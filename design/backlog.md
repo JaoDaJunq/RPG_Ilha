@@ -60,6 +60,8 @@ Tudo o que foi pedido para testar funcionou. Observações:
 
 **Direção atual:** C02 aprovado em 29/10/2026: pixel art mais fina, com Forager e Moonlighter como referências. Ver `design/identidade.md`. As integrações anteriores continuam registradas abaixo; a qualidade final do novo estilo ainda precisa ser demonstrada no jogo.
 
+L07: laboratório Godot isolado em `art/piloto_c02/abrir.cmd`, captura real revisada em `evidence/piloto_c02/dia.png`. Recortes e escala de exibição preparados; terreno v2 simplificado. A01j permanece pendente de avaliação visual do João e integração no jogo principal. O laboratório usa poses paradas, sem combate/coleta; não equivale à conclusão da migração.
+
 - [x] A01i C02: João escolheu a proposta de pixel art fina. Conceito preservado em `art/conceitos/estilo/estilo_pixel_fino_v1.png`; pasta de aprovação atualizada. Desenho liso não escolhido.
 - [ ] A01j Lote piloto C02: Humano Mago, Ogro Arqueiro, árvore, pedra e terreno; definir resolução/escala coerentes com a câmera, comparar na mesma área e validar com captura real. Preservar detalhes de rosto e legibilidade dos recursos antes de refazer os demais assets.
 
