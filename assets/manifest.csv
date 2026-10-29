@@ -1,4 +1,5 @@
 id,tipo,uso,arquivo_fonte,arquivo_exportado,resolucao,licenca,origem,data,estado_aprovacao
+conceito_c02_pixel_fino_v1,conceito,direcao_de_arte_pixel_fino,art/conceitos/estilo/candidatos/estilo_pixel_fino_v1.png,art/conceitos/estilo/estilo_pixel_fino_v1.png,1536x1024,proprio,Candidato C02 existente; aprovado pelo Joao nesta conversa,2026-10-29,aprovado_conceito
 conceito_clareira_a_v1,conceito,direcao_de_arte_noite,art/prompts/pedidos/C01_conceito_visual.md (prompt A),art/conceitos/mundo/clareira_a_v1.png,1536x1024,proprio,Codex gpt-6-luna (geracao de imagem),2026-10-29,conceito
 conceito_clareira_b_v1,conceito,direcao_de_arte_dia,art/prompts/pedidos/C01_conceito_visual.md (prompt B),art/conceitos/mundo/clareira_b_v1.png,1536x1024,proprio,Codex gpt-6-luna (geracao de imagem),2026-10-29,conceito
 ninja_tileset_water,tileset,gelo da lança de gelo (só o tile de gelo),Ninja Adventure/Backgrounds/Tilesets/TilesetWater.png,game/assets/placeholder/ninja/tilesets/TilesetWater.png,448x272,CC0 1.0,https://pixel-boy.itch.io/ninja-adventure-asset-pack,2026-10-29,provisorio

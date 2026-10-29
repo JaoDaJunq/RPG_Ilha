@@ -58,6 +58,11 @@ Tudo o que foi pedido para testar funcionou. Observações:
 
 ## Arte (contínuo, pelo Codex)
 
+**Direção atual:** C02 aprovado em 29/10/2026: pixel art mais fina, com Forager e Moonlighter como referências. Ver `design/identidade.md`. As integrações anteriores continuam registradas abaixo; a qualidade final do novo estilo ainda precisa ser demonstrada no jogo.
+
+- [x] A01i C02: João escolheu a proposta de pixel art fina. Conceito preservado em `art/conceitos/estilo/estilo_pixel_fino_v1.png`; pasta de aprovação atualizada. Desenho liso não escolhido.
+- [ ] A01j Lote piloto C02: Humano Mago, Ogro Arqueiro, árvore, pedra e terreno; definir resolução/escala coerentes com a câmera, comparar na mesma área e validar com captura real. Preservar detalhes de rosto e legibilidade dos recursos antes de refazer os demais assets.
+
 - [x] A01 Conceito visual (T06) → bíblia visual aprovada.
 - [x] A01b Lote L01 (aventureiro, árvore, pedras): aprovado e no jogo (29/10). Ferramenta `game/tools/importar_folha.gd` converte as folhas do Codex.
 - [ ] A01c Aventureiro redesenhado já no tamanho do jogo (~28 px): o L01 veio fino demais e perdeu detalhe no rosto ao reduzir pela metade.

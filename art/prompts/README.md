@@ -4,6 +4,8 @@ O Claude escreve um pedido em `pedidos/`, com o prompt pronto, os anexos e o cam
 
 ## Padrão técnico (vale para todo pedido de sprite, depois que a bíblia visual for aprovada)
 
+**Atualização C02 — 29/10/2026:** João escolheu pixel art mais fina e adicionou Forager e Moonlighter como referências. Anexar `art/conceitos/estilo/estilo_pixel_fino_v1.png` aos novos pedidos, junto com os conceitos de dia/noite. A tabela abaixo é o padrão dos lotes anteriores: tamanhos e ampliação precisam ser revistos no lote piloto descrito em `design/identidade.md`. Não reduzir automaticamente a arte nova para 32 × 32 nem usar o aventureiro antigo como limite de detalhe. Cada novo pedido deve declarar tamanho de origem e tamanho esperado na tela; ainda não há uma nova resolução aprovada.
+
 | Item | Padrão |
 |---|---|
 | Visão | De cima, em 3/4 (topo e frente visíveis) |

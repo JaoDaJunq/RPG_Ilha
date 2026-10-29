@@ -15,6 +15,7 @@
 | 29/10/2026 | Uma classe por personagem (troca na fogueira, pagando material raro). Esquiva no Espaço para todos. Fogo se espalha para árvores vizinhas, mas devagar. |
 | 29/10/2026 | Criação de personagem com raça + classe + atributos (Força, Vitalidade, Agilidade…); raças dão vantagens e desvantagens sem proibir combinações. Proposta detalhada em `design/classes.md`. |
 | 29/10/2026 | Proposta v2 de personagem aprovada: 5 raças, 7 classes em 4 famílias, 5 atributos, reações entre elementos e arte em camadas (`design/classes.md`). |
+| 29/10/2026 | **C02: João escolheu pixel art mais fina** (`art/conceitos/estilo/estilo_pixel_fino_v1.png`) e acrescentou **Forager e Moonlighter** como inspiração. Preservar cores e clima do C01. Direção registrada em `design/identidade.md`; a escala dos sprites e a tradução para o jogo serão validadas num lote piloto. Aprovação de estilo, sem mudança de mecânicas ou aprovação automática de L05/L06. |
 
 ## Em aberto (o João decide)
 

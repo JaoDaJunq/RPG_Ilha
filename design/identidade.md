@@ -1,8 +1,32 @@
 # Identidade visual (bíblia)
 
-> **Aprovada pelo João em 29/10/2026:** o conceito **B** é o visual de **dia** e o conceito **A** é a **noite** da mesma ilha. Referências: `art/conceitos/mundo/clareira_b_v1.png` (dia) e `art/conceitos/mundo/clareira_a_v1.png` (noite). Todo pedido de arte anexa as duas.
+> **Direção atual — C02, aprovada pelo João em 29/10/2026:** **pixel art mais fina**, conforme `art/conceitos/estilo/estilo_pixel_fino_v1.png`. O João acrescentou **Forager** e **Moonlighter (o primeiro, em 2D)** como referências. A alternativa de desenho liso não foi escolhida.
 >
-> Os números técnicos abaixo (tamanhos, contorno, paleta) são a primeira tradução dos conceitos para o jogo. Eles se confirmam no primeiro lote de sprites, com print dentro do jogo.
+> Continuam valendo as cores e o clima aprovados no **C01**: conceito **B = dia** (`art/conceitos/mundo/clareira_b_v1.png`), conceito **A = noite** (`art/conceitos/mundo/clareira_a_v1.png`). Os nomes A/B de C01 e C02 são independentes. Novos pedidos anexam o C02 aprovado e as referências de dia/noite do C01.
+>
+> C02 aprova a direção visual de uma tela conceitual. A conversão em sprites, a escala na tela e a interface ainda precisam ser verificadas dentro do jogo. A imagem não é uma captura da versão jogável.
+
+## Como aplicar as referências
+
+Interpretação de produção a partir das referências indicadas pelo João:
+
+| Referência | Aplicação no Ilha Viva |
+|---|---|
+| **Moonlighter** | Referência principal para acabamento: personagens expressivos, volumes legíveis, materiais distintos, animação de ações e contraste entre luz quente e ambiente frio. Concentrar detalhe no personagem, nos objetos importantes e nas construções. |
+| **Forager** | Referência de clareza: árvores, minérios, recursos e construções reconhecíveis de relance; chão com áreas tranquilas para destacar o que pode ser coletado ou atacado. A leitura precisa continuar fácil com vários amigos e efeitos na tela. |
+| **C01 + C02 próprios** | Manter a identidade da ilha: verdes vivos, água turquesa, flores rosas, fantasia e acampamento acolhedor; usar pixels menores e formas limpas. |
+
+Fontes consultadas em 29/10/2026: [Forager — página oficial na Steam](https://store.steampowered.com/app/751780/Forager/) e [Moonlighter — Digital Sun](https://digitalsungames.com/games/moonlighter/). São referências de direção, sem importação dos seus sprites. A indicação desses jogos não acrescenta automaticamente sistemas de loja, compra de ilhas ou automação ao escopo.
+
+### Tradução para o próximo lote
+
+- **Pixel fino e nítido:** detalhe suficiente para rosto, roupa e arma se distinguirem; contorno colorido fino e grupos de cor bem definidos. Suavidade vem das formas e da resolução da arte.
+- **Cenário legível:** reduzir textura repetitiva na grama, reservar flores e folhagem para grupos e bordas, preservar caminhos e áreas de combate. A densidade de detalhes do mockup não é uma obrigação.
+- **Terreno orgânico:** curvas amplas entre grama, terra, areia e água, sem a aparência de blocos grandes isolados; bordas coerentes com a grade de pixels adotada.
+- **Personagens:** manter as identidades de raça e classe já alinhadas. No Ogro Arqueiro, capuz marrom separado da pele verde e presas legíveis como presas.
+- **Interface:** ícones reconhecíveis no tamanho final, bom contraste e painéis compactos. Texto e números são renderizados pelo Godot; a barra ilustrativa do C02 não redefine as habilidades de nenhuma classe.
+- **Primeiro passo de produção:** um lote piloto com Humano Mago, Ogro Arqueiro, árvore, pedra e trecho de terreno, comparado ao visual atual na mesma área de jogo. Só então consolidar a nova escala e expandir para as outras animações e assets.
+- **Escala ainda a validar:** resolver resolução de origem, escala dos sprites e câmera em conjunto, preservando proporções e área visível. Conferir encaixe dos pés, colisões e nitidez em captura nativa. Não reduzir automaticamente os novos personagens para 32 × 32, nem assumir que duplicar a resolução sozinho resolve o acabamento.
 
 ## Sensação
 
@@ -11,7 +35,9 @@ Uma ilha de fantasia **viva, colorida e convidativa de dia**, que fica **misteri
 - **Dia (B):** sol filtrado pelas copas, verdes amarelados e saturados, água turquesa, árvores de flor rosa, flores e frutas coloridas. Alegre sem ficar infantil.
 - **Noite (A):** sombras azul-arroxeadas frias e luz quente de fogueira e magia. Cogumelos que brilham em azul-esverdeado, slimes verdes translúcidos. **A noite é feita pelo jogo** (escurecer + luzes), não por sprites diferentes: os sprites são desenhados de dia.
 
-## Padrão técnico
+## Padrão técnico anterior (L01–L06; base de comparação)
+
+Esta tabela registra a implementação anterior ao C02. Tamanhos e zoom **não são requisitos definitivos para a nova arte fina**. Visão em 3/4, coerência de luz e identidade dos personagens continuam como orientação; o lote piloto deve definir os novos tamanhos com evidência dentro do jogo.
 
 | Item | Padrão |
 |---|---|
@@ -46,13 +72,13 @@ Uma ilha de fantasia **viva, colorida e convidativa de dia**, que fica **misteri
 - Fundo magenta chapado `#FF00FF` nas folhas; o Claude troca por transparente.
 - Nada parecido com personagem ou marca famosa.
 - Aprovação só depois de ver o sprite **dentro do jogo**, ao lado dos outros, no zoom real.
-- **Paleta curta e sem pixels soltos.** A IA entrega centenas de tons por sprite; toda folha é convertida com `--cores` e `--limpar` (ver `game/tools/medir_ruido.gd`). Meta: até ~16 cores por quadro e menos de 10% de pixels soltos, como pixel art de verdade (6–8 cores, ~5%).
+- **Paleta curta e sem pixels soltos.** A IA pode entregar centenas de tons por sprite. O fluxo anterior usa `--cores` e `--limpar` (ver `game/tools/medir_ruido.gd`), com meta de até ~16 cores por quadro e menos de 10% de pixels soltos. Para o C02, comparar antes/depois no tamanho de exibição: a limpeza não pode apagar olhos, presas, mãos e contorno. As métricas ajudam a encontrar ruído, mas não substituem a avaliação visual.
 
 ## Lições do primeiro lote (L01)
 
 - A IA não respeita a ampliação pedida: a árvore veio certinha (8x), a pedra com "pixel" de ~10 px e o aventureiro de ~6,6 px (o dobro da resolução pedida). A ferramenta `game/tools/importar_folha.gd` mede o tamanho real sozinha; quando vem fino demais, reduz pela metade (`--pixel` e `--escuro`), o que perde detalhe no rosto.
-- Nos próximos pedidos de personagem, anexar o aventureiro já convertido (`game/assets/sprites/personagens/aventureiro.png` ampliado) como referência de tamanho de pixel.
+- No fluxo L01, usou-se o aventureiro convertido como referência de tamanho. **A partir do C02, a referência de acabamento é o conceito de pixel fino aprovado.** Os sprites antigos servem para preservar roupa, cores e identidade, sem obrigar a mesma resolução baixa.
 
-## Placeholders atuais
+## Histórico dos placeholders (L01)
 
-Pacote **Ninja Adventure** (Pixel-boy e AAA, CC0) para chão, plantinhas, barraca, fogueira, slime, ícones e sons. O aventureiro, as árvores e as pedras já são arte própria (L01). O que falta trocar destoa (contorno preto mais grosso): próximo pedido é o chão e o acampamento.
+O primeiro lote usava **Ninja Adventure** (Pixel-boy e AAA, CC0) para chão, plantinhas, barraca, fogueira, slime, ícones e sons. L02–L06 já substituíram parte desses elementos. Consultar `assets/manifest.csv` e `design/backlog.md` para o estado atual; a aprovação de C02 orienta a próxima revisão visual.
