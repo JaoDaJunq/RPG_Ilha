@@ -1,0 +1,69 @@
+[gd_scene load_steps=11 format=3]
+
+[ext_resource type="Script" path="res://scripts/world/resource_node.gd" id="1_recurso"]
+[ext_resource type="Texture2D" path="res://assets/placeholder/ninja/tilesets/TilesetNature.png" id="2_natureza"]
+[ext_resource type="Script" path="res://scripts/components/interactable.gd" id="3_inter"]
+[ext_resource type="Script" path="res://scripts/components/hurtbox.gd" id="4_hurt"]
+[ext_resource type="Script" path="res://scripts/components/flammable.gd" id="5_fogo"]
+[ext_resource type="Texture2D" path="res://assets/luz/luz_radial.tres" id="6_luz"]
+
+[sub_resource type="CircleShape2D" id="Shape_tronco"]
+radius = 6.0
+
+[sub_resource type="RectangleShape2D" id="Shape_selecao"]
+size = Vector2(32, 42)
+
+[sub_resource type="RectangleShape2D" id="Shape_hurt"]
+size = Vector2(26, 38)
+
+[node name="Arvore" type="StaticBody2D"]
+script = ExtResource("1_recurso")
+regiao_inteiro = Rect2(48, 288, 48, 48)
+regiao_queimado = Rect2(64, 0, 32, 32)
+regiao_esgotado = Rect2(32, 128, 32, 32)
+
+[node name="Sprite2D" type="Sprite2D" parent="."]
+texture = ExtResource("2_natureza")
+
+[node name="Colisao" type="CollisionShape2D" parent="."]
+position = Vector2(0, -3)
+shape = SubResource("Shape_tronco")
+
+[node name="Interactable" type="Area2D" parent="."]
+script = ExtResource("3_inter")
+alcance = 32.0
+
+[node name="Forma" type="CollisionShape2D" parent="Interactable"]
+position = Vector2(0, -22)
+shape = SubResource("Shape_selecao")
+
+[node name="Hurtbox" type="Area2D" parent="."]
+script = ExtResource("4_hurt")
+
+[node name="Forma" type="CollisionShape2D" parent="Hurtbox"]
+position = Vector2(0, -21)
+shape = SubResource("Shape_hurt")
+
+[node name="Flammable" type="Node" parent="."]
+script = ExtResource("5_fogo")
+
+[node name="Chamas" type="Node2D" parent="."]
+position = Vector2(0, -24)
+
+[node name="A" type="AnimatedSprite2D" parent="Chamas"]
+position = Vector2(-9, 2)
+
+[node name="B" type="AnimatedSprite2D" parent="Chamas"]
+position = Vector2(8, 5)
+
+[node name="C" type="AnimatedSprite2D" parent="Chamas"]
+position = Vector2(0, -8)
+
+[node name="D" type="AnimatedSprite2D" parent="Chamas"]
+position = Vector2(-2, 14)
+
+[node name="Luz" type="PointLight2D" parent="Chamas"]
+color = Color(1, 0.5, 0.18, 1)
+energy = 0.55
+texture = ExtResource("6_luz")
+texture_scale = 0.9

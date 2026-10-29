@@ -1,0 +1,17 @@
+# Cache e importações do Godot 4 (recriados ao abrir o projeto)
+.godot/
+
+# Exportações locais
+builds/
+*.exe
+*.pck
+
+# Sistema
+Thumbs.db
+.DS_Store
+
+# Pastas locais do Claude Code (subagentes em worktrees)
+.claude/worktrees/
+
+# Candidatos de arte brutos/reprovados ficam fora do git (pesam muito)
+art/**/candidatos/

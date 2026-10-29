@@ -1,0 +1,53 @@
+[gd_scene load_steps=8 format=3]
+
+[ext_resource type="Script" path="res://scripts/player/player.gd" id="1_player"]
+[ext_resource type="Script" path="res://scripts/components/health_component.gd" id="2_vida"]
+[ext_resource type="Script" path="res://scripts/components/inventory.gd" id="3_inv"]
+[ext_resource type="Script" path="res://scripts/components/hurtbox.gd" id="4_hurt"]
+[ext_resource type="Texture2D" path="res://assets/luz/luz_radial.tres" id="5_luz"]
+
+[sub_resource type="CircleShape2D" id="Shape_corpo"]
+radius = 4.5
+
+[sub_resource type="RectangleShape2D" id="Shape_hurt"]
+size = Vector2(10, 14)
+
+[node name="Player" type="CharacterBody2D"]
+collision_layer = 2
+collision_mask = 1
+motion_mode = 1
+script = ExtResource("1_player")
+
+[node name="Visual" type="AnimatedSprite2D" parent="."]
+position = Vector2(0, -8)
+
+[node name="Colisao" type="CollisionShape2D" parent="."]
+position = Vector2(0, -3)
+shape = SubResource("Shape_corpo")
+
+[node name="HealthComponent" type="Node" parent="."]
+script = ExtResource("2_vida")
+invulneravel_por = 0.5
+
+[node name="Inventory" type="Node" parent="."]
+script = ExtResource("3_inv")
+
+[node name="Hurtbox" type="Area2D" parent="."]
+script = ExtResource("4_hurt")
+
+[node name="Forma" type="CollisionShape2D" parent="Hurtbox"]
+position = Vector2(0, -7)
+shape = SubResource("Shape_hurt")
+
+[node name="Luz" type="PointLight2D" parent="." groups=["luzes_noturnas"]]
+position = Vector2(0, -8)
+color = Color(1, 0.86, 0.62, 1)
+energy = 0.35
+texture = ExtResource("5_luz")
+texture_scale = 0.6
+
+[node name="Camera2D" type="Camera2D" parent="."]
+position = Vector2(0, -8)
+zoom = Vector2(3, 3)
+position_smoothing_enabled = true
+position_smoothing_speed = 8.0

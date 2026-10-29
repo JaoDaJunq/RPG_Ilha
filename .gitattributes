@@ -1,0 +1,6 @@
+# Godot espera LF; evita que o Windows troque as quebras de linha dos arquivos do projeto.
+* text=auto eol=lf
+*.png binary
+*.wav binary
+*.ogg binary
+*.glb binary
