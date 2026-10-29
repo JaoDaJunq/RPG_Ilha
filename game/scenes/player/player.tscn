@@ -10,7 +10,7 @@
 radius = 4.5
 
 [sub_resource type="RectangleShape2D" id="Shape_hurt"]
-size = Vector2(12, 22)
+size = Vector2(14, 26)
 
 [sub_resource type="SceneReplicationConfig" id="Replicacao"]
 properties/0/path = NodePath(".:position")
@@ -33,7 +33,7 @@ motion_mode = 1
 script = ExtResource("1_player")
 
 [node name="Visual" type="AnimatedSprite2D" parent="."]
-position = Vector2(0, -14)
+position = Vector2(0, -18)
 
 [node name="Colisao" type="CollisionShape2D" parent="."]
 position = Vector2(0, -3)
@@ -50,7 +50,7 @@ script = ExtResource("3_inv")
 script = ExtResource("4_hurt")
 
 [node name="Forma" type="CollisionShape2D" parent="Hurtbox"]
-position = Vector2(0, -11)
+position = Vector2(0, -13)
 shape = SubResource("Shape_hurt")
 
 [node name="Luz" type="PointLight2D" parent="." groups=["luzes_noturnas"]]

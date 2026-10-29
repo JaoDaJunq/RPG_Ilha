@@ -10,32 +10,28 @@ const ARVORE := preload("res://scenes/world/arvore.tscn")
 const PEDRA := preload("res://scenes/world/pedra.tscn")
 const SLIME := preload("res://scenes/enemies/slime.tscn")
 const JOGADOR := preload("res://scenes/player/player.tscn")
-const TEX_CHAO := preload("res://assets/placeholder/ninja/tilesets/TilesetFloor.png")
+const TEX_CHAO := preload("res://assets/sprites/chao/chao.png")
 const TEX_AGUA := preload("res://assets/placeholder/ninja/tilesets/TilesetWater.png")
-const TEX_NATUREZA := preload("res://assets/placeholder/ninja/tilesets/TilesetNature.png")
-const TEX_ACAMPAMENTO := preload("res://assets/placeholder/ninja/tilesets/tileset_camp.png")
+const TEX_PLANTAS := preload("res://assets/sprites/natureza/plantas.png")
+const TEX_ACAMPAMENTO := preload("res://assets/sprites/acampamento/acampamento.png")
 const LUZ := preload("res://assets/luz/luz_radial.tres")
 
 const T := 16
 # Coordenadas (em tiles) dentro das folhas do Ninja Adventure.
-const GRAMA := Vector2i(0, 12)
-const GRAMA_DETALHES: Array[Vector2i] = [Vector2i(1, 12), Vector2i(2, 12), Vector2i(3, 12), Vector2i(4, 12)]
-const AREIA := Vector2i(1, 1)
-const AREIA_DETALHES: Array[Vector2i] = [Vector2i(0, 4), Vector2i(1, 4)]
-const TERRA_CIRCULO := Vector2i(0, 7)  # canto de cima-esquerda de um círculo 3x3 de terra
-const AGUA := Vector2i(11, 0)
+## Blocos de chão (L02): cada bloco tem 32x32 = 2x2 tiles, na ordem da folha.
+enum Bloco { GRAMA, GRAMA_FLORES, TERRA, AREIA, AGUA, GRAMA_ESCURA }
 const GELO := Vector2i(14, 1)  # gelo liso da folha de água (sem colisão: dá para andar)
 # Regiões (em pixels) na folha de natureza.
 ## Variações da árvore na folha L01: verde (mais comum) e flor rosa.
 const COPA_VERDE := Rect2(0, 0, 64, 64)
 const COPA_ROSA := Rect2(256, 0, 64, 64)
 const PEDRA_MARROM := Rect2(144, 0, 48, 48)
-const PLANTAS: Array[Rect2] = [
-	Rect2(0, 160, 16, 16), Rect2(16, 160, 16, 16), Rect2(32, 160, 16, 16), Rect2(48, 160, 16, 16),
-	Rect2(96, 160, 16, 16), Rect2(112, 160, 16, 16), Rect2(128, 160, 16, 16), Rect2(144, 160, 16, 16),
-	Rect2(0, 176, 16, 16), Rect2(16, 176, 16, 16), Rect2(32, 176, 16, 16), Rect2(48, 176, 16, 16),
-	Rect2(64, 176, 16, 16), Rect2(80, 176, 16, 16), Rect2(96, 176, 16, 16), Rect2(144, 176, 16, 16),
-]
+## Plantas (L02): arbusto vermelho, arbusto azul, samambaia, flores, cogumelo vermelho,
+## cogumelo azul (brilha à noite). Peso de cada uma no sorteio.
+const PLANTAS_PESO: Array[int] = [3, 3, 4, 5, 2, 1]
+const COGUMELO_AZUL := 5
+## Objetos do acampamento (L02), na ordem da folha.
+enum Acamp { BARRACA, FOGUEIRA, BAU, BARRIL, BANCADA, VARAL }
 ## Raio sem árvores em volta da fogueira.
 const RAIO_CLAREIRA := 120.0
 const COR_DIA := Color(1, 1, 1)
@@ -48,7 +44,7 @@ enum Chao { AGUA, AREIA, GRAMA }
 @export var semente := 22117
 @export var arvores := 80
 @export var pedras := 16
-@export var plantas := 170
+@export var plantas := 110
 @export var slimes := 5
 ## Falso nos testes que precisam de terreno limpo (sem árvores e pedras geradas).
 @export var gerar_recursos := true
@@ -80,7 +76,8 @@ var _id_por_peer: Dictionary[int, String] = {}
 var _restaurar_depois: Dictionary[int, Dictionary] = {}
 var _tempo_salvar := 0.0
 var _gelo: Dictionary[Vector2i, float] = {}  # célula congelada → segundos restantes
-var _id_agua := -1
+var _id_agua := -1  # fonte do gelo
+var _id_chao := -1
 var _rng := RandomNumberGenerator.new()
 
 @onready var chao: TileMapLayer = $Chao
@@ -147,8 +144,8 @@ func registrar_jogador_local(p: Player) -> void:
 		Events.aviso.emit("Explore a clareira: segure E nas árvores e pedras.")
 
 
-func ponto_de_nascer(indice: int) -> Vector2:
-	return centro + Vector2(30 * indice, 34)
+func ponto_de_nascer(indice: int) -> Vector2:  # abaixo da fogueira, sem encostar nela
+	return centro + Vector2(30 * indice, 46)
 
 
 func registrar_removido(nome: String) -> void:
@@ -220,7 +217,7 @@ func _definir_gelo(cel: Vector2i, congelado: bool) -> void:
 		if not _gelo.has(cel):
 			_gelo[cel] = duracao_gelo
 	else:
-		chao.set_cell(cel, _id_agua, AGUA)
+		_pintar(cel, Bloco.AGUA)
 		_gelo.erase(cel)
 
 
@@ -451,33 +448,32 @@ func _gerar_chao() -> void:
 	ts.tile_size = Vector2i(T, T)
 	ts.add_physics_layer()
 	ts.set_physics_layer_collision_layer(0, 1)
+	# Chão novo (L02): 6 blocos de 32x32 lado a lado = 12x2 tiles de 16.
 	var src_chao := TileSetAtlasSource.new()
 	src_chao.texture = TEX_CHAO
 	src_chao.texture_region_size = Vector2i(T, T)
-	var id_chao := ts.add_source(src_chao)
-	var coords: Array[Vector2i] = [GRAMA, AREIA]
-	coords.append_array(GRAMA_DETALHES)
-	coords.append_array(AREIA_DETALHES)
-	for y in 3:
-		for x in 3:
-			coords.append(TERRA_CIRCULO + Vector2i(x, y))
-	for c in coords:
-		src_chao.create_tile(c)
-	var src_agua := TileSetAtlasSource.new()
-	src_agua.texture = TEX_AGUA
-	src_agua.texture_region_size = Vector2i(T, T)
-	var id_agua := ts.add_source(src_agua)
-	_id_agua = id_agua
-	src_agua.create_tile(AGUA)
-	src_agua.create_tile(GELO)
-	var dados := src_agua.get_tile_data(AGUA, 0)
-	dados.add_collision_polygon(0)
-	dados.set_collision_polygon_points(0, 0, PackedVector2Array([Vector2(-8, -8), Vector2(8, -8), Vector2(8, 8), Vector2(-8, 8)]))
+	_id_chao = ts.add_source(src_chao)
+	for y in 2:
+		for x in 12:
+			src_chao.create_tile(Vector2i(x, y))
+	# A água não deixa passar.
+	for y in 2:
+		for x in 2:
+			var dados := src_chao.get_tile_data(Vector2i(Bloco.AGUA * 2 + x, y), 0)
+			dados.add_collision_polygon(0)
+			dados.set_collision_polygon_points(0, 0, PackedVector2Array([Vector2(-8, -8), Vector2(8, -8), Vector2(8, 8), Vector2(-8, 8)]))
+	# Gelo da lança de gelo (ainda o placeholder do Ninja Adventure).
+	var src_gelo := TileSetAtlasSource.new()
+	src_gelo.texture = TEX_AGUA
+	src_gelo.texture_region_size = Vector2i(T, T)
+	_id_agua = ts.add_source(src_gelo)
+	src_gelo.create_tile(GELO)
 	chao.tile_set = ts
 
 	var ruido := FastNoiseLite.new()
 	ruido.seed = semente
 	ruido.frequency = 0.08
+	var c := Vector2i(largura / 2, altura / 2)
 	for y in altura:
 		for x in largura:
 			var cel := Vector2i(x, y)
@@ -487,28 +483,35 @@ func _gerar_chao() -> void:
 			_distancia[cel] = d
 			if d > 1.0:
 				_tipo[cel] = Chao.AGUA
-				chao.set_cell(cel, id_agua, AGUA)
+				_pintar(cel, Bloco.AGUA)
 			elif d > 0.87:
 				_tipo[cel] = Chao.AREIA
-				chao.set_cell(cel, id_chao, _sortear(AREIA, AREIA_DETALHES, 0.12))
+				_pintar(cel, Bloco.AREIA)
 			else:
 				_tipo[cel] = Chao.GRAMA
-				chao.set_cell(cel, id_chao, _sortear(GRAMA, GRAMA_DETALHES, 0.18))
-	# Clareira de terra embaixo da fogueira.
-	var c := Vector2i(largura / 2, altura / 2)
-	for y in 3:
-		for x in 3:
-			chao.set_cell(c + Vector2i(x - 1, y - 1), id_chao, TERRA_CIRCULO + Vector2i(x, y))
+				if Vector2(cel - c).length() <= 2.6:
+					_pintar(cel, Bloco.TERRA)  # clareira de terra em volta da fogueira
+				elif _bloco_com_flores(cel):
+					_pintar(cel, Bloco.GRAMA_FLORES)
+				else:
+					_pintar(cel, Bloco.GRAMA)
 
 
-func _sortear(base: Vector2i, detalhes: Array[Vector2i], chance: float) -> Vector2i:
-	if _rng.randf() < chance:
-		return detalhes[_rng.randi() % detalhes.size()]
-	return base
+## Blocos de flores salpicados (alinhados de 2 em 2 tiles para o bloco ficar inteiro).
+## Usa a semente, então é igual em todos os jogadores.
+func _bloco_com_flores(cel: Vector2i) -> bool:
+	var b := Vector2i(floori(cel.x / 2.0), floori(cel.y / 2.0))
+	return hash(Vector3i(b.x, b.y, semente)) % 100 < 7
+
+
+## Pinta a célula com um bloco de 32x32, escolhendo o pedaço certo pela posição
+## (assim o desenho continua de um tile para o outro).
+func _pintar(cel: Vector2i, bloco: int) -> void:
+	chao.set_cell(cel, _id_chao, Vector2i(bloco * 2 + posmod(cel.x, 2), posmod(cel.y, 2)))
 
 
 func _montar_acampamento() -> void:
-	var fogueira := _sprite(TEX_ACAMPAMENTO, Rect2(192, 80, 32, 32), centro + Vector2(0, 10))
+	var fogueira := _objeto_acampamento(Acamp.FOGUEIRA, centro + Vector2(0, 12), Vector2.ZERO)
 	var luz := PointLight2D.new()
 	luz.texture = LUZ
 	luz.color = Color(1, 0.55, 0.25)
@@ -520,19 +523,30 @@ func _montar_acampamento() -> void:
 	var t := luz.create_tween().set_loops()
 	t.tween_property(luz, "energy", 0.65, 0.18)
 	t.tween_property(luz, "energy", 0.85, 0.23)
-	_ocupados.append(fogueira.position)
+	_objeto_acampamento(Acamp.BARRACA, centro + Vector2(-50, -16), Vector2(46, 12))
+	_objeto_acampamento(Acamp.BANCADA, centro + Vector2(50, -16), Vector2(40, 10))
+	_objeto_acampamento(Acamp.BAU, centro + Vector2(56, 18), Vector2(28, 10))
+	_objeto_acampamento(Acamp.BARRIL, centro + Vector2(-44, 20), Vector2(18, 8))
+	_objeto_acampamento(Acamp.VARAL, centro + Vector2(-90, 6), Vector2.ZERO)
 
-	var barraca := StaticBody2D.new()
-	barraca.position = centro + Vector2(-44, -14)
+
+## Um objeto do acampamento (sprite da folha L02). Com `colisao`, ninguém atravessa.
+func _objeto_acampamento(qual: int, pos: Vector2, colisao: Vector2) -> Node2D:
+	var regiao := Rect2(qual * 64, 0, 64, 64)
+	_ocupados.append(pos)
+	if colisao == Vector2.ZERO:
+		return _sprite(TEX_ACAMPAMENTO, regiao, pos)
+	var corpo := StaticBody2D.new()
+	corpo.position = pos
 	var forma := CollisionShape2D.new()
 	var ret := RectangleShape2D.new()
-	ret.size = Vector2(40, 12)
+	ret.size = colisao
 	forma.shape = ret
-	forma.position = Vector2(0, -6)
-	barraca.add_child(forma)
-	entidades.add_child(barraca)
-	_sprite(TEX_ACAMPAMENTO, Rect2(64, 0, 48, 48), Vector2.ZERO, barraca)
-	_ocupados.append(barraca.position)
+	forma.position = Vector2(0, -colisao.y / 2.0 - 2.0)
+	corpo.add_child(forma)
+	entidades.add_child(corpo)
+	_sprite(TEX_ACAMPAMENTO, regiao, Vector2.ZERO, corpo)
+	return corpo
 
 
 func _espalhar() -> void:
@@ -579,8 +593,32 @@ func _espalhar() -> void:
 
 	for i in plantas:
 		var p := _ponto_em(celulas_grama)
-		if p.distance_to(centro) > 30.0 and _livre(p, 8.0):
-			_sprite(TEX_NATUREZA, PLANTAS[_rng.randi() % PLANTAS.size()], p)
+		if p.distance_to(centro) > 100.0 and _livre(p, 14.0):
+			var qual := _sortear_planta()
+			var s := _sprite(TEX_PLANTAS, Rect2(qual * 32, 0, 32, 32), p)
+			_ocupados.append(p)
+			if qual == COGUMELO_AZUL:
+				# O cogumelo azul brilha à noite (conceito A).
+				var luz := PointLight2D.new()
+				luz.texture = LUZ
+				luz.color = Color(0.3, 0.95, 0.9)
+				luz.energy = 0.7
+				luz.texture_scale = 0.35
+				luz.position = Vector2(0, -6)
+				luz.add_to_group(&"luzes_noturnas")
+				s.add_child(luz)
+
+
+func _sortear_planta() -> int:
+	var total := 0
+	for peso in PLANTAS_PESO:
+		total += peso
+	var r := _rng.randi() % total
+	for i in PLANTAS_PESO.size():
+		r -= PLANTAS_PESO[i]
+		if r < 0:
+			return i
+	return 0
 
 
 ## Só o anfitrião cria os slimes; o MultiplayerSpawner copia para os outros.

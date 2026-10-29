@@ -5,10 +5,10 @@
 [ext_resource type="Script" path="res://scripts/components/hurtbox.gd" id="3_hurt"]
 
 [sub_resource type="CircleShape2D" id="Shape_corpo"]
-radius = 5.0
+radius = 6.0
 
 [sub_resource type="RectangleShape2D" id="Shape_hurt"]
-size = Vector2(14, 12)
+size = Vector2(18, 14)
 
 [sub_resource type="SceneReplicationConfig" id="Replicacao"]
 properties/0/path = NodePath(".:position")
@@ -28,7 +28,7 @@ motion_mode = 1
 script = ExtResource("1_slime")
 
 [node name="Visual" type="AnimatedSprite2D" parent="."]
-position = Vector2(0, -7)
+position = Vector2(0, -14)
 
 [node name="Colisao" type="CollisionShape2D" parent="."]
 position = Vector2(0, -3)
@@ -43,7 +43,7 @@ invulneravel_por = 0.15
 script = ExtResource("3_hurt")
 
 [node name="Forma" type="CollisionShape2D" parent="Hurtbox"]
-position = Vector2(0, -6)
+position = Vector2(0, -9)
 shape = SubResource("Shape_hurt")
 
 [node name="Sync" type="MultiplayerSynchronizer" parent="."]

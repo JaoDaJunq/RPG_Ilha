@@ -4,8 +4,6 @@ extends TesteBase
 ## das árvores e do aventureiro atual; monta também um painel de teste com a interface nova.
 ## Salva evidence/vitrine/<nome>.png. Precisa de janela.
 
-const FONTE := preload("res://assets/placeholder/ninja/fonte/fonte_pixel.ttf")
-
 var pasta := ""
 
 
@@ -91,11 +89,8 @@ func _painel_de_teste(w: World, ancora: Vector2) -> void:
 	painel.size = Vector2(170, 124)
 	painel.scale = Vector2(2, 2)
 	camada.add_child(painel)
-	var tema := Theme.new()
-	tema.default_font = FONTE
-	tema.default_font_size = 8
 	var col := VBoxContainer.new()
-	col.theme = tema
+	col.theme = Tema.tema()
 	col.position = Vector2(16, 16)
 	col.add_theme_constant_override(&"separation", 1)
 	painel.add_child(col)

@@ -9,6 +9,7 @@ const MUNDO := "res://scenes/world/world.tscn"
 
 
 func _ready() -> void:
+	theme = Tema.tema()
 	# Atalho de teste: --solo, --hospedar ou --entrar=IP pulam o menu.
 	if Net.modo_pela_linha_de_comando():
 		_ir_para_o_mundo.call_deferred()

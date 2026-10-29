@@ -39,6 +39,9 @@ func _ready() -> void:
 			p.mira_forcada = p.global_position + Vector2(0, 50)
 			p.usar_habilidade_por_id(&"armadilha")
 			await esperar(0.2)
+			# Um slime pisa na armadilha: ela fecha e prende.
+			var preso: Slime = colocar(w, SLIME, p.global_position + Vector2(0, 50))
+			await esperar(0.4)
 			p.mira_forcada = s.global_position + Vector2(0, -6)
 			p.comecar_habilidade(0)  # segurando o tiro carregado
 			await esperar(0.6)

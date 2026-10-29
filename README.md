@@ -7,6 +7,7 @@ Co-op online de sobrevivência e exploração numa ilha de fantasia que reage ao
 **Etapas 0 e 1 concluídas; Etapa 3 (personagem e classes) em andamento.** A base do jogo está em cenas e componentes, com placeholders CC0 do Ninja Adventure. A direção de arte foi aprovada (B = dia, A = noite) e o primeiro lote de sprites próprios espera aprovação. Tarefas em [design/backlog.md](design/backlog.md).
 
 **O que já funciona (sozinho ou com amigos):**
+- Arte própria (Codex): personagens de cada raça e classe (frente, costas, perfil e caminhada), árvores, pedras, chão, plantas, acampamento, slime, armadilha e toda a interface (menu com a ilha à noite, painéis de madeira, ícones, teclinha E quando dá para coletar).
 - Mundo salvo: árvores cortadas, pedras, noite e o seu personagem (nível, pontos, itens, onde estava) voltam ao abrir de novo. Cada raça + classe é um personagem salvo separado. "Começar mundo novo" no menu apaga.
 - Criação de personagem no menu: raça (Humano ou Ogro) e classe (Guerreiro, Mago ou Arqueiro), com atributos que mudam vida, mana, velocidade, dano e coleta. Ficha na tecla C.
 - Níveis e experiência: derrotar slimes (dividido com quem está perto) e coletar dão experiência; cada nível dá 2 pontos de atributo (botões "+" na ficha) e 1 de habilidade (a árvore vem depois). Humano ganha 10% a mais.
@@ -22,7 +23,7 @@ Co-op online de sobrevivência e exploração numa ilha de fantasia que reage ao
 - Golpe com clique esquerdo; slimes perseguem e machucam; ao desmaiar, o jogador volta ao acampamento.
 - N alterna dia e noite; M liga/desliga o som.
 
-**Ainda não tem:** inventário com slots, fabricação, construção, classes e árvore de habilidades, arte própria do chão, do acampamento, do slime e dos efeitos (o aventureiro, as árvores e as pedras já são próprios).
+**Ainda não tem:** inventário com slots, fabricação, construção, classes e árvore de habilidades, efeitos próprios (bola de fogo, gelo, golpes ainda são do pacote placeholder) e fonte pixel própria.
 
 ## Como rodar
 

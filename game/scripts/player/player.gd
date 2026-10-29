@@ -8,7 +8,7 @@ extends CharacterBody2D
 ## (coletar, golpear, habilidades) é um PEDIDO ao anfitrião, que confere e executa.
 ## Vida, mana e inventário são do anfitrião, que manda os valores ao dono.
 
-const TEXTURA := preload("res://assets/sprites/personagens/aventureiro.png")
+const TEXTURA_FRENTE := preload("res://assets/sprites/personagens/frente.png")
 const DURACAO_ESQUIVA := 0.2
 const VELOCIDADE_ESQUIVA := 230.0
 const CARGA_MAXIMA := 1.0  # segundos segurando para a carga completa
@@ -578,20 +578,33 @@ func _animar(entrada: Vector2) -> void:
 	visual.play(animacao)
 
 
-## Folha do aventureiro (L01): 0 frente, 1 costas, 2 direita, 3 andando de frente,
-## 4 andando para a direita. A esquerda é o espelho da direita. Enquanto não chegam
-## mais quadros, o passo alterna parado/andando e o golpe usa a pose de passo.
+## Personagens (L03/L05), quadros de 40x40 com os pés 2 px acima do fundo.
+## frente.png: os 6 personagens de frente (Humano e Ogro x Guerreiro, Mago, Arqueiro).
+## <raca>_<classe>.png (L05): 0 costas, 1 perfil direita, 2 e 3 andando de frente,
+## 4 andando de perfil, 5 andando de costas. Sem ela, o personagem fica sempre de frente.
 func _montar_frames() -> SpriteFrames:
-	var t := Vector2i(32, 32)
-	var frente: Texture2D = SpriteSheets.quadro(TEXTURA, 0, t)
-	var costas: Texture2D = SpriteSheets.quadro(TEXTURA, 1, t)
-	var direita: Texture2D = SpriteSheets.quadro(TEXTURA, 2, t)
-	var esquerda: Texture2D = SpriteSheets.quadro(TEXTURA, 2, t, true)
-	var passo_frente: Texture2D = SpriteSheets.quadro(TEXTURA, 3, t)
-	var passo_frente_b: Texture2D = SpriteSheets.quadro(TEXTURA, 3, t, true)
-	var passo_costas: Texture2D = SpriteSheets.quadro(TEXTURA, 1, t, false, 1)
-	var passo_direita: Texture2D = SpriteSheets.quadro(TEXTURA, 4, t)
-	var passo_esquerda: Texture2D = SpriteSheets.quadro(TEXTURA, 4, t, true)
+	var t := Vector2i(40, 40)
+	var indice := RacaData.TODAS.find(raca) * ClasseData.TODAS.size() + ClasseData.TODAS.find(classe)
+	var frente: Texture2D = SpriteSheets.quadro(TEXTURA_FRENTE, maxi(indice, 0), t)
+	var caminho := "res://assets/sprites/personagens/%s_%s.png" % [raca, classe]
+	var costas := frente
+	var direita := frente
+	var esquerda := frente
+	var passo_frente: Texture2D = SpriteSheets.quadro(TEXTURA_FRENTE, maxi(indice, 0), t, false, 1)
+	var passo_frente_b := passo_frente
+	var passo_costas := passo_frente
+	var passo_direita := passo_frente
+	var passo_esquerda := passo_frente
+	if ResourceLoader.exists(caminho):
+		var folha: Texture2D = load(caminho)
+		costas = SpriteSheets.quadro(folha, 0, t)
+		direita = SpriteSheets.quadro(folha, 1, t)
+		esquerda = SpriteSheets.quadro(folha, 1, t, true)
+		passo_frente = SpriteSheets.quadro(folha, 2, t)
+		passo_frente_b = SpriteSheets.quadro(folha, 3, t)
+		passo_direita = SpriteSheets.quadro(folha, 4, t)
+		passo_esquerda = SpriteSheets.quadro(folha, 4, t, true)
+		passo_costas = SpriteSheets.quadro(folha, 5, t)
 	var f := SpriteFrames.new()
 	f.remove_animation(&"default")
 	SpriteSheets.adicionar_quadros(f, &"parado_baixo", [frente], 1.0)

@@ -3,7 +3,7 @@
 [ext_resource type="Script" path="res://scripts/abilities/armadilha_chao.gd" id="1_armadilha"]
 
 [sub_resource type="CircleShape2D" id="Shape_armadilha"]
-radius = 8.0
+radius = 10.0
 
 [sub_resource type="SceneReplicationConfig" id="Replicacao"]
 properties/0/path = NodePath(".:position")
@@ -18,9 +18,7 @@ properties/1/replication_mode = 0
 script = ExtResource("1_armadilha")
 
 [node name="Visual" type="AnimatedSprite2D" parent="."]
-modulate = Color(1, 1, 1, 0.75)
-position = Vector2(0, -4)
-scale = Vector2(0.6, 0.6)
+position = Vector2(0, -16)
 
 [node name="Forma" type="CollisionShape2D" parent="."]
 position = Vector2(0, -3)

@@ -43,9 +43,9 @@ Lista oficial de tarefas. Marcar `[x]` só com prova (teste OK ou print revisado
 
 Tudo o que foi pedido para testar funcionou. Observações:
 
-- [ ] F01 **Armadilha do Arqueiro ruim:** o ícone no chão não faz sentido e o efeito de prender também não. Arte própria pedida em L04 (armada, fechando, fechada) → integrar.
-- [ ] F02 **Painéis feios** (menu, ficha, HUD): arte própria pedida em L04 (painel, botões, espaços, ícones de atributos) + fonte pixel → refazer menu, ficha e HUD.
-- [ ] F03 **Personagem pixelado e feio** comparado ao conceito: refazer desenhado no tamanho do jogo, com menos detalhes e mais fofo; personagens são ponto forte do jogo. Pedido L03 (com teste de caracterização raça × classe).
+- [x] F01 **Armadilha do Arqueiro ruim:** o ícone no chão não faz sentido e o efeito de prender também não. Arte própria pedida em L04 (armada, fechando, fechada) → integrar.
+- [x] F02 **Painéis feios** (menu, ficha, HUD): arte própria pedida em L04 (painel, botões, espaços, ícones de atributos) + fonte pixel → refazer menu, ficha e HUD.
+- [x] F03 **Personagem pixelado e feio** comparado ao conceito: refazer desenhado no tamanho do jogo, com menos detalhes e mais fofo; personagens são ponto forte do jogo. Pedido L03 (com teste de caracterização raça × classe).
 - [ ] F04 *(depois)* **Inventário** de verdade (o canto de cima não serve; o jogo vai ter muitos itens).
 - [ ] F05 *(depois)* **Personagem segurando a arma/ferramenta** (espada, arco, machado) ao bater. Pesquisa e recomendação em `design/armas_na_mao.md` (arma em sprite separado, presa na mão e girada no golpe).
 - [ ] F06 *(depois)* **Tirar "CHEGUE MAIS PERTO"** e trocar a caixa por só uma teclinha "E" em cima da árvore/pedra quando estiver perto (arte da tecla pedida em L04).
@@ -61,8 +61,10 @@ Tudo o que foi pedido para testar funcionou. Observações:
 - [x] A01 Conceito visual (T06) → bíblia visual aprovada.
 - [x] A01b Lote L01 (aventureiro, árvore, pedras): aprovado e no jogo (29/10). Ferramenta `game/tools/importar_folha.gd` converte as folhas do Codex.
 - [ ] A01c Aventureiro redesenhado já no tamanho do jogo (~28 px): o L01 veio fino demais e perdeu detalhe no rosto ao reduzir pela metade.
-- [ ] A01d Lote L02 (chão, acampamento, plantas, slime) gerado em 29/10: na pasta de aprovações, aguardando o João. Chão com emendas visíveis: provável refazer.
-- [ ] A01e Lotes L03 (personagens + teste de camadas) e L04 (interface, ícones, armadilha) gerados em 29/10: na pasta de aprovações, aguardando o João. Vitrine: `evidence/vitrine/l02_l03_l04.png` (`tests/vitrine_arte.tscn`).
+- [x] A01d Lote L02 (chão, acampamento, plantas, slime): aprovado e no jogo (29/10). Chão convertido com --preencher (sem grade).
+- [x] A01e Lotes L03 (personagens) e L04 (interface, ícones, armadilha): aprovados e no jogo (29/10).
+- [ ] A01f L05 (costas, perfil e caminhada dos 6 personagens): no jogo para o João ver; aguardando aprovação. Ogros com "presinhas" que parecem lágrimas.
+- [ ] A01g Fonte pixel própria (a do pacote placeholder tinha o "i" quebrado; hoje usa a fonte padrão do Godot). Ex.: Pixelify Sans (OFL), precisa de autorização para baixar.
 - [ ] A02 Tileset da clareira (grama, terra, areia, água) no padrão aprovado.
 - [ ] A03 Personagem provisório próprio (4 direções: parado, andar, atacar, coletar).
 - [ ] A04 Árvore (inteira, sendo cortada, toco, queimada), pedra, slime.

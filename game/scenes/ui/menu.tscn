@@ -1,21 +1,7 @@
-[gd_scene load_steps=4 format=3]
+[gd_scene load_steps=3 format=3]
 
 [ext_resource type="Script" path="res://scripts/ui/menu.gd" id="1_menu"]
-
-[sub_resource type="StyleBoxFlat" id="Fundo"]
-bg_color = Color(0.07, 0.13, 0.13, 0.94)
-border_width_left = 2
-border_width_top = 2
-border_width_right = 2
-border_width_bottom = 2
-border_color = Color(0.580392, 0.486275, 0.313726, 1)
-content_margin_left = 32.0
-content_margin_top = 24.0
-content_margin_right = 32.0
-content_margin_bottom = 24.0
-
-[sub_resource type="StyleBoxFlat" id="Tela"]
-bg_color = Color(0.0627451, 0.0627451, 0.188235, 1)
+[ext_resource type="Texture2D" path="res://assets/sprites/interface/menu_fundo.png" id="2_fundo"]
 
 [node name="Menu" type="Control"]
 layout_mode = 3
@@ -26,14 +12,26 @@ grow_horizontal = 2
 grow_vertical = 2
 script = ExtResource("1_menu")
 
-[node name="Fundo" type="Panel" parent="."]
+[node name="Fundo" type="TextureRect" parent="."]
 layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
 anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
-theme_override_styles/panel = SubResource("Tela")
+texture = ExtResource("2_fundo")
+expand_mode = 1
+stretch_mode = 6
+
+[node name="Escurecer" type="ColorRect" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+color = Color(0.03, 0.04, 0.1, 0.45)
 
 [node name="Centro" type="CenterContainer" parent="."]
 layout_mode = 1
@@ -44,9 +42,8 @@ grow_horizontal = 2
 grow_vertical = 2
 
 [node name="Painel" type="PanelContainer" parent="Centro"]
-custom_minimum_size = Vector2(440, 0)
+custom_minimum_size = Vector2(500, 0)
 layout_mode = 2
-theme_override_styles/panel = SubResource("Fundo")
 
 [node name="Coluna" type="VBoxContainer" parent="Centro/Painel"]
 layout_mode = 2
@@ -55,7 +52,7 @@ theme_override_constants/separation = 12
 [node name="Titulo" type="Label" parent="Centro/Painel/Coluna"]
 layout_mode = 2
 theme_override_colors/font_color = Color(0.94902, 0.905882, 0.776471, 1)
-theme_override_font_sizes/font_size = 40
+theme_override_font_sizes/font_size = 48
 text = "ILHA VIVA"
 horizontal_alignment = 1
 
@@ -85,10 +82,10 @@ tooltip_text = "Classe"
 
 [node name="Resumo" type="Label" parent="Centro/Painel/Coluna"]
 unique_name_in_owner = true
-custom_minimum_size = Vector2(440, 0)
+custom_minimum_size = Vector2(500, 0)
 layout_mode = 2
 theme_override_colors/font_color = Color(0.713726, 0.8, 0.686275, 1)
-theme_override_font_sizes/font_size = 13
+theme_override_font_sizes/font_size = 16
 autowrap_mode = 3
 
 [node name="Solo" type="Button" parent="Centro/Painel/Coluna"]
@@ -105,12 +102,12 @@ unique_name_in_owner = true
 layout_mode = 2
 size_flags_horizontal = 3
 theme_override_colors/font_color = Color(0.713726, 0.8, 0.686275, 1)
-theme_override_font_sizes/font_size = 13
+theme_override_font_sizes/font_size = 16
 
 [node name="MundoNovo" type="Button" parent="Centro/Painel/Coluna/LinhaMundo"]
 unique_name_in_owner = true
 layout_mode = 2
-theme_override_font_sizes/font_size = 13
+theme_override_font_sizes/font_size = 16
 text = "Começar mundo novo"
 
 [node name="Hospedar" type="Button" parent="Centro/Painel/Coluna"]
@@ -123,7 +120,7 @@ text = "Hospedar para amigos"
 unique_name_in_owner = true
 layout_mode = 2
 theme_override_colors/font_color = Color(0.713726, 0.8, 0.686275, 1)
-theme_override_font_sizes/font_size = 13
+theme_override_font_sizes/font_size = 16
 horizontal_alignment = 1
 
 [node name="LinhaEntrar" type="HBoxContainer" parent="Centro/Painel/Coluna"]

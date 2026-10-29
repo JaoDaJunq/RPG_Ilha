@@ -23,6 +23,8 @@ func _init() -> void:
 	for a in OS.get_cmdline_user_args():
 		if a.begins_with("--") and a.contains("="):
 			_args[a.substr(2).get_slice("=", 0)] = a.get_slice("=", 1)
+		elif a.begins_with("--"):
+			_args[a.substr(2)] = "sim"  # opção sem valor, como --preencher e --escuro
 	var entrada := _caminho(_args.get("entrada", ""))
 	var saida: String = _args.get("saida", "")
 	var quadro := int(_args.get("quadro", "32"))
@@ -48,6 +50,9 @@ func _init() -> void:
 	var pequeno_folha := _reduzir(folha, s, Vector2(gx.y, gy.y))
 	_tirar_fundo(pequeno_folha)
 
+	# --separar=nome1,nome2,...: cada célula vira um PNG próprio, recortado sem sobras
+	# (peças de interface e ícones), salvo na pasta de --saida com esses nomes.
+	var separar: PackedStringArray = String(_args.get("separar", "")).split(",", false)
 	var tira := Image.create_empty(quadro * celulas.size(), quadro, false, Image.FORMAT_RGBA8)
 	var colunas := folha.get_width() / CELULA
 	for i in celulas.size():
@@ -59,6 +64,16 @@ func _init() -> void:
 		var pequeno := pequeno_folha.get_region(Rect2i(x0, y0, x1 - x0, y1 - y0))
 		_apagar_soltos(pequeno, 3)
 		var caixa := pequeno.get_used_rect()
+		if _args.has("preencher"):
+			# Blocos de chão: a borda serrilhada da IA vira buraco transparente; cada buraco
+			# pega a cor do pixel opaco mais próximo indo para o meio (senão aparece uma grade).
+			_preencher_buracos(pequeno, caixa)
+		if i < separar.size():
+			var peca := pequeno.get_region(caixa)
+			var destino_peca := _caminho(saida).get_base_dir().path_join(separar[i] + ".png")
+			peca.save_png(destino_peca)
+			print("célula %d → %s (%dx%d)" % [c, destino_peca.get_file(), caixa.size.x, caixa.size.y])
+			continue
 		if caixa.size.x > quadro - 2 or caixa.size.y > quadro - base:
 			push_warning("célula %d: desenho %dx%d não cabe no quadro de %d" % [c, caixa.size.x, caixa.size.y, quadro])
 		var destino := Vector2i(i * quadro + (quadro - caixa.size.x) / 2, quadro - base - caixa.size.y)
@@ -208,6 +223,19 @@ func _tirar_fundo(img: Image) -> void:
 					break
 	for p in franja:
 		img.set_pixelv(p, Color(0, 0, 0, 0))
+
+
+func _preencher_buracos(img: Image, caixa: Rect2i) -> void:
+	var centro := caixa.get_center()
+	for y in range(caixa.position.y, caixa.end.y):
+		for x in range(caixa.position.x, caixa.end.x):
+			if img.get_pixel(x, y).a > 0.5:
+				continue
+			var passo := Vector2i(signi(centro.x - x), signi(centro.y - y))
+			var p := Vector2i(x, y)
+			while caixa.has_point(p + passo) and img.get_pixelv(p).a <= 0.5:
+				p += passo
+			img.set_pixel(x, y, img.get_pixelv(p))
 
 
 ## Apaga grupos de pixels opacos com menos de `minimo` pixels (sujeira da IA).

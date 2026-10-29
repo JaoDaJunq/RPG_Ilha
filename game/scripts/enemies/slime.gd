@@ -8,7 +8,8 @@ extends CharacterBody2D
 ##   físico num congelado → ESTILHAÇA: dano dobrado e descongela
 ##   fogo   → dano dobrado; num congelado, só derrete o gelo
 
-const TEXTURA := preload("res://assets/placeholder/ninja/actors/slime.png")
+## Folha do slime (L02): 0 parado, 1 se preparando, 2 pulando, 3 caindo, 4 tomando dano.
+const TEXTURA := preload("res://assets/sprites/criaturas/slime.png")
 const TEMPO_CONGELADO := 2.5
 ## Experiência para cada jogador perto quando o slime é derrotado.
 const XP_DERROTA := 10
@@ -18,7 +19,7 @@ const XP_DERROTA := 10
 @export var dano_contato := 12.0
 @export var recarga_contato := 1.0
 ## Animação atual (sincronizada).
-@export var animacao: StringName = &"pulo_baixo"
+@export var animacao: StringName = &"parado"
 ## Congelado ou preso (sincronizado para todos verem a cor).
 @export var parado := false
 
@@ -26,6 +27,7 @@ var _recarga := 0.0
 var _empurrao := Vector2.ZERO
 var _congelado := 0.0
 var _preso := 0.0
+var _dano_visivel := 0.0  # mostra o quadro de dano por um instante
 
 @onready var visual: AnimatedSprite2D = $Visual
 @onready var vida: HealthComponent = $HealthComponent
@@ -36,7 +38,10 @@ func _ready() -> void:
 	add_to_group(&"inimigos")
 	var f := SpriteFrames.new()
 	f.remove_animation(&"default")
-	SpriteSheets.adicionar_por_direcao(f, TEXTURA, "pulo", Vector2i(16, 16), 0, 4, 6.0)
+	var t := Vector2i(32, 32)
+	SpriteSheets.adicionar_quadros(f, &"parado", [SpriteSheets.quadro(TEXTURA, 0, t)], 1.0)
+	SpriteSheets.adicionar_quadros(f, &"pulo", [SpriteSheets.quadro(TEXTURA, 0, t), SpriteSheets.quadro(TEXTURA, 1, t), SpriteSheets.quadro(TEXTURA, 2, t), SpriteSheets.quadro(TEXTURA, 3, t)], 7.0)
+	SpriteSheets.adicionar_quadros(f, &"dano", [SpriteSheets.quadro(TEXTURA, 4, t)], 1.0)
 	visual.sprite_frames = f
 	visual.play(animacao)
 	if multiplayer.is_server():
@@ -63,9 +68,11 @@ func _physics_process(delta: float) -> void:
 		visual.pause()
 	elif not visual.is_playing():
 		visual.play()
+	_dano_visivel = maxf(0.0, _dano_visivel - delta)
+	var quer: StringName = &"dano" if _dano_visivel > 0.0 else animacao
+	if visual.animation != quer and not parado:
+		visual.play(quer)
 	if not multiplayer.is_server():
-		if visual.animation != animacao:
-			visual.play(animacao)
 		return
 	_recarga = maxf(0.0, _recarga - delta)
 	_congelado = maxf(0.0, _congelado - delta)
@@ -77,12 +84,12 @@ func _physics_process(delta: float) -> void:
 		var para_alvo := alvo.global_position - global_position
 		if para_alvo.length() < raio_visao:
 			dir = para_alvo.normalized()
-			animacao = StringName("pulo_%s" % SpriteSheets.direcao_de(dir))
-			visual.play(animacao)
+			visual.flip_h = dir.x < 0.0
 		if para_alvo.length() < 12.0 and _recarga <= 0.0:
 			_recarga = recarga_contato
 			if alvo.vida.tomar_dano(dano_contato, &"fisico"):
 				alvo.avisar("O slime te acertou! Clique para golpear.")
+	animacao = &"pulo" if dir != Vector2.ZERO else &"parado"
 	velocity = dir * velocidade + _empurrao
 	_empurrao = _empurrao.move_toward(Vector2.ZERO, 400.0 * delta)
 	move_and_slide()
@@ -126,6 +133,7 @@ func _on_atingido(quantidade: float, tipo: StringName, origem: Node) -> void:
 @rpc("authority", "call_local", "reliable")
 func _piscar() -> void:
 	Sfx.tocar(&"acerto", -10.0)
+	_dano_visivel = 0.3
 	var t := create_tween()
 	t.tween_property(visual, "self_modulate", Color(1.0, 0.5, 0.5), 0.05)
 	t.tween_property(visual, "self_modulate", Color.WHITE, 0.2)

@@ -36,7 +36,7 @@ func _ready() -> void:
 	await esperar(0.12)
 	await _salvar(pasta.path_join("noite.png"))
 
-	p.global_position = w.centro + Vector2(0, 34)
+	p.global_position = w.ponto_de_nascer(0)
 	p.get_node("Camera2D").reset_smoothing()
 	p.mira_forcada = null
 	await esperar(0.3)
