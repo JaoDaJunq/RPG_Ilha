@@ -12,14 +12,12 @@
 | 29/10/2026 | Árvore queimada vira **tronco queimado** que rende **carvão** em vez de madeira (consequência previsível do fogo). |
 | 29/10/2026 | Direção de arte aprovada: conceito **B = dia** e conceito **A = noite** da mesma ilha (a noite é feita pelo jogo com luz, não com sprites diferentes). |
 | 29/10/2026 | Multiplayer: um jogador é o anfitrião e manda no mundo; cada jogador controla o próprio movimento. Coletar, golpear, lançar e dia/noite são pedidos que o anfitrião confere. Modo solo usa o mesmo código. |
-
 | 29/10/2026 | Uma classe por personagem (troca na fogueira, pagando material raro). Esquiva no Espaço para todos. Fogo se espalha para árvores vizinhas, mas devagar. |
 | 29/10/2026 | Criação de personagem com raça + classe + atributos (Força, Vitalidade, Agilidade…); raças dão vantagens e desvantagens sem proibir combinações. Proposta detalhada em `design/classes.md`. |
 
 ## Em aberto (o João decide)
 
 - **Nome do jogo.** Opções levantadas: Emberwild, Mossborne, Brasa & Musgo, Ilha Errante, Wildmere, Verdeluz.
-- **Direção de arte final** (depende do conceito C01): tamanho do tile (16 px?), tamanho do personagem e paleta.
 - **Classes, raças e atributos:** proposta v2 em `design/classes.md` aguardando o João (lista de classes, raças, atributos e ordem de construção).
 - **Como os amigos vão se conectar pela internet** no começo (Tailscale, ZeroTier, Radmin VPN ou abrir porta).
 
