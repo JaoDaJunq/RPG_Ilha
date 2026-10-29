@@ -15,7 +15,7 @@ func _ready() -> void:
 				pedras += 1
 		elif n is Slime:
 			slimes += 1
-	checar(arvores >= 70, "ilha tem árvores suficientes (%d)" % arvores)
+	checar(arvores >= 55, "ilha tem árvores suficientes (%d)" % arvores)
 	checar(pedras >= 12, "ilha tem pedras (%d)" % pedras)
 	checar(slimes == 5, "ilha tem 5 slimes (%d)" % slimes)
 	var p := w.jogador

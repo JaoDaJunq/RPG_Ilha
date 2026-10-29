@@ -173,6 +173,25 @@ func _mostrar(regiao: Rect2) -> void:
 	sprite.region_rect = regiao
 	sprite.centered = false
 	sprite.offset = Vector2(-regiao.size.x / 2.0, -regiao.size.y)
+	_altura_visivel = _medir_altura(sprite.texture, regiao)
+
+
+## Altura do desenho que aparece agora (do chão até o topo), para a teclinha E ficar
+## logo acima de cada objeto: mais alta na árvore, mais baixa na pedra e no toco.
+func altura_visivel() -> float:
+	return _altura_visivel
+
+
+var _altura_visivel := 0.0
+static var _alturas: Dictionary = {}
+
+
+static func _medir_altura(tex: Texture2D, regiao: Rect2) -> float:
+	var chave := "%s|%s" % [tex.resource_path, regiao]
+	if not _alturas.has(chave):
+		var usado := tex.get_image().get_region(Rect2i(regiao)).get_used_rect()
+		_alturas[chave] = regiao.size.y - usado.position.y
+	return _alturas[chave]
 
 
 func _tremer() -> void:

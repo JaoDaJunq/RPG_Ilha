@@ -42,7 +42,7 @@ enum Chao { AGUA, AREIA, GRAMA }
 @export var largura := 64
 @export var altura := 44
 @export var semente := 22117
-@export var arvores := 80
+@export var arvores := 70
 @export var pedras := 16
 @export var plantas := 110
 @export var slimes := 5
@@ -79,6 +79,7 @@ var _gelo: Dictionary[Vector2i, float] = {}  # célula congelada → segundos re
 var _id_agua := -1  # fonte do gelo
 var _id_chao := -1
 var _rng := RandomNumberGenerator.new()
+var _bosque := FastNoiseLite.new()  # onde ficam os bosques
 
 @onready var chao: TileMapLayer = $Chao
 @onready var entidades: Node2D = $Entidades
@@ -555,12 +556,16 @@ func _espalhar() -> void:
 		if _tipo[cel] == Chao.GRAMA and _distancia[cel] < 0.82:
 			celulas_grama.append(cel)
 
+	_bosque.seed = semente + 3
+	_bosque.frequency = 0.07
 	var colocadas := 0
 	for i in arvores * 6:
 		if colocadas >= arvores:
 			break
 		var p := _ponto_em(celulas_grama)
-		if p.distance_to(centro) > RAIO_CLAREIRA and _livre(p, 34.0):
+		# Árvores em bosques (manchas de ruído), deixando campos abertos entre eles.
+		var cel_arvore := Vector2i(p / T)
+		if p.distance_to(centro) > RAIO_CLAREIRA and _bosque.get_noise_2d(cel_arvore.x, cel_arvore.y) > 0.0 and _livre(p, 30.0):
 			var rosa := _rng.randf() < 0.22
 			_ocupados.append(p)
 			colocadas += 1

@@ -49,6 +49,12 @@ func _init() -> void:
 	print("pixel desenhado: %.2f px, início (%.1f, %.1f)" % [s, gx.y, gy.y])
 	var pequeno_folha := _reduzir(folha, s, Vector2(gx.y, gy.y))
 	_tirar_fundo(pequeno_folha)
+	# Limpeza de "ruído" da IA (ver tools/medir_ruido.gd): paleta curta e sem pixels soltos.
+	if _args.has("cores"):
+		_reduzir_paleta(pequeno_folha, int(_args["cores"]))
+	if _args.has("limpar"):
+		for i in 2:
+			_tirar_pixels_soltos(pequeno_folha)
 
 	# --separar=nome1,nome2,...: cada célula vira um PNG próprio, recortado sem sobras
 	# (peças de interface e ícones), salvo na pasta de --saida com esses nomes.
@@ -223,6 +229,106 @@ func _tirar_fundo(img: Image) -> void:
 					break
 	for p in franja:
 		img.set_pixelv(p, Color(0, 0, 0, 0))
+
+
+## Paleta por "corte mediano": divide as cores da folha em `n` grupos e troca cada pixel
+## pela média do seu grupo. A mesma paleta vale para todos os quadros da folha.
+func _reduzir_paleta(img: Image, n: int) -> void:
+	var cores: Array[Vector3] = []
+	for y in img.get_height():
+		for x in img.get_width():
+			var c := img.get_pixel(x, y)
+			if c.a > 0.5:
+				cores.append(Vector3(c.r, c.g, c.b))
+	if cores.size() <= n:
+		return
+	var caixas: Array = [cores]
+	while caixas.size() < n:
+		# Divide a caixa com a maior faixa de cor.
+		var melhor := -1
+		var maior := -1.0
+		for i in caixas.size():
+			var faixa := _faixa(caixas[i])
+			if caixas[i].size() > 1 and faixa.x > maior:
+				maior = faixa.x
+				melhor = i
+		if melhor < 0:
+			break
+		var caixa: Array = caixas[melhor]
+		var eixo := int(_faixa(caixa).y)
+		caixa.sort_custom(func(a: Vector3, b: Vector3) -> bool: return a[eixo] < b[eixo])
+		var meio := caixa.size() / 2
+		caixas[melhor] = caixa.slice(0, meio)
+		caixas.append(caixa.slice(meio))
+	var paleta: Array[Color] = []
+	for caixa in caixas:
+		var soma := Vector3.ZERO
+		for c in caixa:
+			soma += c
+		soma /= float(caixa.size())
+		paleta.append(Color(soma.x, soma.y, soma.z))
+	for y in img.get_height():
+		for x in img.get_width():
+			var c := img.get_pixel(x, y)
+			if c.a <= 0.5:
+				continue
+			var perto := paleta[0]
+			var dist := INF
+			for p in paleta:
+				var d := (p.r - c.r) * (p.r - c.r) + (p.g - c.g) * (p.g - c.g) + (p.b - c.b) * (p.b - c.b)
+				if d < dist:
+					dist = d
+					perto = p
+			img.set_pixel(x, y, perto)
+
+
+## (maior faixa, eixo da maior faixa) de um grupo de cores.
+func _faixa(cores: Array) -> Vector2:
+	var mn := Vector3(1, 1, 1)
+	var mx := Vector3.ZERO
+	for c in cores:
+		mn = mn.min(c)
+		mx = mx.max(c)
+	var d := mx - mn
+	if d.x >= d.y and d.x >= d.z:
+		return Vector2(d.x, 0)
+	if d.y >= d.z:
+		return Vector2(d.y, 1)
+	return Vector2(d.z, 2)
+
+
+## Pixel que não tem nenhum vizinho da mesma cor vira a cor mais comum em volta
+## (quando ela aparece em pelo menos 3 dos 8 vizinhos). Não mexe no contorno escuro.
+func _tirar_pixels_soltos(img: Image) -> void:
+	var copia := img.duplicate() as Image
+	var w := img.get_width()
+	var h := img.get_height()
+	for y in range(1, h - 1):
+		for x in range(1, w - 1):
+			var c := copia.get_pixel(x, y)
+			if c.a <= 0.5 or c.get_luminance() < 0.12:
+				continue
+			var cont := {}
+			var igual := false
+			for dy in range(-1, 2):
+				for dx in range(-1, 2):
+					if dx == 0 and dy == 0:
+						continue
+					var v := copia.get_pixel(x + dx, y + dy)
+					if v.a <= 0.5:
+						continue
+					if v == c and (dx == 0 or dy == 0):
+						igual = true
+					cont[v] = cont.get(v, 0) + 1
+			if igual:
+				continue
+			var melhor := c
+			var mais := 2
+			for v in cont:
+				if cont[v] > mais:
+					mais = cont[v]
+					melhor = v
+			img.set_pixel(x, y, melhor)
 
 
 func _preencher_buracos(img: Image, caixa: Rect2i) -> void:

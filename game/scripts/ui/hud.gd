@@ -107,7 +107,9 @@ func _atualizar_tecla_e() -> void:
 	_tecla_e.visible = true
 	_tecla_progresso.visible = jogador.progresso_interacao() > 0.0
 	_tecla_progresso.value = jogador.progresso_interacao() * 100.0
-	var tela := get_viewport().get_canvas_transform() * (alvo.global_position + Vector2(0, -66))
+	var dono := alvo.dono()
+	var altura: float = dono.altura_visivel() if dono.has_method(&"altura_visivel") else 48.0
+	var tela := get_viewport().get_canvas_transform() * (alvo.global_position - Vector2(0, altura + 4.0))
 	_tecla_e.position = (tela - Vector2(_tecla_e.size.x / 2.0, _tecla_e.size.y)).round()
 
 

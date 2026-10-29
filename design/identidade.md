@@ -46,6 +46,7 @@ Uma ilha de fantasia **viva, colorida e convidativa de dia**, que fica **misteri
 - Fundo magenta chapado `#FF00FF` nas folhas; o Claude troca por transparente.
 - Nada parecido com personagem ou marca famosa.
 - Aprovação só depois de ver o sprite **dentro do jogo**, ao lado dos outros, no zoom real.
+- **Paleta curta e sem pixels soltos.** A IA entrega centenas de tons por sprite; toda folha é convertida com `--cores` e `--limpar` (ver `game/tools/medir_ruido.gd`). Meta: até ~16 cores por quadro e menos de 10% de pixels soltos, como pixel art de verdade (6–8 cores, ~5%).
 
 ## Lições do primeiro lote (L01)
 
