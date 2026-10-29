@@ -11,6 +11,9 @@ const MAX_JOGADORES := 4
 var modo := Modo.SOLO
 var endereco := "127.0.0.1"
 var porta := PORTA_PADRAO
+## Personagem escolhido no menu (raça e classe).
+var raca: StringName = &"humano"
+var classe: StringName = &"guerreiro"
 ## Motivo da última desconexão, para o menu mostrar.
 var ultimo_erro := ""
 
@@ -28,6 +31,10 @@ func _ready() -> void:
 			endereco = arg.get_slice("=", 1)
 		elif arg.begins_with("--porta="):
 			porta = arg.get_slice("=", 1).to_int()
+		elif arg.begins_with("--raca="):
+			raca = StringName(arg.get_slice("=", 1))
+		elif arg.begins_with("--classe="):
+			classe = StringName(arg.get_slice("=", 1))
 
 
 func modo_pela_linha_de_comando() -> bool:

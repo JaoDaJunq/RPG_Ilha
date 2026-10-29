@@ -1,0 +1,18 @@
+[gd_resource type="Resource" script_class="HabilidadeData" load_steps=3 format=3]
+
+[ext_resource type="Script" path="res://scripts/data/habilidade_data.gd" id="1_script"]
+[ext_resource type="Texture2D" path="res://assets/placeholder/ninja/ui/icone_investida.png" id="2_icone"]
+
+[resource]
+script = ExtResource("1_script")
+id = &"investida"
+nome = "Investida"
+descricao = "Avança e empurra tudo no caminho."
+icone = ExtResource("2_icone")
+modo = 0
+custo_mana = 6.0
+recarga = 3.0
+elemento = &"fisico"
+dano = 1.5
+alcance = 0.0
+logica = &"Investida"

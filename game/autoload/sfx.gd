@@ -8,6 +8,9 @@ const SONS := {
 	&"golpe_coleta": preload("res://assets/placeholder/ninja/audio/golpe_coleta.wav"),
 	&"acerto": preload("res://assets/placeholder/ninja/audio/acerto.wav"),
 	&"item": preload("res://assets/placeholder/ninja/audio/item.wav"),
+	&"esquiva": preload("res://assets/placeholder/ninja/audio/esquiva.wav"),
+	&"flecha": preload("res://assets/placeholder/ninja/audio/flecha.wav"),
+	&"giro": preload("res://assets/placeholder/ninja/audio/giro.wav"),
 }
 const MUSICA := preload("res://assets/placeholder/ninja/audio/musica_clareira.ogg")
 

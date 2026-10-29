@@ -1,0 +1,46 @@
+[gd_scene load_steps=6 format=3]
+
+[ext_resource type="Script" path="res://scripts/abilities/projetil.gd" id="1_projetil"]
+[ext_resource type="Texture2D" path="res://assets/luz/luz_radial.tres" id="2_luz"]
+[ext_resource type="Texture2D" path="res://assets/placeholder/ninja/fx/lanca_gelo.png" id="3_textura"]
+[ext_resource type="Texture2D" path="res://assets/placeholder/ninja/fx/congelar.png" id="4_impacto"]
+
+[sub_resource type="CircleShape2D" id="Shape_proj"]
+radius = 4.0
+
+[sub_resource type="SceneReplicationConfig" id="Replicacao"]
+properties/0/path = NodePath(".:position")
+properties/0/spawn = true
+properties/0/replication_mode = 1
+properties/1/path = NodePath(".:direcao")
+properties/1/spawn = true
+properties/1/replication_mode = 0
+
+[node name="LancaGelo" type="Area2D"]
+script = ExtResource("1_projetil")
+velocidade = 160.0
+duracao = 1.0
+elemento = &"gelo"
+congela_agua = true
+textura = ExtResource("3_textura")
+quadro = Vector2i(18, 10)
+quadros = 8
+fps = 14.0
+angulo_da_arte = 0.0
+textura_impacto = ExtResource("4_impacto")
+quadro_impacto = Vector2i(32, 32)
+quadros_impacto = 10
+
+[node name="Visual" type="AnimatedSprite2D" parent="."]
+
+[node name="Forma" type="CollisionShape2D" parent="."]
+shape = SubResource("Shape_proj")
+
+[node name="Luz" type="PointLight2D" parent="."]
+color = Color(0.55, 0.85, 1, 1)
+energy = 0.7
+texture = ExtResource("2_luz")
+texture_scale = 0.6
+
+[node name="Sync" type="MultiplayerSynchronizer" parent="."]
+replication_config = SubResource("Replicacao")

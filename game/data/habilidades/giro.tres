@@ -1,0 +1,18 @@
+[gd_resource type="Resource" script_class="HabilidadeData" load_steps=3 format=3]
+
+[ext_resource type="Script" path="res://scripts/data/habilidade_data.gd" id="1_script"]
+[ext_resource type="Texture2D" path="res://assets/placeholder/ninja/ui/icone_giro.png" id="2_icone"]
+
+[resource]
+script = ExtResource("1_script")
+id = &"giro"
+nome = "Giro"
+descricao = "Golpe em volta, acerta todos por perto."
+icone = ExtResource("2_icone")
+modo = 1
+custo_mana = 5.0
+recarga = 2.5
+elemento = &"fisico"
+dano = 1.2
+alcance = 0.0
+logica = &"Giro"

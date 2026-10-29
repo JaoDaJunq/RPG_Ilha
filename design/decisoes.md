@@ -14,12 +14,12 @@
 | 29/10/2026 | Multiplayer: um jogador é o anfitrião e manda no mundo; cada jogador controla o próprio movimento. Coletar, golpear, lançar e dia/noite são pedidos que o anfitrião confere. Modo solo usa o mesmo código. |
 | 29/10/2026 | Uma classe por personagem (troca na fogueira, pagando material raro). Esquiva no Espaço para todos. Fogo se espalha para árvores vizinhas, mas devagar. |
 | 29/10/2026 | Criação de personagem com raça + classe + atributos (Força, Vitalidade, Agilidade…); raças dão vantagens e desvantagens sem proibir combinações. Proposta detalhada em `design/classes.md`. |
+| 29/10/2026 | Proposta v2 de personagem aprovada: 5 raças, 7 classes em 4 famílias, 5 atributos, reações entre elementos e arte em camadas (`design/classes.md`). |
 
 ## Em aberto (o João decide)
 
 - **Nome do jogo.** Opções levantadas: Emberwild, Mossborne, Brasa & Musgo, Ilha Errante, Wildmere, Verdeluz.
-- **Classes, raças e atributos:** proposta v2 em `design/classes.md` aguardando o João (lista de classes, raças, atributos e ordem de construção).
-- **Como os amigos vão se conectar pela internet** no começo (Tailscale, ZeroTier, Radmin VPN ou abrir porta).
+- **Como os amigos vão se conectar pela internet** no começo (Tailscale, ZeroTier, Radmin VPN ou abrir porta). O menu mostrou um IP 25.x neste PC, típico do Radmin VPN: talvez ele já esteja instalado.
 
 ## Problemas conhecidos
 

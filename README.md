@@ -4,16 +4,19 @@ Co-op online de sobrevivência e exploração numa ilha de fantasia que reage ao
 
 ## Estado
 
-**Etapa 0 concluída; Etapa 1 (multiplayer) quase concluída.** A base do jogo está em cenas e componentes, com placeholders CC0 do Ninja Adventure. A direção de arte foi aprovada (B = dia, A = noite) e o primeiro lote de sprites próprios espera aprovação. Tarefas em [design/backlog.md](design/backlog.md).
+**Etapas 0 e 1 concluídas; Etapa 3 (personagem e classes) em andamento.** A base do jogo está em cenas e componentes, com placeholders CC0 do Ninja Adventure. A direção de arte foi aprovada (B = dia, A = noite) e o primeiro lote de sprites próprios espera aprovação. Tarefas em [design/backlog.md](design/backlog.md).
 
 **O que já funciona (sozinho ou com amigos):**
+- Criação de personagem no menu: raça (Humano ou Ogro) e classe (Guerreiro, Mago ou Arqueiro), com atributos que mudam vida, mana, velocidade, dano e coleta. Ficha na tecla C.
+- Habilidades da classe nas teclas 1 e 2 (Investida e Giro; Bola de fogo e Lança de gelo; Tiro carregado e Armadilha), com mana e recarga, e esquiva no Espaço.
+- Reações: gelo congela (e um golpe estilhaça com dano dobrado), lança de gelo sobre a água vira ponte que derrete, fogo passa devagar para árvores vizinhas.
 - Menu: jogar sozinho, hospedar ou entrar pelo IP do anfitrião (até 4 jogadores).
 - Multiplayer: cada um com a sua câmera; o anfitrião cuida do mundo (árvores, slimes, dano, inventário, dia e noite) e quem entra depois vê o que já mudou.
 - Ilha gerada (sempre a mesma), com água que bloqueia, areia, grama, árvores, pedras, plantas e slimes.
 - Acampamento com fogueira e barraca; a fogueira ilumina à noite.
 - Mouse seleciona o objeto; a caixa em cima dele diz o que fazer e se está perto o bastante.
 - Segurar E corta árvore (3 golpes = 3 de madeira, vira toco) e minera pedra (4 golpes = 3 de pedra, some).
-- Bola de fogo (tecla 1): acerta slime (2 de dano) e incendeia árvore; a árvore queimada rende **carvão** em vez de madeira.
+- Bola de fogo (Mago): acerta slime (dano dobrado) e incendeia árvore; a árvore queimada rende **carvão** em vez de madeira.
 - Golpe com clique esquerdo; slimes perseguem e machucam; ao desmaiar, o jogador volta ao acampamento.
 - N alterna dia e noite; M liga/desliga o som.
 
@@ -33,7 +36,9 @@ Atalhos para testar sem o menu: `-- --solo`, `-- --hospedar` ou `-- --entrar=IP`
 | Andar | WASD ou setas |
 | Coletar (segurar) | E, com o mouse em cima do objeto |
 | Golpear | Clique esquerdo (na direção do mouse) |
-| Bola de fogo | 1 (na direção do mouse) |
+| Esquivar | Espaço |
+| Habilidades da classe | 1 e 2 (Tiro carregado: segure e solte) |
+| Ficha do personagem | C |
 | Dia / noite | N |
 | Som | M |
 
@@ -45,7 +50,7 @@ Da raiz do repositório (rodam sem janela):
 bash game/tools/rodar_testes.sh
 ```
 
-Roda todas as cenas `game/tests/*_smoke.tscn` (coleta, fogo, combate, mundo e rede) e termina com `BATERIA: tudo OK`. O teste de rede abre um segundo Godot que entra pelo 127.0.0.1, corta uma árvore e anda; os dois lados são conferidos.
+Roda todas as cenas `game/tests/*_smoke.tscn` (coleta, fogo, combate, mundo, personagem, guerreiro, mago, arqueiro e rede) e termina com `BATERIA: tudo OK`. O teste de rede abre um segundo Godot que entra pelo 127.0.0.1, corta uma árvore e anda; os dois lados são conferidos.
 
 Prints das duas janelas em rede (salva em `evidence/rede/`):
 

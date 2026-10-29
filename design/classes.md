@@ -1,6 +1,6 @@
 # Personagem: raça, classe, atributos e habilidades (proposta v2)
 
-> **Proposta em discussão com o João** (29/10/2026). A v1 tinha 4 afinidades misturáveis; na v2 entram as ideias dele: **uma classe por personagem**, **mais classes**, **atributos** e **raças**. Os itens marcados como **decidido** já foram respondidos por ele; o resto é proposta.
+> **Aprovada pelo João em 29/10/2026** (a ordem de construção começou: ver T30–T37 no backlog). A v1 tinha 4 afinidades misturáveis; na v2 entram as ideias dele: **uma classe por personagem**, **mais classes**, **atributos** e **raças**. Os itens marcados como **decidido** já foram respondidos por ele; o resto é proposta.
 
 ## Decidido pelo João (29/10/2026)
 

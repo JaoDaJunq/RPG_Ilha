@@ -1,9 +1,11 @@
-[gd_scene load_steps=5 format=3]
+[gd_scene load_steps=6 format=3]
 
-[ext_resource type="Script" path="res://scripts/abilities/fireball.gd" id="1_bola"]
+[ext_resource type="Script" path="res://scripts/abilities/projetil.gd" id="1_projetil"]
 [ext_resource type="Texture2D" path="res://assets/luz/luz_radial.tres" id="2_luz"]
+[ext_resource type="Texture2D" path="res://assets/placeholder/ninja/fx/bola_de_fogo.png" id="3_textura"]
+[ext_resource type="Texture2D" path="res://assets/placeholder/ninja/fx/explosao_fogo.png" id="4_impacto"]
 
-[sub_resource type="CircleShape2D" id="Shape_bola"]
+[sub_resource type="CircleShape2D" id="Shape_proj"]
 radius = 4.0
 
 [sub_resource type="SceneReplicationConfig" id="Replicacao"]
@@ -14,13 +16,25 @@ properties/1/path = NodePath(".:direcao")
 properties/1/spawn = true
 properties/1/replication_mode = 0
 
-[node name="Fireball" type="Area2D"]
-script = ExtResource("1_bola")
+[node name="BolaDeFogo" type="Area2D"]
+script = ExtResource("1_projetil")
+velocidade = 170.0
+duracao = 1.2
+elemento = &"fogo"
+congela_agua = false
+textura = ExtResource("3_textura")
+quadro = Vector2i(16, 16)
+quadros = 4
+fps = 12.0
+angulo_da_arte = -0.785398
+textura_impacto = ExtResource("4_impacto")
+quadro_impacto = Vector2i(25, 30)
+quadros_impacto = 8
 
 [node name="Visual" type="AnimatedSprite2D" parent="."]
 
 [node name="Forma" type="CollisionShape2D" parent="."]
-shape = SubResource("Shape_bola")
+shape = SubResource("Shape_proj")
 
 [node name="Luz" type="PointLight2D" parent="."]
 color = Color(1, 0.6, 0.25, 1)

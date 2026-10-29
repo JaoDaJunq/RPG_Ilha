@@ -1,0 +1,18 @@
+[gd_resource type="Resource" script_class="HabilidadeData" load_steps=3 format=3]
+
+[ext_resource type="Script" path="res://scripts/data/habilidade_data.gd" id="1_script"]
+[ext_resource type="Texture2D" path="res://assets/placeholder/ninja/ui/icone_tiro.png" id="2_icone"]
+
+[resource]
+script = ExtResource("1_script")
+id = &"tiro_carregado"
+nome = "Tiro carregado"
+descricao = "Segure para carregar: vai mais longe e bate mais."
+icone = ExtResource("2_icone")
+modo = 2
+custo_mana = 3.0
+recarga = 0.5
+elemento = &"fisico"
+dano = 1.0
+alcance = 0.0
+logica = &"TiroCarregado"

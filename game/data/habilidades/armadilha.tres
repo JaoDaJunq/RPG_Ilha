@@ -1,0 +1,18 @@
+[gd_resource type="Resource" script_class="HabilidadeData" load_steps=3 format=3]
+
+[ext_resource type="Script" path="res://scripts/data/habilidade_data.gd" id="1_script"]
+[ext_resource type="Texture2D" path="res://assets/placeholder/ninja/ui/icone_armadilha.png" id="2_icone"]
+
+[resource]
+script = ExtResource("1_script")
+id = &"armadilha"
+nome = "Armadilha"
+descricao = "Arma espinhos no chão que prendem e machucam quem pisar."
+icone = ExtResource("2_icone")
+modo = 0
+custo_mana = 8.0
+recarga = 4.0
+elemento = &"fisico"
+dano = 1.0
+alcance = 56.0
+logica = &"Armadilha"

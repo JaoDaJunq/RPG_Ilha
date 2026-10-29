@@ -28,7 +28,7 @@ func _ready() -> void:
 	var args := ["--headless"] if not prints else ["--resolution", "960x540", "--position", "980,60"]
 	args.append_array(["--log-file", ProjectSettings.globalize_path("user://rede_cliente.log"),
 		"--path", ProjectSettings.globalize_path("res://"), "res://tests/rede_cliente.tscn",
-		"--", "--porta=%d" % PORTA, "--com-prints" if prints else "--sem-prints"])
+		"--", "--porta=%d" % PORTA, "--raca=ogro", "--classe=arqueiro", "--com-prints" if prints else "--sem-prints"])
 	var pid := OS.create_process(OS.get_executable_path(), args)
 	checar(pid > 0, "segundo jogo (cliente) aberto")
 
@@ -63,7 +63,14 @@ func _ready() -> void:
 	checar(relatorio.get("madeira", 0) == 3, "cliente recebeu 3 de madeira (%s)" % relatorio.get("madeira"))
 	checar(relatorio.get("arvore_estado", -1) == ResourceNode.Estado.ESGOTADO, "cliente vê a árvore virar toco")
 	checar(relatorio.get("viu_bola", false), "cliente viu a bola de fogo do anfitrião")
-	checar(relatorio.get("vida_vista", 0.0) == 100.0, "cliente recebe a própria vida do anfitrião")
+	var esperado := Ficha.criar(&"ogro", &"arqueiro")
+	checar(relatorio.get("vida_vista", 0.0) == esperado.vida_maxima(), "cliente recebe a própria vida do anfitrião (%s)" % relatorio.get("vida_vista"))
+	checar(relatorio.get("titulo", "") == "Ogro Arqueiro", "cliente escolheu Ogro Arqueiro (%s)" % relatorio.get("titulo"))
+	if cliente:
+		checar(cliente.raca == &"ogro" and cliente.classe == &"arqueiro", "anfitrião vê o cliente como Ogro Arqueiro")
+	var armadilhas := get_tree().get_nodes_in_group(&"armadilhas").filter(func(a: Node) -> bool: return a.dono_id == peer)
+	checar(armadilhas.size() == 1, "habilidade do cliente (armadilha) aconteceu no anfitrião")
+	checar(relatorio.get("mana_gasta", false), "cliente recebeu do anfitrião a mana gasta na armadilha")
 	checar(relatorio.get("antes_estado", -1) == ResourceNode.Estado.ESGOTADO, "quem entra depois vê a árvore já cortada")
 	checar(relatorio.get("noite", false), "quem entra depois recebe a noite que já tinha caído")
 	if prints:

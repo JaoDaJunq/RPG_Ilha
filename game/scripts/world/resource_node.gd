@@ -28,6 +28,9 @@ const TEXTURA_CHAMAS := preload("res://assets/placeholder/ninja/fx/chamas.png")
 ## Aparência depois de cada golpe (1º, 2º...). O último vale para os golpes seguintes.
 ## Vazio: não muda até esgotar (ex.: a variação rosa ainda não tem marca de machado).
 @export var regioes_por_golpe: Array[Rect2] = []
+## Fogo: depois de quanto tempo queimando passa para as vizinhas, e até que distância.
+@export var espalhar_apos := 2.0
+@export var raio_do_fogo := 42.0
 
 var estado := Estado.INTEIRO
 var _golpes_restantes: int
@@ -128,11 +131,26 @@ func _definir_estado(novo: Estado, restantes: int, com_golpe: bool) -> void:
 
 
 func _on_atingido(_quantidade: float, tipo: StringName, _origem: Node) -> void:
-	if not multiplayer.is_server():
+	if multiplayer.is_server() and tipo == &"fogo" and incendiar():
+		World.avisar_todos(self, "Uma árvore pegou fogo! Queimada, ela vira carvão. O fogo passa para as vizinhas devagar.")
+
+
+## Só o anfitrião chama. Retorna se pegou fogo agora.
+func incendiar() -> bool:
+	if estado != Estado.INTEIRO or inflamavel == null or not inflamavel.acender():
+		return false
+	_definir_estado.rpc(Estado.QUEIMANDO, _golpes_restantes, false)
+	get_tree().create_timer(espalhar_apos, false, true).timeout.connect(_espalhar_fogo)
+	return true
+
+
+## O fogo passa para as árvores vizinhas (uma vez, depois de `espalhar_apos`).
+func _espalhar_fogo() -> void:
+	if not is_inside_tree() or estado == Estado.ESGOTADO:
 		return
-	if tipo == &"fogo" and estado == Estado.INTEIRO and inflamavel and inflamavel.acender():
-		_definir_estado.rpc(Estado.QUEIMANDO, _golpes_restantes, false)
-		World.avisar_todos(self, "Uma árvore pegou fogo! Queimada, ela vira carvão em vez de madeira.")
+	for r in get_tree().get_nodes_in_group(&"recursos"):
+		if r != self and r.global_position.distance_to(global_position) <= raio_do_fogo:
+			(r as ResourceNode).incendiar()
 
 
 func _on_queimou() -> void:

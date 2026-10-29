@@ -1,0 +1,12 @@
+[gd_resource type="Resource" script_class="RacaData" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/data/raca_data.gd" id="1_script"]
+
+[resource]
+script = ExtResource("1_script")
+id = &"ogro"
+nome = "Ogro"
+descricao = "Grandes e fortes; poucos têm paciência para livros."
+bonus = Dictionary[StringName, int]({&"forca": 2, &"vitalidade": 1, &"intelecto": -1})
+habilidade_nome = "Brutamontes"
+habilidade_descricao = "Empurra pedras grandes e carrega mais (quando houver esses sistemas)."

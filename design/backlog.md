@@ -28,11 +28,16 @@ Lista oficial de tarefas. Marcar `[x]` só com prova (teste OK ou print revisado
 - [ ] T24 Dia e noite com perigo maior à noite; luz de fogueira e tocha.
 - [ ] T25 Salvar e carregar o mundo (no anfitrião).
 
-## Etapa 3: classes e habilidades
+## Etapa 3: personagem, classes e habilidades (em andamento; proposta em `design/classes.md`)
 
-- [ ] T30 Barra de 6 habilidades com modos de conjuração (rápido, indicador, imediato).
-- [ ] T31 Primeira árvore de habilidades (uma afinidade) com pontos limitados.
-- [ ] T32 Segunda afinidade e teste de grupo misto.
+- [x] T30 Ficha de atributos (raça + classe), mana, esquiva (Espaço) e barra com modos rápido, imediato e carregar. Modo "com mira" ainda falta.
+- [x] T31 Criação no menu: Humano e Ogro; Guerreiro (Investida, Giro), Mago (Bola de fogo, Lança de gelo) e Arqueiro (Tiro carregado, Armadilha). Tudo em rede.
+- [x] T32 Elementos e reações: congelar, estilhaçar (dano dobrado), ponte de gelo sobre a água que derrete, fogo que se espalha devagar para árvores vizinhas.
+- [ ] T33 Níveis e experiência; pontos de atributo e de habilidade por nível.
+- [ ] T34 Tela da árvore de habilidades (ramos de cada classe) e refazer escolhas na fogueira.
+- [ ] T35 Ramos completos de Guerreiro, Mago e Arqueiro; modo "com mira".
+- [ ] T36 Clérigo, Druida, Assassino e Alquimista; Elfo, Anão e Tritão.
+- [ ] T37 Arte em camadas (corpo da raça + roupa da classe + arma) com o Codex.
 
 ## Etapa 4: a ilha cresce
 

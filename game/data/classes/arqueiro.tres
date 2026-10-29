@@ -1,0 +1,17 @@
+[gd_resource type="Resource" script_class="ClasseData" load_steps=5 format=3]
+
+[ext_resource type="Script" path="res://scripts/data/classe_data.gd" id="1_script"]
+[ext_resource type="Script" path="res://scripts/data/habilidade_data.gd" id="2_hab_script"]
+[ext_resource type="Resource" path="res://data/habilidades/tiro_carregado.tres" id="3_hab1"]
+[ext_resource type="Resource" path="res://data/habilidades/armadilha.tres" id="4_hab2"]
+
+[resource]
+script = ExtResource("1_script")
+id = &"arqueiro"
+nome = "Arqueiro"
+familia = "Destreza"
+descricao = "Precisão de longe e armadilhas."
+atributos = Dictionary[StringName, int]({&"forca": 4, &"vitalidade": 5, &"agilidade": 8, &"intelecto": 4, &"espirito": 4})
+habilidades = Array[ExtResource("2_hab_script")]([ExtResource("3_hab1"), ExtResource("4_hab2")])
+ramo_a = "Precisão"
+ramo_b = "Pirotécnico"

@@ -27,8 +27,10 @@ func esperar(segundos: float) -> void:
 
 ## Cria a ilha. Por padrão sem slimes e sem árvores/pedras geradas,
 ## para nada no caminho atrapalhar o teste.
-func criar_mundo(slimes := 0, limpar := true) -> World:
+func criar_mundo(slimes := 0, limpar := true, classe: StringName = &"mago", raca: StringName = &"humano") -> World:
 	Sfx.ligado = false
+	Net.classe = classe
+	Net.raca = raca
 	var w: World = MUNDO.instantiate()
 	w.slimes = slimes
 	w.gerar_recursos = not limpar
@@ -40,7 +42,7 @@ func criar_mundo(slimes := 0, limpar := true) -> World:
 func colocar(w: World, cena: PackedScene, pos: Vector2) -> Node2D:
 	var n: Node2D = cena.instantiate()
 	n.position = pos
-	w.entidades.add_child(n)
+	w.entidades.add_child(n, true)
 	return n
 
 

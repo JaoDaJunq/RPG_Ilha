@@ -7,12 +7,12 @@ const REDE := preload("res://tests/rede_smoke.gd")
 func _ready() -> void:
 	Net.modo = Net.Modo.ENTRAR
 	Net.endereco = "127.0.0.1"
-	var w := await criar_mundo(0)
+	var w := await criar_mundo(0, true, Net.classe, Net.raca)
 	var arvore := REDE.criar_arvore_teste(w)
 	var arvore_antes := REDE.criar_arvore_teste(w, "ArvoreAntes", w.ponto_de_nascer(0) + Vector2(-40, 0))
 	var viu_bola := [false]
 	w.entidades.child_entered_tree.connect(func(n: Node) -> void:
-		if n is Fireball:
+		if n is Projetil:
 			viu_bola[0] = true)
 
 	var t := 0.0
@@ -30,6 +30,9 @@ func _ready() -> void:
 	Input.action_press(&"mover_direita")
 	await esperar(0.8)
 	Input.action_release(&"mover_direita")
+	var mana_antes := p.mana
+	p.mira_forcada = p.global_position + Vector2(0, 40)
+	p.usar_habilidade_por_id(&"armadilha")
 	await esperar(0.8)
 
 	var slimes := 0
@@ -43,6 +46,8 @@ func _ready() -> void:
 		"arvore_estado": arvore.estado,
 		"viu_bola": viu_bola[0],
 		"vida_vista": p.vida.atual,
+		"titulo": p.ficha.titulo(),
+		"mana_gasta": p.mana < mana_antes,
 		"antes_estado": arvore_antes.estado,
 		"noite": w.noite,
 	})

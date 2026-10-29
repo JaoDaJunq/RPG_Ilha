@@ -5,12 +5,12 @@ const SLIME := preload("res://scenes/enemies/slime.tscn")
 
 
 func _ready() -> void:
-	var w := await criar_mundo()
+	var w := await criar_mundo(0, true, &"guerreiro")
 	var p := w.jogador
 
 	var slime: Slime = colocar(w, SLIME, p.position + Vector2(30, 0))
 	await esperar(1.5)
-	checar(p.vida.atual < 100.0, "slime persegue e machuca no contato (vida %d)" % p.vida.atual)
+	checar(p.vida.atual < p.vida.maximo, "slime persegue e machuca no contato (vida %d de %d)" % [p.vida.atual, p.vida.maximo])
 
 	slime.set_physics_process(false)
 	for i in 3:

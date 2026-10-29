@@ -24,6 +24,7 @@ const AREIA := Vector2i(1, 1)
 const AREIA_DETALHES: Array[Vector2i] = [Vector2i(0, 4), Vector2i(1, 4)]
 const TERRA_CIRCULO := Vector2i(0, 7)  # canto de cima-esquerda de um círculo 3x3 de terra
 const AGUA := Vector2i(11, 0)
+const GELO := Vector2i(14, 1)  # gelo liso da folha de água (sem colisão: dá para andar)
 # Regiões (em pixels) na folha de natureza.
 ## Variações da árvore na folha L01: verde (mais comum) e flor rosa.
 const COPA_VERDE := Rect2(0, 0, 64, 64)
@@ -51,6 +52,8 @@ enum Chao { AGUA, AREIA, GRAMA }
 @export var slimes := 5
 ## Falso nos testes que precisam de terreno limpo (sem árvores e pedras geradas).
 @export var gerar_recursos := true
+## Quanto tempo a água fica congelada pela lança de gelo.
+@export var duracao_gelo := 10.0
 
 const MENU := "res://scenes/ui/menu.tscn"
 
@@ -66,6 +69,8 @@ var _distancia: Dictionary[Vector2i, float] = {}
 var _ocupados: Array[Vector2] = []
 var _removidos: Array[String] = []
 var _nascimentos: Dictionary[int, Vector2] = {}
+var _gelo: Dictionary[Vector2i, float] = {}  # célula congelada → segundos restantes
+var _id_agua := -1
 var _rng := RandomNumberGenerator.new()
 
 @onready var chao: TileMapLayer = $Chao
@@ -88,13 +93,13 @@ func _ready() -> void:
 		_voltar_ao_menu.call_deferred()
 		return
 	multiplayer.peer_disconnected.connect(_on_peer_saiu)
-	multiplayer.connected_to_server.connect(func() -> void: _cliente_pronto.rpc_id(1))
+	multiplayer.connected_to_server.connect(func() -> void: _cliente_pronto.rpc_id(1, Net.raca, Net.classe))
 	multiplayer.connection_failed.connect(_on_conexao_perdida.bind("Não foi possível conectar ao anfitrião."))
 	multiplayer.server_disconnected.connect(_on_conexao_perdida.bind("O anfitrião saiu do jogo."))
 	if multiplayer.is_server():
 		_criar_slimes()
 		if Net.modo != Net.Modo.ENTRAR:
-			_criar_jogador(1)
+			_criar_jogador(1, Net.raca, Net.classe)
 	else:
 		Events.aviso.emit("Conectando em %s..." % Net.endereco)
 	Sfx.tocar_musica()
@@ -139,6 +144,67 @@ func registrar_removido(nome: String) -> void:
 	_removidos.append(nome)
 
 
+## Efeito visual em todos os jogadores (chamado pelo anfitrião).
+static func efeito_todos(quem: Node, nome: StringName, pos: Vector2) -> void:
+	var w: World = quem.get_tree().get_first_node_in_group(&"mundo")
+	if w:
+		w._efeito.rpc(nome, pos)
+
+
+## Congela a água neste ponto (chamado pelo anfitrião, ex.: lança de gelo passando).
+static func congelar_agua_em(quem: Node, pos: Vector2) -> void:
+	var w: World = quem.get_tree().get_first_node_in_group(&"mundo")
+	if w == null or not w.multiplayer.is_server():
+		return
+	var cel := w.chao.local_to_map(pos)
+	if w.tipo_do_chao(cel) == Chao.AGUA:
+		if not w._gelo.has(cel):
+			w._definir_gelo.rpc(cel, true)
+		w._gelo[cel] = w.duracao_gelo
+
+
+func eh_gelo(cel: Vector2i) -> bool:
+	return _gelo.has(cel)
+
+
+func _process(delta: float) -> void:
+	if not multiplayer.has_multiplayer_peer() or not multiplayer.is_server() or _gelo.is_empty():
+		return
+	for cel in _gelo.keys():
+		_gelo[cel] -= delta
+		if _gelo[cel] <= 0.0:
+			if _alguem_em(cel):
+				_gelo[cel] = 0.5  # não derrete com alguém em cima
+			else:
+				_definir_gelo.rpc(cel, false)
+
+
+func _alguem_em(cel: Vector2i) -> bool:
+	for j in get_tree().get_nodes_in_group(&"jogadores"):
+		if chao.local_to_map(j.global_position) == cel:
+			return true
+	return false
+
+
+@rpc("any_peer", "call_local", "reliable")
+func _definir_gelo(cel: Vector2i, congelado: bool) -> void:
+	if not Net.veio_do_anfitriao():
+		return
+	if congelado:
+		chao.set_cell(cel, _id_agua, GELO)
+		if not _gelo.has(cel):
+			_gelo[cel] = duracao_gelo
+	else:
+		chao.set_cell(cel, _id_agua, AGUA)
+		_gelo.erase(cel)
+
+
+@rpc("any_peer", "call_local", "reliable")
+func _efeito(nome: StringName, pos: Vector2) -> void:
+	if Net.veio_do_anfitriao():
+		entidades.add_child(Efeito.criar(nome, pos))
+
+
 ## Aviso para todos os jogadores (chamado pelo anfitrião).
 static func avisar_todos(quem: Node, texto: String) -> void:
 	var w: World = quem.get_tree().get_first_node_in_group(&"mundo")
@@ -148,9 +214,11 @@ static func avisar_todos(quem: Node, texto: String) -> void:
 
 # --- Rede ------------------------------------------------------------------------
 
-func _criar_jogador(peer: int) -> void:
+func _criar_jogador(peer: int, raca: StringName, classe: StringName) -> void:
 	var p: Player = JOGADOR.instantiate()
 	p.name = str(peer)
+	p.raca = raca if raca in RacaData.TODAS else RacaData.TODAS[0]
+	p.classe = classe if classe in ClasseData.TODAS else ClasseData.TODAS[0]
 	p.position = ponto_de_nascer(get_tree().get_nodes_in_group(&"jogadores").size())
 	_nascimentos[peer] = p.position
 	entidades.add_child(p, true)
@@ -173,15 +241,17 @@ func _definir_nascimento(pos: Vector2) -> void:
 
 
 @rpc("any_peer", "reliable")
-func _cliente_pronto() -> void:
+func _cliente_pronto(raca: StringName, classe: StringName) -> void:
 	if not multiplayer.is_server():
 		return
 	var peer := multiplayer.get_remote_sender_id()
 	if entidades.has_node(str(peer)):
 		return
-	_criar_jogador(peer)
+	_criar_jogador(peer, raca, classe)
 	# Quem entra depois recebe o que já mudou no mundo.
 	_aplicar_ciclo_rede.rpc_id(peer, noite, true)
+	for cel in _gelo:
+		_definir_gelo.rpc_id(peer, cel, true)
 	if not _removidos.is_empty():
 		_remover_recursos.rpc_id(peer, _removidos)
 	for r in get_tree().get_nodes_in_group(&"recursos"):
@@ -265,7 +335,9 @@ func _gerar_chao() -> void:
 	src_agua.texture = TEX_AGUA
 	src_agua.texture_region_size = Vector2i(T, T)
 	var id_agua := ts.add_source(src_agua)
+	_id_agua = id_agua
 	src_agua.create_tile(AGUA)
+	src_agua.create_tile(GELO)
 	var dados := src_agua.get_tile_data(AGUA, 0)
 	dados.add_collision_polygon(0)
 	dados.set_collision_polygon_points(0, 0, PackedVector2Array([Vector2(-8, -8), Vector2(8, -8), Vector2(8, 8), Vector2(-8, 8)]))

@@ -42,6 +42,7 @@ func _ready() -> void:
 
 	# Dia e noite.
 	checar(not w.noite, "começa de dia")
+	checar(not p.luz.enabled, "de dia a luz do jogador fica apagada")
 	w.alternar_noite()
 	await esperar(1.5)
 	checar(w.noite and w.ambiente.color.is_equal_approx(World.COR_NOITE), "N escurece a ilha")

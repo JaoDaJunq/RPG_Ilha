@@ -1,25 +1,34 @@
 class_name Player
 extends CharacterBody2D
-## Jogador: anda com WASD, mira com o mouse, segura E para coletar,
-## clique para golpear e 1 para a bola de fogo.
+## Jogador: anda com WASD, mira com o mouse, segura E para coletar, clique para golpear,
+## Espaço para esquivar e 1–4 para as habilidades da classe.
 ##
 ## Rede: o nome do nó é o id do jogador na rede. Cada jogador controla o próprio
 ## movimento (sincronizado pelo MultiplayerSynchronizer). Tudo que muda o mundo
-## (coletar, golpear, lançar) é um PEDIDO ao anfitrião, que confere e executa.
-## Vida e inventário são do anfitrião, que manda os valores ao dono.
+## (coletar, golpear, habilidades) é um PEDIDO ao anfitrião, que confere e executa.
+## Vida, mana e inventário são do anfitrião, que manda os valores ao dono.
 
 const TEXTURA := preload("res://assets/sprites/personagens/aventureiro.png")
-const BOLA_DE_FOGO := preload("res://scenes/abilities/fireball.tscn")
+const DURACAO_ESQUIVA := 0.2
+const VELOCIDADE_ESQUIVA := 230.0
+const CARGA_MAXIMA := 1.0  # segundos segurando para a carga completa
+const SONS := {
+	&"investida": &"esquiva", &"giro": &"giro", &"bola_de_fogo": &"bola_de_fogo",
+	&"lanca_gelo": &"esquiva", &"tiro_carregado": &"flecha", &"armadilha": &"golpe_coleta",
+}
 
-@export var velocidade := 80.0
 @export var dano_golpe := 1.0
 @export var alcance_golpe := 22.0
 @export var recarga_golpe := 0.35
-@export var recarga_fogo := 0.6
 
 ## Animação atual (sincronizada para os outros jogadores verem).
 @export var animacao: StringName = &"parado_baixo"
+## Personagem (sincronizado ao nascer).
+@export var raca: StringName = &"humano"
+@export var classe: StringName = &"guerreiro"
 
+var ficha: Ficha
+var mana := 0.0
 ## Posição de mira fixa (usada pelos testes). Se nula, usa o mouse.
 var mira_forcada: Variant = null
 var alvo: Interactable = null
@@ -28,8 +37,15 @@ var ponto_de_retorno := Vector2.ZERO
 var _direcao: StringName = &"baixo"
 var _progresso := 0.0
 var _recarga_golpe := 0.0
-var _recarga_fogo := 0.0
 var _atacando := 0.0
+var _recargas: Array[float] = []          # local (para o HUD)
+var _prontas_no_anfitriao: Dictionary = {}  # índice → ms (o anfitrião confere)
+var _recarga_esquiva := 0.0
+var _impulso := Vector2.ZERO
+var _impulso_restante := 0.0
+var _carregando := -1
+var _inicio_carga := 0.0
+var _mana_enviada := -1.0
 
 @onready var visual: AnimatedSprite2D = $Visual
 @onready var vida: HealthComponent = $HealthComponent
@@ -45,10 +61,23 @@ func _enter_tree() -> void:
 
 func _ready() -> void:
 	add_to_group(&"jogadores")
+	if eh_local() and not multiplayer.is_server():
+		# O jogador controlado aqui não recebe as propriedades de nascimento.
+		raca = Net.raca
+		classe = Net.classe
+	ficha = Ficha.criar(raca, classe)
+	vida.maximo = ficha.vida_maxima()
+	vida.atual = vida.maximo
+	mana = ficha.mana_maxima()
+	_recargas.resize(habilidades().size())
+	_recargas.fill(0.0)
 	ponto_de_retorno = position
 	visual.sprite_frames = _montar_frames()
 	visual.play(animacao)
 	camera.enabled = eh_local()
+	# A luz do jogador segue o dia e a noite de quem já está na ilha.
+	var mundo: World = get_tree().get_first_node_in_group(&"mundo")
+	luz.enabled = mundo != null and mundo.noite
 	if multiplayer.is_server():
 		vida.mudou.connect(func(atual: float, _m: float) -> void: _vida_sync.rpc(atual))
 		vida.morreu.connect(_on_morreu)
@@ -66,17 +95,29 @@ func id_rede() -> int:
 	return get_multiplayer_authority()
 
 
+func habilidades() -> Array[HabilidadeData]:
+	return ficha.classe.habilidades if ficha else ([] as Array[HabilidadeData])
+
+
 func _physics_process(delta: float) -> void:
+	if multiplayer.is_server():
+		_regenerar_mana(delta)
 	if not eh_local():
 		if visual.animation != animacao:
 			visual.play(animacao)
 		return
 	_recarga_golpe = maxf(0.0, _recarga_golpe - delta)
-	_recarga_fogo = maxf(0.0, _recarga_fogo - delta)
+	_recarga_esquiva = maxf(0.0, _recarga_esquiva - delta)
 	_atacando = maxf(0.0, _atacando - delta)
+	for i in _recargas.size():
+		_recargas[i] = maxf(0.0, _recargas[i] - delta)
 
 	var entrada := Input.get_vector(&"mover_esquerda", &"mover_direita", &"mover_cima", &"mover_baixo")
-	velocity = entrada * velocidade
+	if _impulso_restante > 0.0:
+		_impulso_restante -= delta
+		velocity = _impulso
+	else:
+		velocity = entrada * ficha.velocidade()
 	move_and_slide()
 
 	_atualizar_alvo()
@@ -89,8 +130,14 @@ func _unhandled_input(event: InputEvent) -> void:
 		return
 	if event.is_action_pressed(&"atacar"):
 		golpear()
-	elif event.is_action_pressed(&"habilidade_1"):
-		lancar_bola_de_fogo()
+	elif event.is_action_pressed(&"esquivar"):
+		esquivar()
+	for i in 4:
+		var acao := StringName("habilidade_%d" % (i + 1))
+		if event.is_action_pressed(acao):
+			comecar_habilidade(i)
+		elif event.is_action_released(acao) and _carregando == i:
+			soltar_carga()
 
 
 func posicao_mira() -> Vector2:
@@ -98,7 +145,7 @@ func posicao_mira() -> Vector2:
 
 
 func direcao_mira() -> Vector2:
-	var d := posicao_mira() - global_position
+	var d := posicao_mira() - (global_position + Vector2(0, -10))
 	return d.normalized() if d.length() > 0.5 else Vector2.DOWN
 
 
@@ -106,15 +153,30 @@ func direcao_mira() -> Vector2:
 func progresso_interacao() -> float:
 	if alvo == null:
 		return 0.0
-	return clampf(_progresso / maxf(alvo.tempo_segurar, 0.01), 0.0, 1.0)
+	return clampf(_progresso / _tempo_coleta(), 0.0, 1.0)
 
 
 func alvo_ao_alcance() -> bool:
 	return alvo != null and is_instance_valid(alvo) and alvo.perto_de(global_position)
 
 
-func recarga_fogo_restante() -> float:
-	return _recarga_fogo / recarga_fogo
+## 0 a 1 do tempo de recarga que falta na habilidade `i` (para o HUD).
+func recarga_restante(i: int) -> float:
+	var hab := habilidades()
+	if i >= hab.size() or hab[i].recarga <= 0.0:
+		return 0.0
+	return _recargas[i] / hab[i].recarga
+
+
+func recarga_esquiva_restante() -> float:
+	return _recarga_esquiva / ficha.recarga_esquiva()
+
+
+## 0 a 1 enquanto segura uma habilidade de carregar; -1 se não está carregando.
+func carga_atual() -> float:
+	if _carregando < 0:
+		return -1.0
+	return clampf((Time.get_ticks_msec() / 1000.0 - _inicio_carga) / CARGA_MAXIMA, 0.0, 1.0)
 
 
 ## Mostra um aviso na tela deste jogador (de onde quer que seja chamado).
@@ -138,15 +200,82 @@ func golpear() -> void:
 	_pedir_golpe.rpc_id(1, dir)
 
 
-func lancar_bola_de_fogo() -> void:
-	if _recarga_fogo > 0.0:
+func esquivar() -> void:
+	if _recarga_esquiva > 0.0:
 		return
-	_recarga_fogo = recarga_fogo
+	var entrada := Input.get_vector(&"mover_esquerda", &"mover_direita", &"mover_cima", &"mover_baixo")
+	var dir := entrada.normalized() if entrada != Vector2.ZERO else direcao_mira()
+	_recarga_esquiva = ficha.recarga_esquiva()
+	_impulso = dir * VELOCIDADE_ESQUIVA
+	_impulso_restante = DURACAO_ESQUIVA
+	Sfx.tocar(&"esquiva", -8.0)
+	_pedir_esquiva.rpc_id(1)
+
+
+## Aperta a tecla da habilidade `i`: lança na hora ou começa a carregar.
+func comecar_habilidade(i: int) -> void:
+	var hab := habilidades()
+	if i >= hab.size() or _recargas[i] > 0.0:
+		return
+	if mana < hab[i].custo_mana:
+		avisar("Sem mana suficiente para %s." % hab[i].nome)
+		return
+	if hab[i].modo == HabilidadeData.Modo.CARREGAR:
+		_carregando = i
+		_inicio_carga = Time.get_ticks_msec() / 1000.0
+		return
+	usar_habilidade(i, 0.0)
+
+
+func soltar_carga() -> void:
+	if _carregando < 0:
+		return
+	var i := _carregando
+	var carga := carga_atual()
+	_carregando = -1
+	usar_habilidade(i, carga)
+
+
+func usar_habilidade(i: int, carga: float) -> void:
+	var hab := habilidades()
+	if i >= hab.size() or _recargas[i] > 0.0:
+		return
+	_recargas[i] = hab[i].recarga
 	_atacando = 0.2
 	var dir := direcao_mira()
 	_direcao = SpriteSheets.direcao_de(dir)
-	Sfx.tocar(&"bola_de_fogo", -10.0)
-	_pedir_bola_de_fogo.rpc_id(1, dir)
+	Sfx.tocar(SONS.get(hab[i].id, &"ataque"), -10.0)
+	_pedir_habilidade.rpc_id(1, i, dir, posicao_mira(), carga)
+
+
+## Atalho usado pelos testes: usa a habilidade pelo id, se a classe tiver.
+func usar_habilidade_por_id(hab_id: StringName, carga := 0.0) -> bool:
+	var hab := habilidades()
+	for i in hab.size():
+		if hab[i].id == hab_id:
+			usar_habilidade(i, carga)
+			return true
+	return false
+
+
+func lancar_bola_de_fogo() -> void:
+	usar_habilidade_por_id(&"bola_de_fogo")
+
+
+## O anfitrião desloca o jogador (investida). Quem anda é o dono, então ele recebe o pedido.
+func mover_por_habilidade(deslocamento: Vector2, duracao: float) -> void:
+	if eh_local():
+		_impulsionar(deslocamento, duracao)
+	else:
+		_impulsionar.rpc_id(id_rede(), deslocamento, duracao)
+
+
+@rpc("any_peer", "reliable")
+func _impulsionar(deslocamento: Vector2, duracao: float) -> void:
+	if not Net.veio_do_anfitriao():
+		return
+	_impulso = deslocamento / duracao
+	_impulso_restante = duracao
 
 
 @rpc("any_peer", "call_local", "reliable")
@@ -164,19 +293,33 @@ func _pedir_golpe(dir: Vector2) -> void:
 	consulta.collision_mask = 1 << 4
 	for r in get_world_2d().direct_space_state.intersect_shape(consulta, 16):
 		var area := r.collider as Hurtbox
-		if area and area != hurtbox:
-			area.receber(dano_golpe, &"fisico", self)
+		if area and area != hurtbox and not area.get_parent() is Player:
+			area.receber(dano_golpe * ficha.multiplicador_fisico(), &"fisico", self)
 
 
 @rpc("any_peer", "call_local", "reliable")
-func _pedir_bola_de_fogo(dir: Vector2) -> void:
+func _pedir_esquiva() -> void:
 	if not multiplayer.is_server() or not _pedido_do_dono():
 		return
-	var bola: Fireball = BOLA_DE_FOGO.instantiate()
-	bola.lancador = self
-	bola.direcao = dir.normalized()
-	bola.position = global_position + Vector2(0, -10) + bola.direcao * 8.0
-	get_parent().add_child(bola, true)
+	vida.proteger(DURACAO_ESQUIVA + 0.1)
+	World.efeito_todos(self, &"poeira", global_position)
+
+
+@rpc("any_peer", "call_local", "reliable")
+func _pedir_habilidade(i: int, dir: Vector2, alvo_mira: Vector2, carga: float) -> void:
+	if not multiplayer.is_server() or not _pedido_do_dono():
+		return
+	var hab := habilidades()
+	if i < 0 or i >= hab.size():
+		return
+	var agora := Time.get_ticks_msec()
+	# Folga de 100 ms: o pedido pode chegar um pouco antes do relógio do anfitrião.
+	if agora < int(_prontas_no_anfitriao.get(i, 0)) - 100 or mana < hab[i].custo_mana:
+		return
+	_prontas_no_anfitriao[i] = agora + int(hab[i].recarga * 1000.0)
+	mana -= hab[i].custo_mana
+	_enviar_mana()
+	Logicas.criar(hab[i].logica).executar(self, hab[i], dir.normalized(), alvo_mira, carga)
 
 
 @rpc("any_peer", "call_local", "reliable")
@@ -197,7 +340,27 @@ func _pedido_do_dono() -> bool:
 	return s == id_rede() or (s == 0 and eh_local())
 
 
-# --- Recebidos do anfitrião --------------------------------------------------
+# --- Do anfitrião para o dono -------------------------------------------------
+
+func _regenerar_mana(delta: float) -> void:
+	var maximo := ficha.mana_maxima()
+	if mana < maximo:
+		mana = minf(maximo, mana + ficha.regeneracao_mana() * delta)
+		if absf(mana - _mana_enviada) >= 1.0 or mana >= maximo:
+			_enviar_mana()
+
+
+func _enviar_mana() -> void:
+	_mana_enviada = mana
+	if not eh_local():
+		_mana_sync.rpc_id(id_rede(), mana)
+
+
+@rpc("any_peer", "reliable")
+func _mana_sync(valor: float) -> void:
+	if Net.veio_do_anfitriao():
+		mana = valor
+
 
 @rpc("any_peer", "call_local", "reliable")
 func _vida_sync(atual: float) -> void:
@@ -242,6 +405,10 @@ func _on_morreu() -> void:
 
 # --- Local: alvo, coleta e animação -------------------------------------------
 
+func _tempo_coleta() -> float:
+	return maxf(alvo.tempo_segurar * ficha.tempo_coleta(), 0.01) if alvo else 1.0
+
+
 func _atualizar_alvo() -> void:
 	var novo: Interactable = null
 	var consulta := PhysicsPointQueryParameters2D.new()
@@ -271,7 +438,7 @@ func _processar_interacao(delta: float) -> void:
 		_progresso = 0.0
 		return
 	_progresso += delta
-	if _progresso >= alvo.tempo_segurar:
+	if _progresso >= _tempo_coleta():
 		_progresso = 0.0
 		_direcao = SpriteSheets.direcao_de(alvo.global_position - global_position)
 		_atacando = 0.2
@@ -279,7 +446,9 @@ func _processar_interacao(delta: float) -> void:
 
 
 func _animar(entrada: Vector2) -> void:
-	if _atacando > 0.0:
+	if _atacando > 0.0 or _carregando >= 0:
+		if _carregando >= 0:
+			_direcao = SpriteSheets.direcao_de(direcao_mira())
 		animacao = StringName("golpe_%s" % _direcao)
 	elif entrada != Vector2.ZERO:
 		_direcao = SpriteSheets.direcao_de(entrada)

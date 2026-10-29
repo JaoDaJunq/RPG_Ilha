@@ -42,6 +42,11 @@ func tomar_dano(quantidade: float, tipo: StringName = &"fisico") -> bool:
 	return true
 
 
+## Fica sem tomar dano por alguns segundos (esquiva).
+func proteger(segundos: float) -> void:
+	_protecao = maxf(_protecao, segundos)
+
+
 func curar_tudo() -> void:
 	atual = maximo
 	_protecao = 0.0

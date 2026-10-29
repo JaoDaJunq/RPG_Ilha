@@ -15,6 +15,8 @@ const TECLAS := {
 	"habilidade_4": [KEY_4],
 	"habilidade_5": [KEY_5],
 	"habilidade_6": [KEY_6],
+	"esquivar": [KEY_SPACE],
+	"ficha": [KEY_C],
 	"alternar_noite": [KEY_N],
 	"alternar_som": [KEY_M],
 }
