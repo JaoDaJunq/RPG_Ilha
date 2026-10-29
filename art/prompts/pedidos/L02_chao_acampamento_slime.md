@@ -47,7 +47,7 @@ Células: 1) parado; 2) achatado se preparando para pular (mais largo e mais bai
 O slime é o mesmo em todas as células: mesmas cores, mesmo olho, só muda a forma.
 ```
 
-## 5. Aventureiro v2 (já no tamanho do jogo)
+## 5. Aventureiro v2 — CANCELADO (substituído pelo L03, NÃO gerar)
 
 **Saída:** `art/sprites/personagens/candidatos/aventureiro_base_v2.png`
 
@@ -62,4 +62,4 @@ O personagem é idêntico em todas as células: mesmo tamanho, mesmas cores, mes
 
 ## Depois de gerar
 
-Salvar só nos cinco caminhos de saída acima (criar as pastas se faltar). Não mexer em `game/` nem em nenhum outro arquivo. Responder com os caminhos e o tamanho em pixels de cada imagem.
+Salvar só nos caminhos de saída dos itens 1 a 4 (o item 5 foi cancelado) (criar as pastas se faltar). Não mexer em `game/` nem em nenhum outro arquivo. Responder com os caminhos e o tamanho em pixels de cada imagem.

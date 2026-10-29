@@ -39,6 +39,17 @@ Lista oficial de tarefas. Marcar `[x]` só com prova (teste OK ou print revisado
 - [ ] T36 Clérigo, Druida, Assassino e Alquimista; Elfo, Anão e Tritão.
 - [ ] T37 Arte em camadas (corpo da raça + roupa da classe + arma) com o Codex.
 
+## Feedback do playtest do João (29/10/2026)
+
+Tudo o que foi pedido para testar funcionou. Observações:
+
+- [ ] F01 **Armadilha do Arqueiro ruim:** o ícone no chão não faz sentido e o efeito de prender também não. Arte própria pedida em L04 (armada, fechando, fechada) → integrar.
+- [ ] F02 **Painéis feios** (menu, ficha, HUD): arte própria pedida em L04 (painel, botões, espaços, ícones de atributos) + fonte pixel → refazer menu, ficha e HUD.
+- [ ] F03 **Personagem pixelado e feio** comparado ao conceito: refazer desenhado no tamanho do jogo, com menos detalhes e mais fofo; personagens são ponto forte do jogo. Pedido L03 (com teste de caracterização raça × classe).
+- [ ] F04 *(depois)* **Inventário** de verdade (o canto de cima não serve; o jogo vai ter muitos itens).
+- [ ] F05 *(depois)* **Personagem segurando a arma/ferramenta** (espada, arco, machado) ao bater. Pesquisar como os jogos fazem (sprite da arma separado, preso na mão e girado na direção do golpe, ou quadros desenhados por arma).
+- [ ] F06 *(depois)* **Tirar "CHEGUE MAIS PERTO"** e trocar a caixa por só uma teclinha "E" em cima da árvore/pedra quando estiver perto (arte da tecla pedida em L04).
+
 ## Etapa 4: a ilha cresce
 
 - [ ] T40 Mapa maior com 2–3 biomas.
