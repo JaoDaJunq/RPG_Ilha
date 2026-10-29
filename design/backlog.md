@@ -48,7 +48,7 @@ Tudo o que foi pedido para testar funcionou. Observações:
 - [x] F03 **Personagem pixelado e feio** comparado ao conceito: refazer desenhado no tamanho do jogo, com menos detalhes e mais fofo; personagens são ponto forte do jogo. Pedido L03 (com teste de caracterização raça × classe).
 - [ ] F04 *(depois)* **Inventário** de verdade (o canto de cima não serve; o jogo vai ter muitos itens).
 - [ ] F05 *(depois)* **Personagem segurando a arma/ferramenta** (espada, arco, machado) ao bater. Pesquisa e recomendação em `design/armas_na_mao.md` (arma em sprite separado, presa na mão e girada no golpe).
-- [ ] F06 *(depois)* **Tirar "CHEGUE MAIS PERTO"** e trocar a caixa por só uma teclinha "E" em cima da árvore/pedra quando estiver perto (arte da tecla pedida em L04).
+- [x] F06 *(feito junto com a interface)* **Tirar "CHEGUE MAIS PERTO"** e trocar a caixa por só uma teclinha "E" em cima da árvore/pedra quando estiver perto (arte da tecla pedida em L04).
 
 ## Etapa 4: a ilha cresce
 
