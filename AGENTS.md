@@ -26,7 +26,9 @@ A cota do Codex é a mesma para imagens e código, então o Codex fica só com a
 codex exec -m gpt-6-luna -c model_reasoning_effort='"high"' -s workspace-write "<instrução apontando para o arquivo do pedido>"
 ```
 
-Fluxo de arte: o Claude escreve o pedido em `art/prompts/pedidos/` → o Codex gera e salva como **candidato** → o Claude avalia e integra, ou escreve a correção. Nada vai para `game/` sem aprovação do João.
+Fluxo de arte: o Claude escreve o pedido em `art/prompts/pedidos/` → o Codex gera e salva como **candidato** → o Claude avalia e **copia as imagens inteiras para a pasta de aprovações do João** → o João aprova ou pede ajuste → o Claude integra, ou escreve a correção. Nada vai para `game/` sem aprovação do João.
+
+**Pasta de aprovações:** `C:\Users\jpach\Aprovações Ilhas Vivas\`. Uma subpasta por pedido, com o status no nome: `<pedido> - <assunto> (aguardando)`, `(aprovado)` ou `(refazer)`, e um `LEIA-ME.txt` dizendo o que é cada imagem e o que olhar. Ao mudar o status, renomear a subpasta. Prints de dentro do jogo que dependem da aprovação dele também vão para a subpasta do pedido.
 
 ## Regras
 

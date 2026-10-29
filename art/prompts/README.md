@@ -1,6 +1,6 @@
 # Pedidos de arte: como funciona
 
-O Claude escreve um pedido em `pedidos/`, com o prompt pronto, os anexos e o caminho de saída. O Codex gera e salva **só** no caminho indicado. O Claude avalia e integra, ou escreve a correção.
+O Claude escreve um pedido em `pedidos/`, com o prompt pronto, os anexos e o caminho de saída. O Codex gera e salva **só** no caminho indicado. O Claude avalia, copia as imagens inteiras para `C:\Users\jpach\Aprovações Ilhas Vivas\<pedido> - <assunto> (aguardando)\` com um `LEIA-ME.txt`, e só integra depois da aprovação do João (ou escreve a correção).
 
 ## Padrão técnico (vale para todo pedido de sprite, depois que a bíblia visual for aprovada)
 
