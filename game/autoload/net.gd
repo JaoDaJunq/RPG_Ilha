@@ -16,12 +16,21 @@ var raca: StringName = &"humano"
 var classe: StringName = &"guerreiro"
 ## Motivo da última desconexão, para o menu mostrar.
 var ultimo_erro := ""
+## Identidade deste jogador entre sessões (o id de rede muda a cada partida).
+## O anfitrião guarda o progresso de cada um por esta identidade.
+var id_jogador := ""
+
+const PERFIL := "user://perfil.cfg"
 
 
 func _ready() -> void:
+	id_jogador = _carregar_ou_criar_id()
 	# Atalhos de linha de comando para testar sem passar pelo menu:
 	#   -- --solo | --hospedar | --entrar=192.168.0.10   (opcional: --porta=7777)
+	#   --perfil=nome usa outra identidade (para testar dois jogadores no mesmo PC)
 	for arg in OS.get_cmdline_user_args():
+		if arg.begins_with("--perfil="):
+			id_jogador = arg.get_slice("=", 1)
 		if arg == "--solo":
 			modo = Modo.SOLO
 		elif arg == "--hospedar":
@@ -80,6 +89,19 @@ func encerrar() -> void:
 func veio_do_anfitriao() -> bool:
 	var s := multiplayer.get_remote_sender_id()
 	return s == 0 or s == 1
+
+
+func _carregar_ou_criar_id() -> String:
+	var cfg := ConfigFile.new()
+	cfg.load(PERFIL)
+	var id: String = cfg.get_value("jogador", "id", "")
+	if id == "":
+		var rng := RandomNumberGenerator.new()
+		rng.randomize()
+		id = "%08x%08x" % [rng.randi(), rng.randi()]
+		cfg.set_value("jogador", "id", id)
+		cfg.save(PERFIL)
+	return id
 
 
 ## Endereços IPv4 desta máquina, para o anfitrião passar aos amigos.

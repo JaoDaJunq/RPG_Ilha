@@ -26,6 +26,20 @@ func remover(item_id: StringName, quantidade: int) -> bool:
 	return true
 
 
+## Só o anfitrião chama (ao carregar o mundo salvo).
+func definir(itens_salvos: Dictionary) -> void:
+	_itens.clear()
+	for k in itens_salvos:
+		if int(itens_salvos[k]) > 0:
+			_itens[StringName(k)] = int(itens_salvos[k])
+	_enviar()
+
+
+## O anfitrião manda o inventário para o dono (quando ele acaba de chegar).
+func reenviar() -> void:
+	_enviar()
+
+
 func quantidade_de(item_id: StringName) -> int:
 	return _itens.get(item_id, 0)
 

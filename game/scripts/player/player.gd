@@ -420,6 +420,36 @@ func _progresso_sync(n: int, x: int, pa: int, ph: int, dist: Dictionary) -> void
 	progresso_mudou.emit()
 
 
+## O que o anfitrião guarda deste jogador no arquivo do mundo.
+func registro() -> Dictionary:
+	return {
+		"raca": String(raca), "classe": String(classe),
+		"nivel": nivel, "xp": xp,
+		"pontos_atributo": pontos_atributo, "pontos_habilidade": pontos_habilidade,
+		"distribuidos": distribuidos.duplicate(),
+		"itens": inventario.itens(),
+		"pos": [global_position.x, global_position.y],
+		"salvo_em": Time.get_unix_time_from_system(),
+	}
+
+
+## Só o anfitrião chama, logo depois de criar o jogador: devolve o progresso salvo.
+func restaurar(reg: Dictionary) -> void:
+	nivel = clampi(int(reg.get("nivel", 1)), 1, Ficha.NIVEL_MAXIMO)
+	xp = int(reg.get("xp", 0))
+	pontos_atributo = int(reg.get("pontos_atributo", 0))
+	pontos_habilidade = int(reg.get("pontos_habilidade", 0))
+	distribuidos.clear()
+	var dist: Dictionary = reg.get("distribuidos", {})
+	for k in dist:
+		distribuidos[StringName(k)] = int(dist[k])
+	_recalcular_ficha()
+	vida.curar_tudo()
+	mana = ficha.mana_maxima()
+	inventario.definir(reg.get("itens", {}))
+	_enviar_progresso()
+
+
 ## Refaz a ficha com os pontos distribuídos; vida e mana máximas acompanham.
 func _recalcular_ficha() -> void:
 	var vida_antes := vida.maximo

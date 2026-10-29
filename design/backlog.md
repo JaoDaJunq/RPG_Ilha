@@ -17,7 +17,7 @@ Lista oficial de tarefas. Marcar `[x]` só com prova (teste OK ou print revisado
 - [x] T11 ENet com anfitrião no comando: cada jogador nasce no acampamento com a sua câmera.
 - [x] T12 Movimento sincronizado; coletar, golpear, bola de fogo, dano, inventário e dia/noite passam pelo anfitrião. Quem entra depois recebe o que já mudou.
 - [x] T13 Teste automático com dois jogos de verdade (`rede_smoke`) + prints das duas janelas em `evidence/rede/`.
-- [ ] T14 Guia para jogar pela internet com Tailscale/ZeroTier.
+- [x] T14 Guia em `docs/jogar_pela_internet.md` (Hamachi, já instalado no PC do João; Radmin VPN; Tailscale; firewall). Não testado com outra pessoa ainda.
 
 ## Etapa 2: fatia jogável em rede
 
@@ -26,7 +26,7 @@ Lista oficial de tarefas. Marcar `[x]` só com prova (teste OK ou print revisado
 - [ ] T22 Construção (paredes, chão, porta) com prévia e custo.
 - [ ] T23 Inimigos com estados (patrulhar, perseguir, atacar) e saque.
 - [ ] T24 Dia e noite com perigo maior à noite; luz de fogueira e tocha.
-- [ ] T25 Salvar e carregar o mundo (no anfitrião).
+- [x] T25 Salvar e carregar (anfitrião): árvores, pedras, noite e cada personagem (nível, pontos, itens, posição), um por jogador + raça + classe. Salva ao fechar a janela, ao voltar ao menu, quando alguém sai e a cada 60 s. Menu mostra o mundo salvo e tem "Começar mundo novo".
 
 ## Etapa 3: personagem, classes e habilidades (em andamento; proposta em `design/classes.md`)
 

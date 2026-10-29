@@ -54,6 +54,10 @@ enum Chao { AGUA, AREIA, GRAMA }
 @export var gerar_recursos := true
 ## Quanto tempo a água fica congelada pela lança de gelo.
 @export var duracao_gelo := 10.0
+## Arquivo do mundo salvo (vazio = não salva nem carrega; os testes usam isso).
+@export var arquivo_salvo := Salvamento.PADRAO
+## Salvamento automático a cada tantos segundos (anfitrião).
+@export var intervalo_salvar := 60.0
 
 const MENU := "res://scenes/ui/menu.tscn"
 
@@ -69,6 +73,12 @@ var _distancia: Dictionary[Vector2i, float] = {}
 var _ocupados: Array[Vector2] = []
 var _removidos: Array[String] = []
 var _nascimentos: Dictionary[int, Vector2] = {}
+var _retornos: Dictionary[int, Vector2] = {}
+# Progresso salvo: id do jogador → registro; e quem é quem nesta partida.
+var _registros: Dictionary = {}
+var _id_por_peer: Dictionary[int, String] = {}
+var _restaurar_depois: Dictionary[int, Dictionary] = {}
+var _tempo_salvar := 0.0
 var _gelo: Dictionary[Vector2i, float] = {}  # célula congelada → segundos restantes
 var _id_agua := -1
 var _rng := RandomNumberGenerator.new()
@@ -93,13 +103,14 @@ func _ready() -> void:
 		_voltar_ao_menu.call_deferred()
 		return
 	multiplayer.peer_disconnected.connect(_on_peer_saiu)
-	multiplayer.connected_to_server.connect(func() -> void: _cliente_pronto.rpc_id(1, Net.raca, Net.classe))
+	multiplayer.connected_to_server.connect(func() -> void: _cliente_pronto.rpc_id(1, Net.raca, Net.classe, Net.id_jogador))
 	multiplayer.connection_failed.connect(_on_conexao_perdida.bind("Não foi possível conectar ao anfitrião."))
 	multiplayer.server_disconnected.connect(_on_conexao_perdida.bind("O anfitrião saiu do jogo."))
 	if multiplayer.is_server():
+		_carregar_mundo()
 		_criar_slimes()
 		if Net.modo != Net.Modo.ENTRAR:
-			_criar_jogador(1, Net.raca, Net.classe)
+			_criar_jogador(1, Net.raca, Net.classe, Net.id_jogador)
 	else:
 		Events.aviso.emit("Conectando em %s..." % Net.endereco)
 	Sfx.tocar_musica()
@@ -118,7 +129,7 @@ func alternar_noite() -> void:
 ## O Player local chama isto ao nascer nesta máquina.
 func registrar_jogador_local(p: Player) -> void:
 	jogador = p
-	p.ponto_de_retorno = p.position
+	p.ponto_de_retorno = _retornos.get(p.id_rede(), p.position)
 	if not multiplayer.is_server():
 		# O jogador controlado aqui não aceita a posição enviada no nascimento
 		# (quem manda nele é este jogo), então pergunta ao anfitrião onde nascer.
@@ -179,7 +190,10 @@ func eh_gelo(cel: Vector2i) -> bool:
 
 
 func _process(delta: float) -> void:
-	if not multiplayer.has_multiplayer_peer() or not multiplayer.is_server() or _gelo.is_empty():
+	if not multiplayer.has_multiplayer_peer() or not multiplayer.is_server():
+		return
+	_process_salvar(delta)
+	if _gelo.is_empty():
 		return
 	for cel in _gelo.keys():
 		_gelo[cel] -= delta
@@ -225,40 +239,66 @@ static func avisar_todos(quem: Node, texto: String) -> void:
 
 # --- Rede ------------------------------------------------------------------------
 
-func _criar_jogador(peer: int, raca: StringName, classe: StringName) -> void:
+func _criar_jogador(peer: int, raca: StringName, classe: StringName, id_jogador: String) -> void:
 	var p: Player = JOGADOR.instantiate()
 	p.name = str(peer)
 	p.raca = raca if raca in RacaData.TODAS else RacaData.TODAS[0]
 	p.classe = classe if classe in ClasseData.TODAS else ClasseData.TODAS[0]
-	p.position = ponto_de_nascer(get_tree().get_nodes_in_group(&"jogadores").size())
+	# Um personagem salvo por jogador + raça + classe. Duas janelas no mesmo PC com o
+	# mesmo personagem: a segunda ganha um sufixo.
+	var id := chave_personagem(id_jogador if id_jogador != "" else "anonimo", p.raca, p.classe)
+	while id in _id_por_peer.values():
+		id += "+"
+	_id_por_peer[peer] = id
+	var retorno := ponto_de_nascer(get_tree().get_nodes_in_group(&"jogadores").size())
+	p.position = retorno
+	# Personagem que já estava salvo: volta de onde parou.
+	var reg: Dictionary = _registros.get(id, {})
+	var mesmo := not reg.is_empty()
+	if mesmo and reg.get("pos") is Array and reg["pos"].size() == 2:
+		p.position = Vector2(reg["pos"][0], reg["pos"][1])
 	_nascimentos[peer] = p.position
+	_retornos[peer] = retorno
 	entidades.add_child(p, true)
+	if mesmo:
+		if peer == multiplayer.get_unique_id():
+			p.restaurar(reg)
+			Events.aviso.emit("Bem-vindo de volta! Seu %s está no nível %d." % [p.ficha.titulo(), p.nivel])
+		else:
+			# Para os outros, só depois que o jogador já existe lá (ver _pedir_nascimento).
+			_restaurar_depois[peer] = reg
 
 
 @rpc("any_peer", "reliable")
 func _pedir_nascimento() -> void:
 	var peer := multiplayer.get_remote_sender_id()
-	if multiplayer.is_server() and _nascimentos.has(peer):
-		_definir_nascimento.rpc_id(peer, _nascimentos[peer])
+	if not multiplayer.is_server() or not _nascimentos.has(peer):
+		return
+	_definir_nascimento.rpc_id(peer, _nascimentos[peer], _retornos.get(peer, _nascimentos[peer]))
+	if _restaurar_depois.has(peer) and entidades.has_node(str(peer)):
+		var p: Player = entidades.get_node(str(peer))
+		p.restaurar(_restaurar_depois[peer])
+		_restaurar_depois.erase(peer)
+		p.avisar("Bem-vindo de volta! Seu %s está no nível %d." % [p.ficha.titulo(), p.nivel])
 
 
 @rpc("any_peer", "reliable")
-func _definir_nascimento(pos: Vector2) -> void:
+func _definir_nascimento(pos: Vector2, retorno: Vector2) -> void:
 	if not Net.veio_do_anfitriao() or jogador == null:
 		return
 	jogador.global_position = pos
-	jogador.ponto_de_retorno = pos
+	jogador.ponto_de_retorno = retorno
 	jogador.camera.reset_smoothing()
 
 
 @rpc("any_peer", "reliable")
-func _cliente_pronto(raca: StringName, classe: StringName) -> void:
+func _cliente_pronto(raca: StringName, classe: StringName, id_jogador: String) -> void:
 	if not multiplayer.is_server():
 		return
 	var peer := multiplayer.get_remote_sender_id()
 	if entidades.has_node(str(peer)):
 		return
-	_criar_jogador(peer, raca, classe)
+	_criar_jogador(peer, raca, classe, id_jogador)
 	# Quem entra depois recebe o que já mudou no mundo.
 	_aplicar_ciclo_rede.rpc_id(peer, noite, true)
 	for cel in _gelo:
@@ -275,8 +315,85 @@ func _cliente_pronto(raca: StringName, classe: StringName) -> void:
 
 func _on_peer_saiu(peer: int) -> void:
 	if multiplayer.is_server() and entidades.has_node(str(peer)):
-		entidades.get_node(str(peer)).queue_free()
+		var p: Player = entidades.get_node(str(peer))
+		if _id_por_peer.has(peer) and not _restaurar_depois.has(peer):
+			_registros[_id_por_peer[peer]] = p.registro()
+		_id_por_peer.erase(peer)
+		p.queue_free()
+		salvar()
 		World.avisar_todos(self, "Um amigo saiu da ilha.")
+
+
+# --- Salvar e carregar (só o anfitrião) ---------------------------------------------
+
+static func chave_personagem(id_jogador: String, raca: StringName, classe: StringName) -> String:
+	return "%s:%s:%s" % [id_jogador, raca, classe]
+
+
+## O personagem salvo mais recente deste jogador (para o menu já vir escolhido).
+static func ultimo_personagem(dados: Dictionary, id_jogador: String) -> Dictionary:
+	var melhor := {}
+	var jogadores: Dictionary = dados.get("jogadores", {})
+	for chave in jogadores:
+		if String(chave).begins_with(id_jogador + ":") and float(jogadores[chave].get("salvo_em", 0)) >= float(melhor.get("salvo_em", -1)):
+			melhor = jogadores[chave]
+	return melhor
+
+
+## Grava o mundo e o progresso de todos. Retorna se gravou.
+func salvar() -> bool:
+	# Quem entrou no jogo de outro não grava nada: o mundo é do anfitrião.
+	if not multiplayer.has_multiplayer_peer() or not multiplayer.is_server() or arquivo_salvo == "" or Net.modo == Net.Modo.ENTRAR:
+		return false
+	for peer in _id_por_peer:
+		if entidades.has_node(str(peer)) and not _restaurar_depois.has(peer):
+			_registros[_id_por_peer[peer]] = (entidades.get_node(str(peer)) as Player).registro()
+	var recursos := {}
+	for r in get_tree().get_nodes_in_group(&"recursos"):
+		var rn := r as ResourceNode
+		if rn.estado != ResourceNode.Estado.INTEIRO or rn.golpes_restantes() != rn.golpes:
+			# Árvore queimando é salva como queimada (o fogo não volta aceso).
+			var e := ResourceNode.Estado.QUEIMADO if rn.estado == ResourceNode.Estado.QUEIMANDO else rn.estado
+			recursos[String(rn.name)] = [e, rn.golpes_restantes()]
+	return Salvamento.gravar({
+		"semente": semente, "noite": noite,
+		"recursos": recursos, "removidos": _removidos.duplicate(),
+		"jogadores": _registros,
+	}, arquivo_salvo)
+
+
+func _carregar_mundo() -> void:
+	var dados := Salvamento.ler(arquivo_salvo)
+	if dados.is_empty():
+		return
+	if int(dados.get("semente", semente)) != semente:
+		push_warning("O mundo salvo é de outra semente; começando um novo.")
+		return
+	_registros = dados.get("jogadores", {})
+	_aplicar_ciclo(bool(dados.get("noite", false)), true)
+	for nome in dados.get("removidos", []):
+		if entidades.has_node(NodePath(nome)):
+			entidades.get_node(NodePath(nome)).free()
+		_removidos.append(String(nome))
+	var recursos: Dictionary = dados.get("recursos", {})
+	for nome in recursos:
+		var r := entidades.get_node_or_null(NodePath(nome)) as ResourceNode
+		if r:
+			r.carregar_estado(int(recursos[nome][0]), int(recursos[nome][1]))
+
+
+func _process_salvar(delta: float) -> void:
+	_tempo_salvar += delta
+	if _tempo_salvar >= intervalo_salvar:
+		_tempo_salvar = 0.0
+		salvar()
+
+
+## Ao fechar a janela o mundo ainda está inteiro. (No _exit_tree, não: o Godot tira os
+## filhos primeiro e o mundo seria gravado sem árvores nem pedras.)
+func _notification(what: int) -> void:
+	if what == NOTIFICATION_WM_CLOSE_REQUEST:
+		salvar()
 
 
 func _on_conexao_perdida(motivo: String) -> void:
@@ -285,6 +402,7 @@ func _on_conexao_perdida(motivo: String) -> void:
 
 
 func _voltar_ao_menu() -> void:
+	salvar()
 	Net.encerrar()
 	if ResourceLoader.exists(MENU) and get_tree().current_scene == self:
 		get_tree().change_scene_to_file(MENU)

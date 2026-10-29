@@ -180,3 +180,8 @@ func _tremer() -> void:
 	t.tween_property(sprite, "position:x", 1.5, 0.04)
 	t.tween_property(sprite, "position:x", -1.5, 0.06)
 	t.tween_property(sprite, "position:x", 0.0, 0.04)
+
+
+## Só o anfitrião chama, ao carregar o mundo salvo (antes de alguém entrar).
+func carregar_estado(novo: int, restantes: int) -> void:
+	_definir_estado(novo as Estado, restantes, false)

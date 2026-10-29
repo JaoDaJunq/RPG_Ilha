@@ -32,6 +32,7 @@ func criar_mundo(slimes := 0, limpar := true, classe: StringName = &"mago", raca
 	Net.classe = classe
 	Net.raca = raca
 	var w: World = MUNDO.instantiate()
+	w.arquivo_salvo = ""  # testes não mexem no mundo salvo do João
 	w.slimes = slimes
 	w.gerar_recursos = not limpar
 	add_child(w)

@@ -17,7 +17,14 @@ func _ready() -> void:
 	estado.text = Net.ultimo_erro
 	var ips := Net.enderecos_locais()
 	meus_ips.text = "Seu IP nesta rede: " + (", ".join(ips) if not ips.is_empty() else "não encontrado")
+	# Já vem escolhido o personagem salvo, para continuar de onde parou.
+	var meu := World.ultimo_personagem(Salvamento.ler(), Net.id_jogador)
+	if not meu.is_empty():
+		Net.raca = StringName(meu.get("raca", Net.raca))
+		Net.classe = StringName(meu.get("classe", Net.classe))
 	_montar_escolhas()
+	_atualizar_mundo_salvo()
+	%MundoNovo.pressed.connect(_mundo_novo)
 	%Solo.pressed.connect(_jogar.bind(Net.Modo.SOLO))
 	%Hospedar.pressed.connect(_jogar.bind(Net.Modo.HOSPEDAR))
 	%Entrar.pressed.connect(_jogar.bind(Net.Modo.ENTRAR))
@@ -66,6 +73,32 @@ func _atualizar_resumo() -> void:
 		f.titulo(), f.classe.descricao, " · ".join(atributos),
 		f.vida_maxima(), f.mana_maxima(), ", ".join(habs),
 		f.raca.habilidade_nome, f.raca.habilidade_descricao]
+
+
+## Mostra se há mundo salvo (vale para jogar sozinho e para hospedar).
+func _atualizar_mundo_salvo() -> void:
+	var dados := Salvamento.ler()
+	%MundoNovo.visible = not dados.is_empty()
+	%MundoNovo.text = "Começar mundo novo"
+	if dados.is_empty():
+		%InfoMundo.text = "Nenhum mundo salvo: a ilha começa do zero."
+		return
+	var meu := World.ultimo_personagem(dados, Net.id_jogador)
+	if meu.is_empty():
+		%InfoMundo.text = "Mundo salvo encontrado (sozinho ou hospedando)."
+	else:
+		var f := Ficha.criar(StringName(meu.get("raca", "humano")), StringName(meu.get("classe", "guerreiro")))
+		%InfoMundo.text = "Mundo salvo · seu %s nível %d" % [f.titulo(), int(meu.get("nivel", 1))]
+
+
+## Dois cliques para não apagar sem querer.
+func _mundo_novo() -> void:
+	if %MundoNovo.text != "Clique de novo para apagar":
+		%MundoNovo.text = "Clique de novo para apagar"
+		return
+	Salvamento.apagar()
+	_atualizar_mundo_salvo()
+	estado.text = "Mundo apagado. A próxima partida começa do zero."
 
 
 func _ir_para_o_mundo() -> void:

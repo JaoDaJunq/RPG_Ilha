@@ -7,6 +7,7 @@ Co-op online de sobrevivência e exploração numa ilha de fantasia que reage ao
 **Etapas 0 e 1 concluídas; Etapa 3 (personagem e classes) em andamento.** A base do jogo está em cenas e componentes, com placeholders CC0 do Ninja Adventure. A direção de arte foi aprovada (B = dia, A = noite) e o primeiro lote de sprites próprios espera aprovação. Tarefas em [design/backlog.md](design/backlog.md).
 
 **O que já funciona (sozinho ou com amigos):**
+- Mundo salvo: árvores cortadas, pedras, noite e o seu personagem (nível, pontos, itens, onde estava) voltam ao abrir de novo. Cada raça + classe é um personagem salvo separado. "Começar mundo novo" no menu apaga.
 - Criação de personagem no menu: raça (Humano ou Ogro) e classe (Guerreiro, Mago ou Arqueiro), com atributos que mudam vida, mana, velocidade, dano e coleta. Ficha na tecla C.
 - Níveis e experiência: derrotar slimes (dividido com quem está perto) e coletar dão experiência; cada nível dá 2 pontos de atributo (botões "+" na ficha) e 1 de habilidade (a árvore vem depois). Humano ganha 10% a mais.
 - Habilidades da classe nas teclas 1 e 2 (Investida e Giro; Bola de fogo e Lança de gelo; Tiro carregado e Armadilha), com mana e recarga, e esquiva no Espaço.
@@ -21,14 +22,14 @@ Co-op online de sobrevivência e exploração numa ilha de fantasia que reage ao
 - Golpe com clique esquerdo; slimes perseguem e machucam; ao desmaiar, o jogador volta ao acampamento.
 - N alterna dia e noite; M liga/desliga o som.
 
-**Ainda não tem:** guia para jogar pela internet (fora da mesma rede), salvar, inventário com slots, fabricação, construção, classes e árvore de habilidades, arte própria do chão, do acampamento, do slime e dos efeitos (o aventureiro, as árvores e as pedras já são próprios).
+**Ainda não tem:** inventário com slots, fabricação, construção, classes e árvore de habilidades, arte própria do chão, do acampamento, do slime e dos efeitos (o aventureiro, as árvores e as pedras já são próprios).
 
 ## Como rodar
 
 1. Abra o Godot 4.7.2, clique em **Importar** e escolha `game/project.godot`.
 2. Aperte **F5** e escolha no menu.
 
-**Jogar com amigos na mesma rede (casa, Wi-Fi):** um clica em **Hospedar para amigos**; o menu mostra o IP dele (ex.: 192.168.0.10). Os outros digitam esse IP e clicam em **Entrar**. Pela internet ainda precisa de um programa como Tailscale ou ZeroTier (guia na T14).
+**Jogar com amigos na mesma rede (casa, Wi-Fi):** um clica em **Hospedar para amigos**; o menu mostra o IP dele (ex.: 192.168.0.10). Os outros digitam esse IP e clicam em **Entrar**. Pela internet: veja [docs/jogar_pela_internet.md](docs/jogar_pela_internet.md) (Hamachi, Radmin VPN ou Tailscale).
 
 Atalhos para testar sem o menu: `-- --solo`, `-- --hospedar` ou `-- --entrar=IP` no fim do comando do Godot.
 

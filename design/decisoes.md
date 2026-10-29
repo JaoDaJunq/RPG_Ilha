@@ -19,7 +19,6 @@
 ## Em aberto (o João decide)
 
 - **Nome do jogo.** Opções levantadas: Emberwild, Mossborne, Brasa & Musgo, Ilha Errante, Wildmere, Verdeluz.
-- **Como os amigos vão se conectar pela internet** no começo (Tailscale, ZeroTier, Radmin VPN ou abrir porta). O menu mostrou um IP 25.x neste PC, típico do Radmin VPN: talvez ele já esteja instalado.
 
 ## Problemas conhecidos
 
