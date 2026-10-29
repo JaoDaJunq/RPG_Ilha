@@ -52,6 +52,10 @@ func _init() -> void:
 	# Limpeza de "ruído" da IA (ver tools/medir_ruido.gd): paleta curta e sem pixels soltos.
 	if _args.has("cores"):
 		_reduzir_paleta(pequeno_folha, int(_args["cores"]))
+	if _args.has("paleta_de"):
+		# Usa as cores de outra folha já convertida (ex.: bordas com as cores do chão liso,
+		# para a grama da borda ser a mesma grama do chão).
+		_usar_paleta_de(pequeno_folha, _caminho(_args["paleta_de"]))
 	if _args.has("limpar"):
 		for i in 2:
 			_tirar_pixels_soltos(pequeno_folha)
@@ -84,6 +88,9 @@ func _init() -> void:
 			push_warning("célula %d: desenho %dx%d não cabe no quadro de %d" % [c, caixa.size.x, caixa.size.y, quadro])
 		var destino := Vector2i(i * quadro + (quadro - caixa.size.x) / 2, quadro - base - caixa.size.y)
 		tira.blit_rect(pequeno, caixa, destino)
+		if _args.has("preencher"):
+			# Chão: o quadro inteiro tem de ficar opaco (um bloco de 31 px deixaria um risco).
+			_preencher_buracos(tira, Rect2i(i * quadro, 0, quadro, quadro))
 		print("célula %d: desenho %dx%d" % [c, caixa.size.x, caixa.size.y])
 
 	var erro := tira.save_png(_caminho(saida))
@@ -273,6 +280,32 @@ func _reduzir_paleta(img: Image, n: int) -> void:
 			if c.a <= 0.5:
 				continue
 			var perto := paleta[0]
+			var dist := INF
+			for p in paleta:
+				var d := (p.r - c.r) * (p.r - c.r) + (p.g - c.g) * (p.g - c.g) + (p.b - c.b) * (p.b - c.b)
+				if d < dist:
+					dist = d
+					perto = p
+			img.set_pixel(x, y, perto)
+
+
+func _usar_paleta_de(img: Image, caminho: String) -> void:
+	var ref := Image.load_from_file(caminho)
+	ref.convert(Image.FORMAT_RGBA8)
+	var paleta: Array[Color] = []
+	var vistas := {}
+	for y in ref.get_height():
+		for x in ref.get_width():
+			var c := ref.get_pixel(x, y)
+			if c.a > 0.5 and not vistas.has(c.to_rgba32()):
+				vistas[c.to_rgba32()] = true
+				paleta.append(c)
+	for y in img.get_height():
+		for x in img.get_width():
+			var c := img.get_pixel(x, y)
+			if c.a <= 0.5:
+				continue
+			var perto := c
 			var dist := INF
 			for p in paleta:
 				var d := (p.r - c.r) * (p.r - c.r) + (p.g - c.g) * (p.g - c.g) + (p.b - c.b) * (p.b - c.b)
