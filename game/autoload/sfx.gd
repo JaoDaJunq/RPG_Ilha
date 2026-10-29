@@ -24,12 +24,6 @@ func _ready() -> void:
 	add_child(_musica)
 
 
-func _exit_tree() -> void:
-	# Soltar a música ao fechar evita o aviso de recurso preso na saída.
-	_musica.stop()
-	_musica.stream = null
-
-
 func tocar_musica() -> void:
 	if ligado and not _musica.playing:
 		_musica.play()

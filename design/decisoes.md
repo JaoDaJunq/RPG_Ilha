@@ -17,3 +17,7 @@
 - **Direção de arte final** (depende do conceito C01): tamanho do tile (16 px?), tamanho do personagem e paleta.
 - **O fogo se espalha?** Para árvores vizinhas, dá histórias boas, mas pode queimar a floresta inteira. Hoje não se espalha.
 - **Como os amigos vão se conectar pela internet** no começo (Tailscale, ZeroTier, Radmin VPN ou abrir porta).
+
+## Problemas conhecidos
+
+- Ao fechar o jogo, o Godot avisa "2 resources still in use at exit" (a música OGG que estava tocando). Não afeta o jogo; parar a música no `_exit_tree` e trocar `preload` por `load` não resolveram (29/10/2026). Investigar de novo quando houver menu e saída pelo jogo.
