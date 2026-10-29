@@ -17,6 +17,7 @@ func _ready() -> void:
 	var arvore_antes := criar_arvore_teste(w, "ArvoreAntes", w.ponto_de_nascer(0) + Vector2(-40, 0))
 	for i in arvore_antes.golpes:
 		arvore_antes.interagir(w.jogador)
+	w.jogador.ganhar_xp(60)  # o anfitrião já está no nível 3 quando o cliente entra
 	w.alternar_noite()
 	var prints := "--com-prints" in OS.get_cmdline_user_args()
 
@@ -37,6 +38,9 @@ func _ready() -> void:
 		await esperar(0.1)
 		t += 0.1
 	checar(get_tree().get_nodes_in_group(&"jogadores").size() == 2, "cliente entrou: 2 jogadores na ilha (%.1f s)" % t)
+	for j in get_tree().get_nodes_in_group(&"jogadores"):
+		if j != w.jogador:
+			(j as Player).ganhar_xp(25)  # o cliente sobe para o nível 2
 
 	# O anfitrião lança uma bola de fogo para o cliente ver.
 	await esperar(0.5)
@@ -71,6 +75,11 @@ func _ready() -> void:
 	var armadilhas := get_tree().get_nodes_in_group(&"armadilhas").filter(func(a: Node) -> bool: return a.dono_id == peer)
 	checar(armadilhas.size() == 1, "habilidade do cliente (armadilha) aconteceu no anfitrião")
 	checar(relatorio.get("mana_gasta", false), "cliente recebeu do anfitrião a mana gasta na armadilha")
+	checar(relatorio.get("nivel", 0) == 2, "cliente recebeu o nível 2 do anfitrião (%s)" % relatorio.get("nivel"))
+	checar(relatorio.get("nivel_anfitriao", 0) == 3, "quem entra depois vê o nível do anfitrião (%s)" % relatorio.get("nivel_anfitriao"))
+	if cliente:
+		checar(cliente.distribuidos.get(&"agilidade", 0) == 1 and cliente.pontos_atributo == 1, "ponto que o cliente colocou chegou no anfitrião")
+	checar(relatorio.get("agilidade", 0) == Ficha.criar(&"ogro", &"arqueiro").valor(&"agilidade") + 1, "cliente vê a própria Agilidade subir (%s)" % relatorio.get("agilidade"))
 	checar(relatorio.get("antes_estado", -1) == ResourceNode.Estado.ESGOTADO, "quem entra depois vê a árvore já cortada")
 	checar(relatorio.get("noite", false), "quem entra depois recebe a noite que já tinha caído")
 	if prints:

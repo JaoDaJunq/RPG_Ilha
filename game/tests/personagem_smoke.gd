@@ -16,7 +16,7 @@ func _ready() -> void:
 	var w := await criar_mundo(0, true, &"mago", &"ogro")
 	var p := w.jogador
 	checar(p.vida.maximo == 90.0 and p.mana == 45.0, "jogador nasce com a vida e a mana da ficha (%d / %d)" % [p.vida.maximo, p.mana])
-	checar(w.hud._titulo_personagem.text == "Ogro Mago", "HUD mostra Ogro Mago")
+	checar(w.hud._titulo_personagem.text == "Nv 1 · Ogro Mago", "HUD mostra nível, raça e classe (%s)" % w.hud._titulo_personagem.text)
 
 	# Esquiva: desloca rápido, protege do dano e tem recarga.
 	p.mira_forcada = p.global_position + Vector2(200, -10)

@@ -7,6 +7,7 @@ const TABELA := {
 	&"giro": [preload("res://assets/placeholder/ninja/fx/giro.png"), Vector2i(32, 32), 4, 16.0],
 	&"poeira": [preload("res://assets/placeholder/ninja/fx/poeira.png"), Vector2i(32, 32), 6, 18.0],
 	&"congelar": [preload("res://assets/placeholder/ninja/fx/congelar.png"), Vector2i(32, 32), 10, 16.0],
+	&"subir_nivel": [preload("res://assets/placeholder/ninja/fx/subir_nivel.png"), Vector2i(53, 35), 8, 12.0],
 }
 
 

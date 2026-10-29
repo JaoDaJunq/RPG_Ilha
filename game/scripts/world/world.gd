@@ -151,6 +151,17 @@ static func efeito_todos(quem: Node, nome: StringName, pos: Vector2) -> void:
 		w._efeito.rpc(nome, pos)
 
 
+## Raio em que os jogadores dividem a experiência de uma derrota.
+const RAIO_XP := 160.0
+
+
+## Experiência para todos os jogadores perto (chamado pelo anfitrião).
+static func dar_xp_em_volta(quem: Node, pos: Vector2, quantidade: int) -> void:
+	for j in quem.get_tree().get_nodes_in_group(&"jogadores"):
+		if (j as Player).global_position.distance_to(pos) <= RAIO_XP:
+			(j as Player).ganhar_xp(quantidade)
+
+
 ## Congela a água neste ponto (chamado pelo anfitrião, ex.: lança de gelo passando).
 static func congelar_agua_em(quem: Node, pos: Vector2) -> void:
 	var w: World = quem.get_tree().get_first_node_in_group(&"mundo")
@@ -256,6 +267,9 @@ func _cliente_pronto(raca: StringName, classe: StringName) -> void:
 		_remover_recursos.rpc_id(peer, _removidos)
 	for r in get_tree().get_nodes_in_group(&"recursos"):
 		(r as ResourceNode).enviar_estado_para(peer)
+	for j in get_tree().get_nodes_in_group(&"jogadores"):
+		if j.name != str(peer):
+			(j as Player).enviar_progresso_para(peer)
 	World.avisar_todos(self, "Um amigo entrou na ilha!")
 
 

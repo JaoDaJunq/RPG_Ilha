@@ -49,8 +49,11 @@ func _ready() -> void:
 			await get_tree().physics_frame
 			p.usar_habilidade_por_id(&"giro")
 			await esperar(0.12)
+	if "--subir" in OS.get_cmdline_user_args():
+		p.ganhar_xp(60)
+		await esperar(0.25)
 	if "--com-ficha" in OS.get_cmdline_user_args():
-		w.hud._ficha_texto.text = w.hud._texto_ficha()
+		w.hud._atualizar_progresso()
 		w.hud._ficha.visible = true
 	await salvar_print("personagem/%s%s.png" % [classe, "_ficha" if "--com-ficha" in OS.get_cmdline_user_args() else ""])
 	terminar()

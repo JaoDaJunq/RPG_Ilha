@@ -11,6 +11,7 @@ const SONS := {
 	&"esquiva": preload("res://assets/placeholder/ninja/audio/esquiva.wav"),
 	&"flecha": preload("res://assets/placeholder/ninja/audio/flecha.wav"),
 	&"giro": preload("res://assets/placeholder/ninja/audio/giro.wav"),
+	&"subir_nivel": preload("res://assets/placeholder/ninja/audio/subir_nivel.wav"),
 }
 const MUSICA := preload("res://assets/placeholder/ninja/audio/musica_clareira.ogg")
 

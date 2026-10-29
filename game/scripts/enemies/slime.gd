@@ -10,6 +10,8 @@ extends CharacterBody2D
 
 const TEXTURA := preload("res://assets/placeholder/ninja/actors/slime.png")
 const TEMPO_CONGELADO := 2.5
+## Experiência para cada jogador perto quando o slime é derrotado.
+const XP_DERROTA := 10
 
 @export var velocidade := 28.0
 @export var raio_visao := 90.0
@@ -130,5 +132,6 @@ func _piscar() -> void:
 
 
 func _on_morreu() -> void:
-	World.avisar_todos(self, "Slime derrotado!")
+	World.dar_xp_em_volta(self, global_position, XP_DERROTA)
+	World.avisar_todos(self, "Slime derrotado! +%d de experiência para quem estava perto." % XP_DERROTA)
 	queue_free()

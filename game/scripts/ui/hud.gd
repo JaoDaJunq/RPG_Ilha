@@ -26,6 +26,10 @@ var _sombra_esquiva: ColorRect
 var _carga: ProgressBar
 var _ficha: PanelContainer
 var _ficha_texto: Label
+var _ficha_rodape: Label
+var _ficha_atributos: Dictionary[StringName, Label] = {}
+var _ficha_botoes: Dictionary[StringName, Button] = {}
+var _barra_xp: ProgressBar
 var _nomes: Dictionary[Node, Label] = {}
 var _raiz: Control
 
@@ -40,12 +44,12 @@ func configurar(p: Player) -> void:
 	jogador = p
 	jogador.inventario.mudou.connect(_atualizar_itens)
 	jogador.vida.mudou.connect(func(atual: float, maximo: float) -> void: _barra_vida.value = atual / maximo * 100.0)
-	_titulo_personagem.text = jogador.ficha.titulo()
+	jogador.progresso_mudou.connect(_atualizar_progresso)
 	var hab := jogador.habilidades()
 	for i in _slots_icone.size():
 		_slots_icone[i].texture = hab[i].icone if i < hab.size() else null
 		_slots_icone[i].get_parent().tooltip_text = ("%s (%d de mana)\n%s" % [hab[i].nome, hab[i].custo_mana, hab[i].descricao]) if i < hab.size() else ""
-	_ficha_texto.text = _texto_ficha()
+	_atualizar_progresso()
 	_atualizar_itens()
 
 
@@ -65,7 +69,7 @@ func ficha_visivel() -> bool:
 
 func _unhandled_input(event: InputEvent) -> void:
 	if event.is_action_pressed(&"ficha") and jogador:
-		_ficha_texto.text = _texto_ficha()
+		_atualizar_progresso()
 		_ficha.visible = not _ficha.visible
 
 
@@ -111,12 +115,13 @@ func _atualizar_nomes() -> void:
 			continue
 		vistos.append(p)
 		if not _nomes.has(p):
-			var l := _rotulo((p as Player).ficha.titulo(), 13, COR_TEXTO)
+			var l := _rotulo("", 13, COR_TEXTO)
 			l.add_theme_color_override(&"font_outline_color", Color(0.05, 0.08, 0.08))
 			l.add_theme_constant_override(&"outline_size", 4)
 			_raiz.add_child(l)
 			_nomes[p] = l
 		var rotulo := _nomes[p]
+		rotulo.text = "Nv %d · %s" % [(p as Player).nivel, (p as Player).ficha.titulo()]
 		var tela := get_viewport().get_canvas_transform() * ((p as Node2D).global_position + Vector2(0, -32))
 		rotulo.position = (tela - Vector2(rotulo.size.x / 2.0, rotulo.size.y)).round()
 	for p in _nomes.keys():
@@ -132,20 +137,43 @@ func _atualizar_itens() -> void:
 
 func _texto_ficha() -> String:
 	var f := jogador.ficha
+	return "%s · NÍVEL %d\n%s · ramos: %s e %s\nExperiência %d / %d" % [
+		f.titulo().to_upper(), jogador.nivel, f.classe.familia, f.classe.ramo_a, f.classe.ramo_b,
+		jogador.xp, jogador.xp_para_subir()]
+
+
+func _rodape_ficha() -> String:
+	var f := jogador.ficha
 	var linhas: Array[String] = [
-		f.titulo().to_upper(),
-		"%s · ramos: %s e %s" % [f.classe.familia, f.classe.ramo_a, f.classe.ramo_b],
+		"Pontos de atributo para distribuir: %d" % jogador.pontos_atributo,
+		"Pontos de habilidade guardados: %d (a árvore vem na próxima etapa)" % jogador.pontos_habilidade,
 		"",
+		"Vida %d · Mana %d · Velocidade %d" % [f.vida_maxima(), f.mana_maxima(), f.velocidade()],
+		"Dano físico x%.1f · mágico x%.1f · coleta x%.2f" % [f.multiplicador_fisico(), f.multiplicador_magico(), f.tempo_coleta()],
+		"",
+		"%s: %s" % [f.raca.habilidade_nome, f.raca.habilidade_descricao],
 	]
+	return "\n".join(linhas)
+
+
+func _atualizar_progresso() -> void:
+	if jogador == null:
+		return
+	var f := jogador.ficha
+	_titulo_personagem.text = "Nv %d · %s" % [jogador.nivel, f.titulo()]
+	_barra_xp.value = 100.0 * jogador.xp / maxf(jogador.xp_para_subir(), 1.0)
+	_ficha_texto.text = _texto_ficha()
+	_ficha_rodape.text = _rodape_ficha()
 	for a in Ficha.ATRIBUTOS:
 		var bonus: int = f.raca.bonus.get(a, 0)
-		linhas.append("%-11s %2d   %s" % [Ficha.NOMES[a], f.valor(a), ("(raça %+d)" % bonus) if bonus != 0 else ""])
-	linhas.append("")
-	linhas.append("Vida %d · Mana %d · Velocidade %d" % [f.vida_maxima(), f.mana_maxima(), f.velocidade()])
-	linhas.append("Dano físico x%.1f · mágico x%.1f" % [f.multiplicador_fisico(), f.multiplicador_magico()])
-	linhas.append("")
-	linhas.append("%s: %s" % [f.raca.habilidade_nome, f.raca.habilidade_descricao])
-	return "\n".join(linhas)
+		var pontos: int = jogador.distribuidos.get(a, 0)
+		var extras: Array[String] = []
+		if bonus != 0:
+			extras.append("raça %+d" % bonus)
+		if pontos > 0:
+			extras.append("pontos +%d" % pontos)
+		_ficha_atributos[a].text = "%s  %d   %s" % [Ficha.NOMES[a], f.valor(a), ("(" + ", ".join(extras) + ")") if not extras.is_empty() else ""]
+		_ficha_botoes[a].visible = jogador.pontos_atributo > 0
 
 
 # --- Montagem da interface -------------------------------------------------------
@@ -194,6 +222,9 @@ func _montar() -> void:
 	_barra_mana = _barra(Color("4a86d0"), 8)
 	_barra_mana.value = 100.0
 	rv.add_child(_barra_mana)
+	_barra_xp = _barra(Color("e7c46e"), 4)
+	_barra_xp.tooltip_text = "Experiência"
+	rv.add_child(_barra_xp)
 
 	# Barra de baixo: avisos, controles e habilidades
 	var base := PanelContainer.new()
@@ -244,8 +275,26 @@ func _montar() -> void:
 	_ficha = _painel(_raiz)
 	_ficha.position = Vector2(16, 110)
 	_ficha.visible = false
+	_ficha.mouse_filter = Control.MOUSE_FILTER_STOP  # os botões "+" recebem o clique
+	var fv := VBoxContainer.new()
+	_ficha.add_child(fv)
 	_ficha_texto = _rotulo("", 14, COR_TEXTO)
-	_ficha.add_child(_ficha_texto)
+	fv.add_child(_ficha_texto)
+	for a in Ficha.ATRIBUTOS:
+		var linha_attr := HBoxContainer.new()
+		fv.add_child(linha_attr)
+		var botao := Button.new()
+		botao.text = "+"
+		botao.custom_minimum_size = Vector2(28, 24)
+		botao.tooltip_text = "Colocar 1 ponto em " + Ficha.NOMES[a]
+		botao.pressed.connect(func() -> void: jogador.pedir_atributo(a))
+		linha_attr.add_child(botao)
+		_ficha_botoes[a] = botao
+		var rotulo_attr := _rotulo("", 14, COR_TEXTO)
+		linha_attr.add_child(rotulo_attr)
+		_ficha_atributos[a] = rotulo_attr
+	_ficha_rodape = _rotulo("", 13, COR_TEXTO_2)
+	fv.add_child(_ficha_rodape)
 
 	# Dica de interação (segue o objeto sob o mouse)
 	_dica = PanelContainer.new()

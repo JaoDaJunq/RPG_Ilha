@@ -14,12 +14,13 @@ var classe: ClasseData
 var valores: Dictionary[StringName, int] = {}
 
 
-static func criar(raca_id: StringName, classe_id: StringName) -> Ficha:
+## `distribuidos`: pontos que o jogador colocou ao subir de nível.
+static func criar(raca_id: StringName, classe_id: StringName, distribuidos: Dictionary = {}) -> Ficha:
 	var f := Ficha.new()
 	f.raca = RacaData.carregar(raca_id)
 	f.classe = ClasseData.carregar(classe_id)
 	for a in ATRIBUTOS:
-		f.valores[a] = f.classe.atributos.get(a, 5) + f.raca.bonus.get(a, 0)
+		f.valores[a] = f.classe.atributos.get(a, 5) + f.raca.bonus.get(a, 0) + int(distribuidos.get(a, 0))
 	return f
 
 
@@ -69,3 +70,20 @@ func recarga_esquiva() -> float:
 
 func multiplicador(elemento: StringName) -> float:
 	return multiplicador_fisico() if elemento == &"fisico" else multiplicador_magico()
+
+
+# --- Níveis ----------------------------------------------------------------------
+
+const NIVEL_MAXIMO := 16  # do 1 ao 16: 15 pontos de habilidade ao todo
+const PONTOS_ATRIBUTO_POR_NIVEL := 2
+const PONTOS_HABILIDADE_POR_NIVEL := 1
+
+
+## Experiência para sair do nível `n` para o seguinte.
+static func xp_para_subir(n: int) -> int:
+	return 20 + (n - 1) * 15
+
+
+## Bônus de raça na experiência (Humano: Versátil, +10%).
+func experiencia_ajustada(quantidade: int) -> int:
+	return roundi(quantidade * 1.1) if raca.id == &"humano" else quantidade

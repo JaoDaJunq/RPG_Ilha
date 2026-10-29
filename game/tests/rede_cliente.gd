@@ -34,6 +34,13 @@ func _ready() -> void:
 	p.mira_forcada = p.global_position + Vector2(0, 40)
 	p.usar_habilidade_por_id(&"armadilha")
 	await esperar(0.8)
+	var espera := 0.0
+	while p.nivel < 2 and espera < 3.0:
+		await esperar(0.1)
+		espera += 0.1
+	p.pedir_atributo(&"agilidade")
+	await esperar(0.5)
+	var anfitriao: Player = w.entidades.get_node_or_null("1")
 
 	var slimes := 0
 	for n in w.entidades.get_children():
@@ -48,6 +55,9 @@ func _ready() -> void:
 		"vida_vista": p.vida.atual,
 		"titulo": p.ficha.titulo(),
 		"mana_gasta": p.mana < mana_antes,
+		"nivel": p.nivel,
+		"agilidade": p.ficha.valor(&"agilidade"),
+		"nivel_anfitriao": anfitriao.nivel if anfitriao else -1,
 		"antes_estado": arvore_antes.estado,
 		"noite": w.noite,
 	})

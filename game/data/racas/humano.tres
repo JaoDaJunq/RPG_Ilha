@@ -9,4 +9,4 @@ nome = "Humano"
 descricao = "Versáteis, chegaram de barco atrás da ilha."
 bonus = Dictionary[StringName, int]({&"forca": 1, &"vitalidade": 1, &"agilidade": 1, &"intelecto": 1, &"espirito": 1})
 habilidade_nome = "Versátil"
-habilidade_descricao = "Ganha 10% mais experiência (quando houver níveis)."
+habilidade_descricao = "Ganha 10% mais experiência."

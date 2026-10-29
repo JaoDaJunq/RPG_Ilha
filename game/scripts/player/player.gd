@@ -27,8 +27,17 @@ const SONS := {
 @export var raca: StringName = &"humano"
 @export var classe: StringName = &"guerreiro"
 
+## Nível, experiência ou pontos mudaram (o HUD escuta).
+signal progresso_mudou
+
 var ficha: Ficha
 var mana := 0.0
+# Progressão: quem manda é o anfitrião; todos recebem por _progresso_sync.
+var nivel := 1
+var xp := 0
+var pontos_atributo := 0
+var pontos_habilidade := 0
+var distribuidos: Dictionary[StringName, int] = {}
 ## Posição de mira fixa (usada pelos testes). Se nula, usa o mouse.
 var mira_forcada: Variant = null
 var alvo: Interactable = null
@@ -338,6 +347,87 @@ func _pedir_interacao(caminho_alvo: NodePath) -> void:
 func _pedido_do_dono() -> bool:
 	var s := multiplayer.get_remote_sender_id()
 	return s == id_rede() or (s == 0 and eh_local())
+
+
+# --- Experiência e níveis ------------------------------------------------------
+
+## Só o anfitrião chama. Sobe quantos níveis a experiência permitir.
+func ganhar_xp(quantidade: int) -> void:
+	if not multiplayer.is_server() or nivel >= Ficha.NIVEL_MAXIMO:
+		return
+	xp += ficha.experiencia_ajustada(quantidade)
+	var subiu := 0
+	while nivel < Ficha.NIVEL_MAXIMO and xp >= Ficha.xp_para_subir(nivel):
+		xp -= Ficha.xp_para_subir(nivel)
+		nivel += 1
+		pontos_atributo += Ficha.PONTOS_ATRIBUTO_POR_NIVEL
+		pontos_habilidade += Ficha.PONTOS_HABILIDADE_POR_NIVEL
+		subiu += 1
+	if nivel >= Ficha.NIVEL_MAXIMO:
+		xp = 0
+	_enviar_progresso()
+	if subiu > 0:
+		vida.curar_tudo()
+		mana = ficha.mana_maxima()
+		_enviar_mana()
+		World.efeito_todos(self, &"subir_nivel", global_position + Vector2(0, -14))
+		avisar("Subiu para o nível %d! +%d pontos de atributo: abra a ficha (C)." % [nivel, Ficha.PONTOS_ATRIBUTO_POR_NIVEL * subiu], &"subir_nivel")
+
+
+func xp_para_subir() -> int:
+	return Ficha.xp_para_subir(nivel)
+
+
+## O dono pede para colocar 1 ponto num atributo.
+func pedir_atributo(atributo: StringName) -> void:
+	_pedir_atributo.rpc_id(1, atributo)
+
+
+@rpc("any_peer", "call_local", "reliable")
+func _pedir_atributo(atributo: StringName) -> void:
+	if not multiplayer.is_server() or not _pedido_do_dono():
+		return
+	if pontos_atributo <= 0 or not atributo in Ficha.ATRIBUTOS:
+		return
+	pontos_atributo -= 1
+	distribuidos[atributo] = distribuidos.get(atributo, 0) + 1
+	_enviar_progresso()
+
+
+func _enviar_progresso() -> void:
+	_progresso_sync.rpc(nivel, xp, pontos_atributo, pontos_habilidade, distribuidos)
+
+
+## O anfitrião manda o progresso para todos (o nível aparece no nome em cima da cabeça).
+func enviar_progresso_para(peer: int) -> void:
+	_progresso_sync.rpc_id(peer, nivel, xp, pontos_atributo, pontos_habilidade, distribuidos)
+
+
+@rpc("any_peer", "call_local", "reliable")
+func _progresso_sync(n: int, x: int, pa: int, ph: int, dist: Dictionary) -> void:
+	if not Net.veio_do_anfitriao():
+		return
+	nivel = n
+	xp = x
+	pontos_atributo = pa
+	pontos_habilidade = ph
+	# Copia antes de limpar: na chamada local, `dist` é o próprio `distribuidos`.
+	var copia := dist.duplicate()
+	distribuidos.clear()
+	for k in copia:
+		distribuidos[StringName(k)] = int(copia[k])
+	_recalcular_ficha()
+	progresso_mudou.emit()
+
+
+## Refaz a ficha com os pontos distribuídos; vida e mana máximas acompanham.
+func _recalcular_ficha() -> void:
+	var vida_antes := vida.maximo
+	ficha = Ficha.criar(raca, classe, distribuidos)
+	vida.maximo = ficha.vida_maxima()
+	if multiplayer.is_server() and vida.maximo > vida_antes:
+		vida.atual += vida.maximo - vida_antes
+		vida.mudou.emit(vida.atual, vida.maximo)
 
 
 # --- Do anfitrião para o dono -------------------------------------------------
