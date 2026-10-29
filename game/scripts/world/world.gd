@@ -46,13 +46,23 @@ enum Chao { AGUA, AREIA, GRAMA }
 @export var pedras := 16
 @export var plantas := 170
 @export var slimes := 5
+## Falso nos testes que precisam de terreno limpo (sem árvores e pedras geradas).
+@export var gerar_recursos := true
 
+const MENU := "res://scenes/ui/menu.tscn"
+
+## Só para os testes de rede: o outro jogo manda o que viu.
+signal relatorio_recebido(peer: int, dados: Dictionary)
+
+## O jogador controlado nesta máquina.
 var jogador: Player
 var noite := false
 var centro := Vector2.ZERO
 var _tipo: Dictionary[Vector2i, int] = {}
 var _distancia: Dictionary[Vector2i, float] = {}
 var _ocupados: Array[Vector2] = []
+var _removidos: Array[String] = []
+var _nascimentos: Dictionary[int, Vector2] = {}
 var _rng := RandomNumberGenerator.new()
 
 @onready var chao: TileMapLayer = $Chao
@@ -62,16 +72,29 @@ var _rng := RandomNumberGenerator.new()
 
 
 func _ready() -> void:
+	add_to_group(&"mundo")
 	_rng.seed = semente
 	centro = Vector2(largura / 2 * T + T / 2, altura / 2 * T + T / 2)
+	# O cenário nasce igual em todos os jogadores (mesma semente, mesmos nomes).
 	_gerar_chao()
 	_montar_acampamento()
 	_espalhar()
-	_criar_jogador()
-	hud.configurar(jogador)
 	_aplicar_ciclo(false, true)
+
+	if Net.iniciar() != OK:
+		_voltar_ao_menu.call_deferred()
+		return
+	multiplayer.peer_disconnected.connect(_on_peer_saiu)
+	multiplayer.connected_to_server.connect(func() -> void: _cliente_pronto.rpc_id(1))
+	multiplayer.connection_failed.connect(_on_conexao_perdida.bind("Não foi possível conectar ao anfitrião."))
+	multiplayer.server_disconnected.connect(_on_conexao_perdida.bind("O anfitrião saiu do jogo."))
+	if multiplayer.is_server():
+		_criar_slimes()
+		if Net.modo != Net.Modo.ENTRAR:
+			_criar_jogador(1)
+	else:
+		Events.aviso.emit("Conectando em %s..." % Net.endereco)
 	Sfx.tocar_musica()
-	Events.aviso.emit("Explore a clareira: segure E nas árvores e pedras.")
 
 
 func _unhandled_input(event: InputEvent) -> void:
@@ -79,8 +102,137 @@ func _unhandled_input(event: InputEvent) -> void:
 		alternar_noite()
 
 
+## Qualquer jogador pode pedir; o anfitrião troca para todos.
 func alternar_noite() -> void:
-	_aplicar_ciclo(not noite, false)
+	_pedir_ciclo.rpc_id(1)
+
+
+## O Player local chama isto ao nascer nesta máquina.
+func registrar_jogador_local(p: Player) -> void:
+	jogador = p
+	p.ponto_de_retorno = p.position
+	if not multiplayer.is_server():
+		# O jogador controlado aqui não aceita a posição enviada no nascimento
+		# (quem manda nele é este jogo), então pergunta ao anfitrião onde nascer.
+		_pedir_nascimento.rpc_id(1)
+	p.camera.limit_left = 0
+	p.camera.limit_top = 0
+	p.camera.limit_right = largura * T
+	p.camera.limit_bottom = altura * T
+	p.camera.reset_smoothing()
+	hud.configurar(p)
+	if multiplayer.is_server() and Net.modo == Net.Modo.HOSPEDAR:
+		var ips := ", ".join(Net.enderecos_locais())
+		Events.aviso.emit("Você é o anfitrião. Seus amigos entram pelo IP: %s" % (ips if ips != "" else "?"))
+	else:
+		Events.aviso.emit("Explore a clareira: segure E nas árvores e pedras.")
+
+
+func ponto_de_nascer(indice: int) -> Vector2:
+	return centro + Vector2(30 * indice, 34)
+
+
+func registrar_removido(nome: String) -> void:
+	_removidos.append(nome)
+
+
+## Aviso para todos os jogadores (chamado pelo anfitrião).
+static func avisar_todos(quem: Node, texto: String) -> void:
+	var w: World = quem.get_tree().get_first_node_in_group(&"mundo")
+	if w:
+		w._aviso_global.rpc(texto)
+
+
+# --- Rede ------------------------------------------------------------------------
+
+func _criar_jogador(peer: int) -> void:
+	var p: Player = JOGADOR.instantiate()
+	p.name = str(peer)
+	p.position = ponto_de_nascer(get_tree().get_nodes_in_group(&"jogadores").size())
+	_nascimentos[peer] = p.position
+	entidades.add_child(p, true)
+
+
+@rpc("any_peer", "reliable")
+func _pedir_nascimento() -> void:
+	var peer := multiplayer.get_remote_sender_id()
+	if multiplayer.is_server() and _nascimentos.has(peer):
+		_definir_nascimento.rpc_id(peer, _nascimentos[peer])
+
+
+@rpc("any_peer", "reliable")
+func _definir_nascimento(pos: Vector2) -> void:
+	if not Net.veio_do_anfitriao() or jogador == null:
+		return
+	jogador.global_position = pos
+	jogador.ponto_de_retorno = pos
+	jogador.camera.reset_smoothing()
+
+
+@rpc("any_peer", "reliable")
+func _cliente_pronto() -> void:
+	if not multiplayer.is_server():
+		return
+	var peer := multiplayer.get_remote_sender_id()
+	if entidades.has_node(str(peer)):
+		return
+	_criar_jogador(peer)
+	# Quem entra depois recebe o que já mudou no mundo.
+	_aplicar_ciclo_rede.rpc_id(peer, noite, true)
+	if not _removidos.is_empty():
+		_remover_recursos.rpc_id(peer, _removidos)
+	for r in get_tree().get_nodes_in_group(&"recursos"):
+		(r as ResourceNode).enviar_estado_para(peer)
+	World.avisar_todos(self, "Um amigo entrou na ilha!")
+
+
+func _on_peer_saiu(peer: int) -> void:
+	if multiplayer.is_server() and entidades.has_node(str(peer)):
+		entidades.get_node(str(peer)).queue_free()
+		World.avisar_todos(self, "Um amigo saiu da ilha.")
+
+
+func _on_conexao_perdida(motivo: String) -> void:
+	Net.ultimo_erro = motivo
+	_voltar_ao_menu()
+
+
+func _voltar_ao_menu() -> void:
+	Net.encerrar()
+	if ResourceLoader.exists(MENU) and get_tree().current_scene == self:
+		get_tree().change_scene_to_file(MENU)
+
+
+@rpc("any_peer", "reliable")
+func _remover_recursos(nomes: Array) -> void:
+	if not Net.veio_do_anfitriao():
+		return
+	for n in nomes:
+		if entidades.has_node(NodePath(n)):
+			entidades.get_node(NodePath(n)).queue_free()
+
+
+@rpc("any_peer", "call_local", "reliable")
+func _aviso_global(texto: String) -> void:
+	if Net.veio_do_anfitriao():
+		Events.aviso.emit(texto)
+
+
+@rpc("any_peer", "call_local", "reliable")
+func _pedir_ciclo() -> void:
+	if multiplayer.is_server():
+		_aplicar_ciclo_rede.rpc(not noite, false)
+
+
+@rpc("any_peer", "call_local", "reliable")
+func _aplicar_ciclo_rede(para_noite: bool, imediato: bool) -> void:
+	if Net.veio_do_anfitriao():
+		_aplicar_ciclo(para_noite, imediato)
+
+
+@rpc("any_peer", "reliable")
+func relatorio_teste(dados: Dictionary) -> void:
+	relatorio_recebido.emit(multiplayer.get_remote_sender_id(), dados)
 
 
 func tipo_do_chao(celula: Vector2i) -> int:
@@ -188,12 +340,15 @@ func _espalhar() -> void:
 			break
 		var p := _ponto_em(celulas_grama)
 		if p.distance_to(centro) > RAIO_CLAREIRA and _livre(p, 24.0):
-			var a: ResourceNode = ARVORE.instantiate()
-			a.regiao_inteiro = COPAS[_rng.randi() % COPAS.size()]
-			a.position = p
-			entidades.add_child(a)
+			var regiao := COPAS[_rng.randi() % COPAS.size()]
 			_ocupados.append(p)
 			colocadas += 1
+			if gerar_recursos:
+				var a: ResourceNode = ARVORE.instantiate()
+				a.name = "Arvore%d" % colocadas
+				a.regiao_inteiro = regiao
+				a.position = p
+				entidades.add_child(a)
 
 	colocadas = 0
 	for i in pedras * 8:
@@ -201,41 +356,40 @@ func _espalhar() -> void:
 			break
 		var p := _ponto_em(celulas_grama)
 		if p.distance_to(centro) > 60.0 and _livre(p, 18.0):
-			var pd: ResourceNode = PEDRA.instantiate()
-			if _rng.randf() < 0.4:
-				pd.regiao_inteiro = Rect2(256, 128, 32, 32)
-			pd.position = p
-			entidades.add_child(pd)
+			var cinza := _rng.randf() < 0.4
 			_ocupados.append(p)
 			colocadas += 1
+			if gerar_recursos:
+				var pd: ResourceNode = PEDRA.instantiate()
+				pd.name = "Pedra%d" % colocadas
+				if cinza:
+					pd.regiao_inteiro = Rect2(256, 128, 32, 32)
+				pd.position = p
+				entidades.add_child(pd)
 
 	for i in plantas:
 		var p := _ponto_em(celulas_grama)
 		if p.distance_to(centro) > 30.0 and _livre(p, 8.0):
 			_sprite(TEX_NATUREZA, PLANTAS[_rng.randi() % PLANTAS.size()], p)
 
-	colocadas = 0
+
+## Só o anfitrião cria os slimes; o MultiplayerSpawner copia para os outros.
+func _criar_slimes() -> void:
+	var celulas_grama: Array[Vector2i] = []
+	for cel in _tipo:
+		if _tipo[cel] == Chao.GRAMA and _distancia[cel] < 0.82:
+			celulas_grama.append(cel)
+	var colocadas := 0
 	for i in slimes * 20:
 		if colocadas >= slimes:
 			break
 		var p := _ponto_em(celulas_grama)
 		if p.distance_to(centro) > 150.0 and _livre(p, 14.0):
-			var s: Slime = SLIME.instantiate()
-			s.position = p
-			entidades.add_child(s)
 			colocadas += 1
-
-
-func _criar_jogador() -> void:
-	jogador = JOGADOR.instantiate()
-	jogador.position = centro + Vector2(0, 34)
-	entidades.add_child(jogador)
-	var cam: Camera2D = jogador.get_node("Camera2D")
-	cam.limit_left = 0
-	cam.limit_top = 0
-	cam.limit_right = largura * T
-	cam.limit_bottom = altura * T
-	cam.reset_smoothing()
+			var s: Slime = SLIME.instantiate()
+			s.name = "Slime%d" % colocadas
+			s.position = p
+			entidades.add_child(s, true)
 
 
 func _ponto_em(celulas: Array[Vector2i]) -> Vector2:

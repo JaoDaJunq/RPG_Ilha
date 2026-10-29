@@ -1,4 +1,4 @@
-[gd_scene load_steps=8 format=3]
+[gd_scene load_steps=9 format=3]
 
 [ext_resource type="Script" path="res://scripts/player/player.gd" id="1_player"]
 [ext_resource type="Script" path="res://scripts/components/health_component.gd" id="2_vida"]
@@ -11,6 +11,14 @@ radius = 4.5
 
 [sub_resource type="RectangleShape2D" id="Shape_hurt"]
 size = Vector2(10, 14)
+
+[sub_resource type="SceneReplicationConfig" id="Replicacao"]
+properties/0/path = NodePath(".:position")
+properties/0/spawn = true
+properties/0/replication_mode = 1
+properties/1/path = NodePath(".:animacao")
+properties/1/spawn = true
+properties/1/replication_mode = 2
 
 [node name="Player" type="CharacterBody2D"]
 collision_layer = 2
@@ -51,3 +59,6 @@ position = Vector2(0, -8)
 zoom = Vector2(3, 3)
 position_smoothing_enabled = true
 position_smoothing_speed = 8.0
+
+[node name="Sync" type="MultiplayerSynchronizer" parent="."]
+replication_config = SubResource("Replicacao")

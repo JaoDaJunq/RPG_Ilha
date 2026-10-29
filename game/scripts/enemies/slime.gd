@@ -2,6 +2,7 @@ class_name Slime
 extends CharacterBody2D
 ## Slime: persegue o jogador mais próximo e machuca no contato.
 ## Golpe físico tira 1 de vida e empurra; fogo tira 2.
+## Rede: só o anfitrião pensa e move o slime; os outros recebem posição e animação.
 
 const TEXTURA := preload("res://assets/placeholder/ninja/actors/slime.png")
 
@@ -9,6 +10,8 @@ const TEXTURA := preload("res://assets/placeholder/ninja/actors/slime.png")
 @export var raio_visao := 90.0
 @export var dano_contato := 12.0
 @export var recarga_contato := 1.0
+## Animação atual (sincronizada).
+@export var animacao: StringName = &"pulo_baixo"
 
 var _recarga := 0.0
 var _empurrao := Vector2.ZERO
@@ -24,12 +27,17 @@ func _ready() -> void:
 	f.remove_animation(&"default")
 	SpriteSheets.adicionar_por_direcao(f, TEXTURA, "pulo", Vector2i(16, 16), 0, 4, 6.0)
 	visual.sprite_frames = f
-	visual.play(&"pulo_baixo")
-	hurtbox.atingido.connect(_on_atingido)
-	vida.morreu.connect(_on_morreu)
+	visual.play(animacao)
+	if multiplayer.is_server():
+		hurtbox.atingido.connect(_on_atingido)
+		vida.morreu.connect(_on_morreu)
 
 
 func _physics_process(delta: float) -> void:
+	if not multiplayer.is_server():
+		if visual.animation != animacao:
+			visual.play(animacao)
+		return
 	_recarga = maxf(0.0, _recarga - delta)
 	var alvo := _jogador_mais_proximo()
 	var dir := Vector2.ZERO
@@ -37,11 +45,12 @@ func _physics_process(delta: float) -> void:
 		var para_alvo := alvo.global_position - global_position
 		if para_alvo.length() < raio_visao:
 			dir = para_alvo.normalized()
-			visual.play(StringName("pulo_%s" % SpriteSheets.direcao_de(dir)))
+			animacao = StringName("pulo_%s" % SpriteSheets.direcao_de(dir))
+			visual.play(animacao)
 		if para_alvo.length() < 12.0 and _recarga <= 0.0:
 			_recarga = recarga_contato
-			alvo.vida.tomar_dano(dano_contato, &"fisico")
-			Events.aviso.emit("O slime te acertou! Clique para golpear.")
+			if alvo.vida.tomar_dano(dano_contato, &"fisico"):
+				alvo.avisar("O slime te acertou! Clique para golpear.")
 	velocity = dir * velocidade + _empurrao
 	_empurrao = _empurrao.move_toward(Vector2.ZERO, 400.0 * delta)
 	move_and_slide()
@@ -62,14 +71,19 @@ func _on_atingido(quantidade: float, tipo: StringName, origem: Node) -> void:
 	var dano := quantidade * (2.0 if tipo == &"fogo" else 1.0)
 	if not vida.tomar_dano(dano, tipo):
 		return
-	Sfx.tocar(&"acerto", -10.0)
 	if origem is Node2D:
 		_empurrao = (global_position - origem.global_position).normalized() * 160.0
+	_piscar.rpc()
+
+
+@rpc("authority", "call_local", "reliable")
+func _piscar() -> void:
+	Sfx.tocar(&"acerto", -10.0)
 	var t := create_tween()
 	t.tween_property(visual, "modulate", Color(1.0, 0.5, 0.5), 0.05)
 	t.tween_property(visual, "modulate", Color.WHITE, 0.2)
 
 
 func _on_morreu() -> void:
-	Events.aviso.emit("Slime derrotado!")
+	World.avisar_todos(self, "Slime derrotado!")
 	queue_free()

@@ -4,9 +4,11 @@ Co-op online de sobrevivência e exploração numa ilha de fantasia que reage ao
 
 ## Estado
 
-**Etapa 0 (fundação) quase concluída.** A base do jogo foi refeita em cenas e componentes, com placeholders CC0 do Ninja Adventure. Falta o João aprovar a direção de arte (conceitos em `art/conceitos/mundo/`). Próximo passo: multiplayer (Etapa 1). Tarefas em [design/backlog.md](design/backlog.md).
+**Etapa 0 concluída; Etapa 1 (multiplayer) quase concluída.** A base do jogo está em cenas e componentes, com placeholders CC0 do Ninja Adventure. A direção de arte foi aprovada (B = dia, A = noite) e o primeiro lote de sprites próprios espera aprovação. Tarefas em [design/backlog.md](design/backlog.md).
 
-**O que já funciona (solo):**
+**O que já funciona (sozinho ou com amigos):**
+- Menu: jogar sozinho, hospedar ou entrar pelo IP do anfitrião (até 4 jogadores).
+- Multiplayer: cada um com a sua câmera; o anfitrião cuida do mundo (árvores, slimes, dano, inventário, dia e noite) e quem entra depois vê o que já mudou.
 - Ilha gerada (sempre a mesma), com água que bloqueia, areia, grama, árvores, pedras, plantas e slimes.
 - Acampamento com fogueira e barraca; a fogueira ilumina à noite.
 - Mouse seleciona o objeto; a caixa em cima dele diz o que fazer e se está perto o bastante.
@@ -15,12 +17,16 @@ Co-op online de sobrevivência e exploração numa ilha de fantasia que reage ao
 - Golpe com clique esquerdo; slimes perseguem e machucam; ao desmaiar, o jogador volta ao acampamento.
 - N alterna dia e noite; M liga/desliga o som.
 
-**Ainda não tem:** multiplayer, salvar, inventário com slots, fabricação, construção, classes e árvore de habilidades, arte própria.
+**Ainda não tem:** guia para jogar pela internet (fora da mesma rede), salvar, inventário com slots, fabricação, construção, classes e árvore de habilidades, arte própria.
 
 ## Como rodar
 
 1. Abra o Godot 4.7.2, clique em **Importar** e escolha `game/project.godot`.
-2. Aperte **F5**.
+2. Aperte **F5** e escolha no menu.
+
+**Jogar com amigos na mesma rede (casa, Wi-Fi):** um clica em **Hospedar para amigos**; o menu mostra o IP dele (ex.: 192.168.0.10). Os outros digitam esse IP e clicam em **Entrar**. Pela internet ainda precisa de um programa como Tailscale ou ZeroTier (guia na T14).
+
+Atalhos para testar sem o menu: `-- --solo`, `-- --hospedar` ou `-- --entrar=IP` no fim do comando do Godot.
 
 | Ação | Tecla |
 |---|---|
@@ -39,7 +45,13 @@ Da raiz do repositório (rodam sem janela):
 bash game/tools/rodar_testes.sh
 ```
 
-Roda todas as cenas `game/tests/*_smoke.tscn` (coleta, fogo, combate e mundo) e termina com `BATERIA: tudo OK`.
+Roda todas as cenas `game/tests/*_smoke.tscn` (coleta, fogo, combate, mundo e rede) e termina com `BATERIA: tudo OK`. O teste de rede abre um segundo Godot que entra pelo 127.0.0.1, corta uma árvore e anda; os dois lados são conferidos.
+
+Prints das duas janelas em rede (salva em `evidence/rede/`):
+
+```bash
+"$LOCALAPPDATA/Programs/Godot/4.7.2/Godot_v4.7.2-stable_win64_console.exe" --path game --resolution 960x540 --position 0,60 res://tests/rede_smoke.tscn -- --com-prints
+```
 
 Prints de dentro do jogo (abre uma janela por alguns segundos e salva em `evidence/fundacao/`):
 
@@ -63,7 +75,7 @@ art/conceitos/       imagens de conceito (não vão para o jogo)
 assets/manifest.csv  origem e licença de cada asset
 evidence/            prints e provas das entregas
 game/
-  autoload/          Events (sinais globais) e Sfx (som)
+  autoload/          Events (sinais globais), Net (conexão) e Sfx (som)
   scripts/components vida, inventário, área de acerto, área de interação, inflamável
   scripts/…          jogador, mundo, recursos, slime, bola de fogo, HUD
   scenes/            cenas de cada coisa (jogador, árvore, pedra, slime, bola de fogo, mundo)

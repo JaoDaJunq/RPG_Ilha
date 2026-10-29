@@ -5,6 +5,9 @@ extends StaticBody2D
 ## Estados: INTEIRO → (fogo) QUEIMANDO → QUEIMADO → (coleta) ESGOTADO
 ##          INTEIRO → (coleta) ESGOTADO
 ## Cortar rende o item normal; queimar transforma o que ele rende (árvore → carvão).
+##
+## Rede: as árvores e pedras nascem iguais em todos os jogadores (mesma semente e mesmos
+## nomes). Só o anfitrião muda o estado e avisa todo mundo com _definir_estado.
 
 enum Estado { INTEIRO, QUEIMANDO, QUEIMADO, ESGOTADO }
 
@@ -34,6 +37,7 @@ var _golpes_restantes: int
 
 
 func _ready() -> void:
+	add_to_group(&"recursos")
 	_golpes_restantes = golpes
 	hurtbox.atingido.connect(_on_atingido)
 	if inflamavel:
@@ -63,56 +67,76 @@ func destacar(ligado: bool) -> void:
 	sprite.modulate = Color(1.15, 1.15, 1.05) if ligado else Color.WHITE
 
 
-## Um "golpe" de coleta. Chamado pelo jogador a cada ciclo de segurar E.
-## (No multiplayer, só o anfitrião chama isto.)
-func interagir(quem: Node) -> void:
-	if not pode_interagir():
+## Um "golpe" de coleta. Só o anfitrião chama (o jogador pede pela rede).
+func interagir(quem: Player) -> void:
+	if not multiplayer.is_server() or not pode_interagir():
 		return
-	Sfx.tocar(&"golpe_coleta")
-	_tremer()
 	if estado == Estado.QUEIMADO:
 		_entregar(quem, item_queimado, quantidade_queimado)
-		_esgotar()
+		_definir_estado.rpc(Estado.ESGOTADO, 0, true)
 		return
-	_golpes_restantes -= 1
-	if _golpes_restantes <= 0:
+	var restantes := _golpes_restantes - 1
+	if restantes <= 0:
 		_entregar(quem, item_id, quantidade)
-		_esgotar()
+		_definir_estado.rpc(Estado.ESGOTADO, 0, true)
+	else:
+		_definir_estado.rpc(estado, restantes, true)
 
 
 func golpes_restantes() -> int:
 	return _golpes_restantes
 
 
+## O anfitrião manda o estado para um jogador que acabou de entrar.
+func enviar_estado_para(peer: int) -> void:
+	if estado != Estado.INTEIRO or _golpes_restantes != golpes:
+		_definir_estado.rpc_id(peer, estado, _golpes_restantes, false)
+
+
+@rpc("any_peer", "call_local", "reliable")
+func _definir_estado(novo: Estado, restantes: int, com_golpe: bool) -> void:
+	if not Net.veio_do_anfitriao():
+		return
+	_golpes_restantes = restantes
+	if com_golpe:
+		Sfx.tocar(&"golpe_coleta")
+		_tremer()
+	if novo == estado:
+		return
+	estado = novo
+	if chamas:
+		chamas.visible = estado == Estado.QUEIMANDO
+	match estado:
+		Estado.QUEIMANDO:
+			Sfx.tocar(&"fogo")
+		Estado.QUEIMADO:
+			_mostrar(regiao_queimado)
+		Estado.ESGOTADO:
+			destacar(false)
+			if some_ao_esgotar:
+				if multiplayer.is_server():
+					get_tree().call_group(&"mundo", &"registrar_removido", name)
+				queue_free()
+			else:
+				_mostrar(regiao_esgotado)
+
+
 func _on_atingido(_quantidade: float, tipo: StringName, _origem: Node) -> void:
+	if not multiplayer.is_server():
+		return
 	if tipo == &"fogo" and estado == Estado.INTEIRO and inflamavel and inflamavel.acender():
-		estado = Estado.QUEIMANDO
-		chamas.visible = true
-		Sfx.tocar(&"fogo")
-		Events.aviso.emit("A árvore pegou fogo! Queimada, ela vira carvão em vez de madeira.")
+		_definir_estado.rpc(Estado.QUEIMANDO, _golpes_restantes, false)
+		World.avisar_todos(self, "Uma árvore pegou fogo! Queimada, ela vira carvão em vez de madeira.")
 
 
 func _on_queimou() -> void:
-	estado = Estado.QUEIMADO
-	chamas.visible = false
-	_mostrar(regiao_queimado)
+	if multiplayer.is_server():
+		_definir_estado.rpc(Estado.QUEIMADO, _golpes_restantes, false)
 
 
-func _entregar(quem: Node, item: StringName, qtd: int) -> void:
-	var inv: Inventory = quem.get_node_or_null("Inventory")
-	if inv:
-		inv.adicionar(item, qtd)
-		Sfx.tocar(&"item")
-		Events.aviso.emit("+%d %s" % [qtd, ItemData.carregar(item).nome.to_lower()])
-
-
-func _esgotar() -> void:
-	estado = Estado.ESGOTADO
-	destacar(false)
-	if some_ao_esgotar:
-		queue_free()
-		return
-	_mostrar(regiao_esgotado)
+func _entregar(quem: Player, item: StringName, qtd: int) -> void:
+	quem.inventario.adicionar(item, qtd)
+	quem.avisar("+%d %s" % [qtd, ItemData.carregar(item).nome.to_lower()], &"item")
 
 
 func _mostrar(regiao: Rect2) -> void:

@@ -10,6 +10,8 @@
 | 29/10/2026 | Repositório em `C:\projetos\ilha_viva`, seguindo o processo do Smash Junq (AGENTS.md, pedidos de arte ao Codex, manifesto, testes headless). |
 | 29/10/2026 | Placeholders só do pacote **Ninja Adventure (CC0)**, para não misturar estilos enquanto a arte própria não chega. |
 | 29/10/2026 | Árvore queimada vira **tronco queimado** que rende **carvão** em vez de madeira (consequência previsível do fogo). |
+| 29/10/2026 | Direção de arte aprovada: conceito **B = dia** e conceito **A = noite** da mesma ilha (a noite é feita pelo jogo com luz, não com sprites diferentes). |
+| 29/10/2026 | Multiplayer: um jogador é o anfitrião e manda no mundo; cada jogador controla o próprio movimento. Coletar, golpear, lançar e dia/noite são pedidos que o anfitrião confere. Modo solo usa o mesmo código. |
 
 ## Em aberto (o João decide)
 

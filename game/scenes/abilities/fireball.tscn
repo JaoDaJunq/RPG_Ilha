@@ -1,10 +1,18 @@
-[gd_scene load_steps=4 format=3]
+[gd_scene load_steps=5 format=3]
 
 [ext_resource type="Script" path="res://scripts/abilities/fireball.gd" id="1_bola"]
 [ext_resource type="Texture2D" path="res://assets/luz/luz_radial.tres" id="2_luz"]
 
 [sub_resource type="CircleShape2D" id="Shape_bola"]
 radius = 4.0
+
+[sub_resource type="SceneReplicationConfig" id="Replicacao"]
+properties/0/path = NodePath(".:position")
+properties/0/spawn = true
+properties/0/replication_mode = 1
+properties/1/path = NodePath(".:direcao")
+properties/1/spawn = true
+properties/1/replication_mode = 0
 
 [node name="Fireball" type="Area2D"]
 script = ExtResource("1_bola")
@@ -19,3 +27,6 @@ color = Color(1, 0.6, 0.25, 1)
 energy = 0.7
 texture = ExtResource("2_luz")
 texture_scale = 0.6
+
+[node name="Sync" type="MultiplayerSynchronizer" parent="."]
+replication_config = SubResource("Replicacao")

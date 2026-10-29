@@ -12,12 +12,13 @@ config_version=5
 
 config/name="Ilha Viva"
 config/description="Co-op de sobrevivência e exploração numa ilha de fantasia (nome provisório)."
-run/main_scene="res://scenes/world/world.tscn"
+run/main_scene="res://scenes/ui/menu.tscn"
 config/features=PackedStringArray("4.7", "GL Compatibility")
 
 [autoload]
 
 Events="*res://autoload/events.gd"
+Net="*res://autoload/net.gd"
 Sfx="*res://autoload/sfx.gd"
 
 [display]

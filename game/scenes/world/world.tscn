@@ -15,3 +15,7 @@ y_sort_enabled = true
 
 [node name="HUD" type="CanvasLayer" parent="."]
 script = ExtResource("2_hud")
+
+[node name="Spawner" type="MultiplayerSpawner" parent="."]
+_spawnable_scenes = PackedStringArray("res://scenes/player/player.tscn", "res://scenes/enemies/slime.tscn", "res://scenes/abilities/fireball.tscn")
+spawn_path = NodePath("../Entidades")

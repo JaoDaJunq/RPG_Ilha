@@ -2,21 +2,21 @@
 
 Lista oficial de tarefas. Marcar `[x]` só com prova (teste OK ou print revisado). Cada etapa termina com aprovação do João.
 
-## Etapa 0: fundação (em andamento)
+## Etapa 0: fundação (concluída)
 
 - [x] T01 Repositório, AGENTS.md, GDD, backlog, bíblia visual (rascunho), manifesto de assets.
 - [x] T02 Projeto Godot com o Input Map (WASD, E, clique, 1–6, N, M) e pixels nítidos.
 - [x] T03 Componentes: vida, interagível, inflamável, saque e inventário.
 - [x] T04 Cenas: jogador com câmera, árvore, pedra, slime, bola de fogo, mundo e HUD (com placeholders CC0).
 - [x] T05 Testes de fumaça headless + script `rodar_testes.sh` + print dentro do jogo.
-- [ ] T06 Conceito visual feito pelo Codex e aprovado pelo João (`art/prompts/pedidos/C01_conceito_visual.md`).
+- [x] T06 Conceito visual aprovado (29/10): B = dia, A = noite. Bíblia em `design/identidade.md`.
 
-## Etapa 1: multiplayer desde já
+## Etapa 1: multiplayer desde já (em andamento)
 
-- [ ] T10 Menu simples: Hospedar / Entrar (IP) / Solo.
-- [ ] T11 ENet com anfitrião autoritativo: spawn dos jogadores, cada um com a sua câmera.
-- [ ] T12 Sincronizar movimento (MultiplayerSynchronizer) e as ações no mundo (interagir, lançar, dano) via RPC validada pelo anfitrião.
-- [ ] T13 Teste em duas janelas + teste automático de host/cliente na mesma máquina.
+- [x] T10 Menu simples: Jogar sozinho / Hospedar / Entrar (IP).
+- [x] T11 ENet com anfitrião no comando: cada jogador nasce no acampamento com a sua câmera.
+- [x] T12 Movimento sincronizado; coletar, golpear, bola de fogo, dano, inventário e dia/noite passam pelo anfitrião. Quem entra depois recebe o que já mudou.
+- [x] T13 Teste automático com dois jogos de verdade (`rede_smoke`) + prints das duas janelas em `evidence/rede/`.
 - [ ] T14 Guia para jogar pela internet com Tailscale/ZeroTier.
 
 ## Etapa 2: fatia jogável em rede
@@ -42,7 +42,8 @@ Lista oficial de tarefas. Marcar `[x]` só com prova (teste OK ou print revisado
 
 ## Arte (contínuo, pelo Codex)
 
-- [ ] A01 Conceito visual (T06) → bíblia visual aprovada.
+- [x] A01 Conceito visual (T06) → bíblia visual aprovada.
+- [ ] A01b Lote L01 (aventureiro, árvore, pedras): gerado pelo Codex em 29/10, aguardando aprovação do João para integrar.
 - [ ] A02 Tileset da clareira (grama, terra, areia, água) no padrão aprovado.
 - [ ] A03 Personagem provisório próprio (4 direções: parado, andar, atacar, coletar).
 - [ ] A04 Árvore (inteira, sendo cortada, toco, queimada), pedra, slime.

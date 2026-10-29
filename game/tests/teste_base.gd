@@ -31,11 +31,8 @@ func criar_mundo(slimes := 0, limpar := true) -> World:
 	Sfx.ligado = false
 	var w: World = MUNDO.instantiate()
 	w.slimes = slimes
+	w.gerar_recursos = not limpar
 	add_child(w)
-	if limpar:
-		for n in w.entidades.get_children():
-			if n is ResourceNode:
-				n.free()
 	await get_tree().physics_frame
 	return w
 
@@ -45,6 +42,15 @@ func colocar(w: World, cena: PackedScene, pos: Vector2) -> Node2D:
 	n.position = pos
 	w.entidades.add_child(n)
 	return n
+
+
+## Salva o que está na tela em evidence/<caminho> (precisa de janela).
+func salvar_print(caminho: String) -> void:
+	var destino := ProjectSettings.globalize_path("res://").path_join("../evidence").path_join(caminho)
+	DirAccess.make_dir_recursive_absolute(destino.get_base_dir())
+	await RenderingServer.frame_post_draw
+	var erro := get_viewport().get_texture().get_image().save_png(destino)
+	checar(erro == OK, "print salvo: " + caminho)
 
 
 ## Segura E por `segundos` mirando no ponto indicado.

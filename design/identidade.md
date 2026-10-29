@@ -1,31 +1,52 @@
-# Identidade visual (rascunho)
+# Identidade visual (bíblia)
 
-> **Rascunho.** Nada aqui está aprovado. Vira regra depois que o João escolher o conceito do pedido C01 (`art/prompts/pedidos/C01_conceito_visual.md`).
+> **Aprovada pelo João em 29/10/2026:** o conceito **B** é o visual de **dia** e o conceito **A** é a **noite** da mesma ilha. Referências: `art/conceitos/mundo/clareira_b_v1.png` (dia) e `art/conceitos/mundo/clareira_a_v1.png` (noite). Todo pedido de arte anexa as duas.
+>
+> Os números técnicos abaixo (tamanhos, contorno, paleta) são a primeira tradução dos conceitos para o jogo. Eles se confirmam no primeiro lote de sprites, com print dentro do jogo.
 
 ## Sensação
 
-Uma ilha de fantasia **colorida de dia e misteriosa à noite**. Inspirada no Core Keeper: personagens pequenos num mundo cheio de detalhe, **iluminação** fazendo boa parte do trabalho (fogueira, magia, cogumelos que brilham), contraste forte entre luz quente e sombra fria.
+Uma ilha de fantasia **viva, colorida e convidativa de dia**, que fica **misteriosa e aconchegante à noite**. Personagens pequenos num mundo grande e cheio de detalhe. Ruínas antigas cobertas de musgo sugerem segredos.
 
-## Proposta técnica (a confirmar com o conceito)
+- **Dia (B):** sol filtrado pelas copas, verdes amarelados e saturados, água turquesa, árvores de flor rosa, flores e frutas coloridas. Alegre sem ficar infantil.
+- **Noite (A):** sombras azul-arroxeadas frias e luz quente de fogueira e magia. Cogumelos que brilham em azul-esverdeado, slimes verdes translúcidos. **A noite é feita pelo jogo** (escurecer + luzes), não por sprites diferentes: os sprites são desenhados de dia.
 
-| Item | Proposta |
+## Padrão técnico
+
+| Item | Padrão |
 |---|---|
-| Perspectiva | Visão de cima em 3/4 (vê o topo e a frente das coisas), como Core Keeper e Stardew |
-| Tile | 16 × 16 px |
-| Personagem | cerca de 24 px de altura (1,5 tile), cabeça grande, silhueta clara |
-| Escala no jogo | zoom inteiro (3× ou 4×), sem filtro: pixels nítidos |
-| Contorno | 1 px, cor escura da paleta (não preto puro) |
-| Sombra | 2 tons por material, luz vindo de cima-esquerda |
-| Direções | 4 (baixo, cima, esquerda, direita); direita pode ser espelho da esquerda se a roupa for simétrica |
-| Luz | O sprite não traz brilho desenhado; o jogo adiciona luz (PointLight2D) e o ciclo dia/noite |
+| Perspectiva | Visão de cima em 3/4: vê o topo e a frente das coisas |
+| Tile do chão | 16 × 16 px |
+| Personagem | Quadro de 32 × 32 px, personagem com cerca de 28 px de altura (pés na linha 30) |
+| Proporção | Chibi: cabeça grande (≈ 40% da altura), olhos grandes, corpo curto, silhueta clara |
+| Árvore grande | Quadro de 64 × 64 px (copa larga; o tronco toca o chão no centro de baixo) |
+| Pedra, arbusto, objeto pequeno | Quadro de 32 × 32 px |
+| Contorno | 1 px, escuro e colorido (marrom-escuro ou verde-escuro, nunca preto puro) |
+| Sombreamento | 2–3 tons por material, luz vindo de cima-esquerda |
+| Direções | Personagens e criaturas: baixo, cima e direita (a esquerda é espelho da direita) |
+| No jogo | Zoom inteiro (3×), sem filtro: pixels nítidos |
 
-## Regras que já valem (herdadas do Smash Junq)
+## Paleta (âncoras tiradas dos conceitos)
 
-- Cada folha tem **só o objeto ou personagem**; nada de chão, sombra projetada, rastro, poeira ou brilho (o jogo faz os efeitos).
-- Todo objeto que muda de estado tem uma imagem para cada estado (árvore inteira, sendo cortada, toco, queimada).
-- O mesmo personagem tem o mesmo tamanho, as mesmas cores e o mesmo contorno em todas as folhas.
+| Grupo | Cores |
+|---|---|
+| Grama de dia | `#B0D050` `#90B030` `#709030` `#507030` |
+| Folhagem e sombra verde | `#509050` `#307050` `#305030` `#105030` |
+| Pedra e ruína | `#707070` `#505050` `#303030` (+ musgo `#709030`) |
+| Areia e terra | `#E8D08A` `#C8A060` `#8A6038` |
+| Água | `#40C8D8` `#2090B0` (espuma `#E8F8F8`) |
+| Flores e acentos | rosa `#E890B0`, vermelho `#D04040`, azul `#5070D0`, amarelo `#F0D040` |
+| Noite (feita pelo jogo) | sombra `#101030` `#103050` `#303050`; luz `#F0A040`; brilho mágico `#40E0D0` |
+
+## Regras de produção (valem para todo sprite)
+
+- Cada folha tem **só o objeto ou personagem**. Nada de chão, sombra projetada, rastro, poeira, faísca ou brilho (o jogo faz os efeitos e a luz).
+- **Todo estado tem a sua imagem** (árvore inteira, com marcas de machado, queimada, toco).
+- O mesmo personagem tem o mesmo tamanho, cores e contorno em todas as folhas.
+- Fundo magenta chapado `#FF00FF` nas folhas; o Claude troca por transparente.
 - Nada parecido com personagem ou marca famosa.
+- Aprovação só depois de ver o sprite **dentro do jogo**, ao lado dos outros, no zoom real.
 
 ## Placeholders atuais
 
-Pacote **Ninja Adventure** (Pixel-boy e AAA, CC0), escolhido por ser de um estilo só e 16 px. Não é a direção final; serve para testar a mecânica sem misturar estilos.
+Pacote **Ninja Adventure** (Pixel-boy e AAA, CC0), até os sprites próprios serem aprovados. Ele usa personagem de 16 px; os sprites novos têm o dobro, então a troca é por conjunto (personagem + árvores + pedras juntos), não peça por peça.
