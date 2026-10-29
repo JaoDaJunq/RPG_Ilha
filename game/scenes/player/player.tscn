@@ -10,7 +10,7 @@
 radius = 4.5
 
 [sub_resource type="RectangleShape2D" id="Shape_hurt"]
-size = Vector2(10, 14)
+size = Vector2(12, 22)
 
 [sub_resource type="SceneReplicationConfig" id="Replicacao"]
 properties/0/path = NodePath(".:position")
@@ -27,7 +27,7 @@ motion_mode = 1
 script = ExtResource("1_player")
 
 [node name="Visual" type="AnimatedSprite2D" parent="."]
-position = Vector2(0, -8)
+position = Vector2(0, -14)
 
 [node name="Colisao" type="CollisionShape2D" parent="."]
 position = Vector2(0, -3)
@@ -44,18 +44,18 @@ script = ExtResource("3_inv")
 script = ExtResource("4_hurt")
 
 [node name="Forma" type="CollisionShape2D" parent="Hurtbox"]
-position = Vector2(0, -7)
+position = Vector2(0, -11)
 shape = SubResource("Shape_hurt")
 
 [node name="Luz" type="PointLight2D" parent="." groups=["luzes_noturnas"]]
-position = Vector2(0, -8)
+position = Vector2(0, -14)
 color = Color(1, 0.86, 0.62, 1)
 energy = 0.35
 texture = ExtResource("5_luz")
 texture_scale = 0.6
 
 [node name="Camera2D" type="Camera2D" parent="."]
-position = Vector2(0, -8)
+position = Vector2(0, -14)
 zoom = Vector2(3, 3)
 position_smoothing_enabled = true
 position_smoothing_speed = 8.0

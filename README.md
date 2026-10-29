@@ -17,7 +17,7 @@ Co-op online de sobrevivência e exploração numa ilha de fantasia que reage ao
 - Golpe com clique esquerdo; slimes perseguem e machucam; ao desmaiar, o jogador volta ao acampamento.
 - N alterna dia e noite; M liga/desliga o som.
 
-**Ainda não tem:** guia para jogar pela internet (fora da mesma rede), salvar, inventário com slots, fabricação, construção, classes e árvore de habilidades, arte própria.
+**Ainda não tem:** guia para jogar pela internet (fora da mesma rede), salvar, inventário com slots, fabricação, construção, classes e árvore de habilidades, arte própria do chão, do acampamento, do slime e dos efeitos (o aventureiro, as árvores e as pedras já são próprios).
 
 ## Como rodar
 
@@ -81,7 +81,7 @@ game/
   scenes/            cenas de cada coisa (jogador, árvore, pedra, slime, bola de fogo, mundo)
   data/items/        itens como dados (.tres)
   tests/             testes de fumaça e prints
-  tools/             scripts de apoio (controles, bateria de testes)
+  tools/             scripts de apoio (controles, bateria de testes, importar_folha: folha do Codex → sprite do jogo)
 ```
 
 ## Como as coisas conversam

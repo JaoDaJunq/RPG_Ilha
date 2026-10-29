@@ -2,16 +2,16 @@
 
 importer="texture"
 type="CompressedTexture2D"
-uid="uid://ccjqlaxhn8sfx"
-path="res://.godot/imported/heroi.png-5e7620722116680b9a1daa42ed4a6c0f.ctex"
+uid="uid://c15vtepmrql0m"
+path="res://.godot/imported/pedra.png-6b13f54cdc44428ee519a3e5c541a0c5.ctex"
 metadata={
 "vram_texture": false
 }
 
 [deps]
 
-source_file="res://assets/placeholder/ninja/actors/heroi.png"
-dest_files=["res://.godot/imported/heroi.png-5e7620722116680b9a1daa42ed4a6c0f.ctex"]
+source_file="res://assets/sprites/natureza/pedra.png"
+dest_files=["res://.godot/imported/pedra.png-6b13f54cdc44428ee519a3e5c541a0c5.ctex"]
 
 [params]
 

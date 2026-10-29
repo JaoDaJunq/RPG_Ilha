@@ -8,7 +8,7 @@ extends CharacterBody2D
 ## (coletar, golpear, lançar) é um PEDIDO ao anfitrião, que confere e executa.
 ## Vida e inventário são do anfitrião, que manda os valores ao dono.
 
-const TEXTURA := preload("res://assets/placeholder/ninja/actors/heroi.png")
+const TEXTURA := preload("res://assets/sprites/personagens/aventureiro.png")
 const BOLA_DE_FOGO := preload("res://scenes/abilities/fireball.tscn")
 
 @export var velocidade := 80.0
@@ -158,7 +158,7 @@ func _pedir_golpe(dir: Vector2) -> void:
 	forma.radius = alcance_golpe * 0.6
 	var consulta := PhysicsShapeQueryParameters2D.new()
 	consulta.shape = forma
-	consulta.transform = Transform2D(0.0, global_position + Vector2(0, -6) + dir * alcance_golpe * 0.6)
+	consulta.transform = Transform2D(0.0, global_position + Vector2(0, -10) + dir * alcance_golpe * 0.6)
 	consulta.collide_with_areas = true
 	consulta.collide_with_bodies = false
 	consulta.collision_mask = 1 << 4
@@ -175,7 +175,7 @@ func _pedir_bola_de_fogo(dir: Vector2) -> void:
 	var bola: Fireball = BOLA_DE_FOGO.instantiate()
 	bola.lancador = self
 	bola.direcao = dir.normalized()
-	bola.position = global_position + Vector2(0, -6) + bola.direcao * 8.0
+	bola.position = global_position + Vector2(0, -10) + bola.direcao * 8.0
 	get_parent().add_child(bola, true)
 
 
@@ -289,11 +289,32 @@ func _animar(entrada: Vector2) -> void:
 	visual.play(animacao)
 
 
+## Folha do aventureiro (L01): 0 frente, 1 costas, 2 direita, 3 andando de frente,
+## 4 andando para a direita. A esquerda é o espelho da direita. Enquanto não chegam
+## mais quadros, o passo alterna parado/andando e o golpe usa a pose de passo.
 func _montar_frames() -> SpriteFrames:
+	var t := Vector2i(32, 32)
+	var frente: Texture2D = SpriteSheets.quadro(TEXTURA, 0, t)
+	var costas: Texture2D = SpriteSheets.quadro(TEXTURA, 1, t)
+	var direita: Texture2D = SpriteSheets.quadro(TEXTURA, 2, t)
+	var esquerda: Texture2D = SpriteSheets.quadro(TEXTURA, 2, t, true)
+	var passo_frente: Texture2D = SpriteSheets.quadro(TEXTURA, 3, t)
+	var passo_frente_b: Texture2D = SpriteSheets.quadro(TEXTURA, 3, t, true)
+	var passo_costas: Texture2D = SpriteSheets.quadro(TEXTURA, 1, t, false, 1)
+	var passo_direita: Texture2D = SpriteSheets.quadro(TEXTURA, 4, t)
+	var passo_esquerda: Texture2D = SpriteSheets.quadro(TEXTURA, 4, t, true)
 	var f := SpriteFrames.new()
 	f.remove_animation(&"default")
-	var t := Vector2i(16, 16)
-	SpriteSheets.adicionar_por_direcao(f, TEXTURA, "parado", t, 0, 1, 1.0)
-	SpriteSheets.adicionar_por_direcao(f, TEXTURA, "andar", t, 0, 4, 8.0)
-	SpriteSheets.adicionar_por_direcao(f, TEXTURA, "golpe", t, 4, 1, 1.0)
+	SpriteSheets.adicionar_quadros(f, &"parado_baixo", [frente], 1.0)
+	SpriteSheets.adicionar_quadros(f, &"parado_cima", [costas], 1.0)
+	SpriteSheets.adicionar_quadros(f, &"parado_direita", [direita], 1.0)
+	SpriteSheets.adicionar_quadros(f, &"parado_esquerda", [esquerda], 1.0)
+	SpriteSheets.adicionar_quadros(f, &"andar_baixo", [passo_frente, frente, passo_frente_b, frente], 7.0)
+	SpriteSheets.adicionar_quadros(f, &"andar_cima", [passo_costas, costas], 5.0)
+	SpriteSheets.adicionar_quadros(f, &"andar_direita", [passo_direita, direita], 6.0)
+	SpriteSheets.adicionar_quadros(f, &"andar_esquerda", [passo_esquerda, esquerda], 6.0)
+	SpriteSheets.adicionar_quadros(f, &"golpe_baixo", [passo_frente], 1.0)
+	SpriteSheets.adicionar_quadros(f, &"golpe_cima", [passo_costas], 1.0)
+	SpriteSheets.adicionar_quadros(f, &"golpe_direita", [passo_direita], 1.0)
+	SpriteSheets.adicionar_quadros(f, &"golpe_esquerda", [passo_esquerda], 1.0)
 	return f

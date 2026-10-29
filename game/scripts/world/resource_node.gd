@@ -25,6 +25,9 @@ const TEXTURA_CHAMAS := preload("res://assets/placeholder/ninja/fx/chamas.png")
 @export var regiao_inteiro := Rect2()
 @export var regiao_queimado := Rect2()
 @export var regiao_esgotado := Rect2()
+## Aparência depois de cada golpe (1º, 2º...). O último vale para os golpes seguintes.
+## Vazio: não muda até esgotar (ex.: a variação rosa ainda não tem marca de machado).
+@export var regioes_por_golpe: Array[Rect2] = []
 
 var estado := Estado.INTEIRO
 var _golpes_restantes: int
@@ -102,6 +105,9 @@ func _definir_estado(novo: Estado, restantes: int, com_golpe: bool) -> void:
 		Sfx.tocar(&"golpe_coleta")
 		_tremer()
 	if novo == estado:
+		var dados := golpes - restantes
+		if estado == Estado.INTEIRO and dados > 0 and not regioes_por_golpe.is_empty():
+			_mostrar(regioes_por_golpe[mini(dados, regioes_por_golpe.size()) - 1])
 		return
 	estado = novo
 	if chamas:

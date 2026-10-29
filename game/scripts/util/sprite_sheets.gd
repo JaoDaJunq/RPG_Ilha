@@ -29,6 +29,28 @@ static func adicionar_tira(frames: SpriteFrames, textura: Texture2D, nome: Strin
 		frames.add_frame(nome, _recorte(textura, Rect2i(Vector2i(i * tamanho.x, 0), tamanho)))
 
 
+## Um quadro de uma tira horizontal como textura própria, opcionalmente espelhado
+## (para a esquerda reaproveitar a direita) ou erguido alguns pixels (passo de costas).
+static func quadro(textura: Texture2D, indice: int, tamanho: Vector2i, espelhar := false, subir := 0) -> Texture2D:
+	var img := textura.get_image().get_region(Rect2i(Vector2i(indice * tamanho.x, 0), tamanho))
+	if espelhar:
+		img.flip_x()
+	if subir > 0:
+		var erguida := Image.create_empty(tamanho.x, tamanho.y, false, img.get_format())
+		erguida.blit_rect(img, Rect2i(Vector2i(0, subir), tamanho - Vector2i(0, subir)), Vector2i.ZERO)
+		img = erguida
+	return ImageTexture.create_from_image(img)
+
+
+## Cria uma animação a partir de uma lista de texturas.
+static func adicionar_quadros(frames: SpriteFrames, nome: StringName, quadros: Array[Texture2D], fps: float, loop := true) -> void:
+	frames.add_animation(nome)
+	frames.set_animation_speed(nome, fps)
+	frames.set_animation_loop(nome, loop)
+	for q in quadros:
+		frames.add_frame(nome, q)
+
+
 static func direcao_de(vetor: Vector2) -> StringName:
 	if absf(vetor.x) > absf(vetor.y):
 		return &"esquerda" if vetor.x < 0.0 else &"direita"

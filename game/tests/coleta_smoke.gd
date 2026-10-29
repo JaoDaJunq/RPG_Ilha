@@ -22,6 +22,7 @@ func _ready() -> void:
 	var arvore: ResourceNode = colocar(w, ARVORE, p.position + Vector2(22, 0))
 	await segurar_e(p, arvore.global_position + Vector2(0, -20), 0.75)
 	checar(arvore.golpes_restantes() == 2, "segurar E 0,75 s dá 1 golpe (restam %d)" % arvore.golpes_restantes())
+	checar(arvore.sprite.region_rect == arvore.regioes_por_golpe[0], "depois do 1º golpe a árvore mostra a marca do machado")
 	await segurar_e(p, arvore.global_position + Vector2(0, -20), 1.3)
 	checar(inv.quantidade_de(&"madeira") == 3, "árvore cortada rende 3 de madeira (tem %d)" % inv.quantidade_de(&"madeira"))
 	checar(arvore.estado == ResourceNode.Estado.ESGOTADO, "árvore cortada vira toco")

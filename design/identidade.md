@@ -47,6 +47,11 @@ Uma ilha de fantasia **viva, colorida e convidativa de dia**, que fica **misteri
 - Nada parecido com personagem ou marca famosa.
 - Aprovação só depois de ver o sprite **dentro do jogo**, ao lado dos outros, no zoom real.
 
+## Lições do primeiro lote (L01)
+
+- A IA não respeita a ampliação pedida: a árvore veio certinha (8x), a pedra com "pixel" de ~10 px e o aventureiro de ~6,6 px (o dobro da resolução pedida). A ferramenta `game/tools/importar_folha.gd` mede o tamanho real sozinha; quando vem fino demais, reduz pela metade (`--pixel` e `--escuro`), o que perde detalhe no rosto.
+- Nos próximos pedidos de personagem, anexar o aventureiro já convertido (`game/assets/sprites/personagens/aventureiro.png` ampliado) como referência de tamanho de pixel.
+
 ## Placeholders atuais
 
-Pacote **Ninja Adventure** (Pixel-boy e AAA, CC0), até os sprites próprios serem aprovados. Ele usa personagem de 16 px; os sprites novos têm o dobro, então a troca é por conjunto (personagem + árvores + pedras juntos), não peça por peça.
+Pacote **Ninja Adventure** (Pixel-boy e AAA, CC0) para chão, plantinhas, barraca, fogueira, slime, ícones e sons. O aventureiro, as árvores e as pedras já são arte própria (L01). O que falta trocar destoa (contorno preto mais grosso): próximo pedido é o chão e o acampamento.

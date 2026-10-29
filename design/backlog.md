@@ -43,7 +43,8 @@ Lista oficial de tarefas. Marcar `[x]` só com prova (teste OK ou print revisado
 ## Arte (contínuo, pelo Codex)
 
 - [x] A01 Conceito visual (T06) → bíblia visual aprovada.
-- [ ] A01b Lote L01 (aventureiro, árvore, pedras): gerado pelo Codex em 29/10, aguardando aprovação do João para integrar.
+- [x] A01b Lote L01 (aventureiro, árvore, pedras): aprovado e no jogo (29/10). Ferramenta `game/tools/importar_folha.gd` converte as folhas do Codex.
+- [ ] A01c Aventureiro redesenhado já no tamanho do jogo (~28 px): o L01 veio fino demais e perdeu detalhe no rosto ao reduzir pela metade.
 - [ ] A02 Tileset da clareira (grama, terra, areia, água) no padrão aprovado.
 - [ ] A03 Personagem provisório próprio (4 direções: parado, andar, atacar, coletar).
 - [ ] A04 Árvore (inteira, sendo cortada, toco, queimada), pedra, slime.

@@ -25,7 +25,10 @@ const AREIA_DETALHES: Array[Vector2i] = [Vector2i(0, 4), Vector2i(1, 4)]
 const TERRA_CIRCULO := Vector2i(0, 7)  # canto de cima-esquerda de um círculo 3x3 de terra
 const AGUA := Vector2i(11, 0)
 # Regiões (em pixels) na folha de natureza.
-const COPAS: Array[Rect2] = [Rect2(48, 288, 48, 48), Rect2(48, 288, 48, 48), Rect2(48, 288, 48, 48), Rect2(0, 288, 48, 48), Rect2(144, 288, 48, 48)]
+## Variações da árvore na folha L01: verde (mais comum) e flor rosa.
+const COPA_VERDE := Rect2(0, 0, 64, 64)
+const COPA_ROSA := Rect2(256, 0, 64, 64)
+const PEDRA_MARROM := Rect2(144, 0, 48, 48)
 const PLANTAS: Array[Rect2] = [
 	Rect2(0, 160, 16, 16), Rect2(16, 160, 16, 16), Rect2(32, 160, 16, 16), Rect2(48, 160, 16, 16),
 	Rect2(96, 160, 16, 16), Rect2(112, 160, 16, 16), Rect2(128, 160, 16, 16), Rect2(144, 160, 16, 16),
@@ -33,7 +36,7 @@ const PLANTAS: Array[Rect2] = [
 	Rect2(64, 176, 16, 16), Rect2(80, 176, 16, 16), Rect2(96, 176, 16, 16), Rect2(144, 176, 16, 16),
 ]
 ## Raio sem árvores em volta da fogueira.
-const RAIO_CLAREIRA := 110.0
+const RAIO_CLAREIRA := 120.0
 const COR_DIA := Color(1, 1, 1)
 const COR_NOITE := Color(0.24, 0.27, 0.46)
 
@@ -42,7 +45,7 @@ enum Chao { AGUA, AREIA, GRAMA }
 @export var largura := 64
 @export var altura := 44
 @export var semente := 22117
-@export var arvores := 95
+@export var arvores := 80
 @export var pedras := 16
 @export var plantas := 170
 @export var slimes := 5
@@ -339,14 +342,16 @@ func _espalhar() -> void:
 		if colocadas >= arvores:
 			break
 		var p := _ponto_em(celulas_grama)
-		if p.distance_to(centro) > RAIO_CLAREIRA and _livre(p, 24.0):
-			var regiao := COPAS[_rng.randi() % COPAS.size()]
+		if p.distance_to(centro) > RAIO_CLAREIRA and _livre(p, 34.0):
+			var rosa := _rng.randf() < 0.22
 			_ocupados.append(p)
 			colocadas += 1
 			if gerar_recursos:
 				var a: ResourceNode = ARVORE.instantiate()
 				a.name = "Arvore%d" % colocadas
-				a.regiao_inteiro = regiao
+				if rosa:
+					a.regiao_inteiro = COPA_ROSA
+					a.regioes_por_golpe = []
 				a.position = p
 				entidades.add_child(a)
 
@@ -355,15 +360,16 @@ func _espalhar() -> void:
 		if colocadas >= pedras:
 			break
 		var p := _ponto_em(celulas_grama)
-		if p.distance_to(centro) > 60.0 and _livre(p, 18.0):
-			var cinza := _rng.randf() < 0.4
+		if p.distance_to(centro) > 70.0 and _livre(p, 26.0):
+			var marrom := _rng.randf() < 0.35
 			_ocupados.append(p)
 			colocadas += 1
 			if gerar_recursos:
 				var pd: ResourceNode = PEDRA.instantiate()
 				pd.name = "Pedra%d" % colocadas
-				if cinza:
-					pd.regiao_inteiro = Rect2(256, 128, 32, 32)
+				if marrom:
+					pd.regiao_inteiro = PEDRA_MARROM
+					pd.regioes_por_golpe = []
 				pd.position = p
 				entidades.add_child(pd)
 
