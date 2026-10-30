@@ -1,7 +1,7 @@
 [gd_scene load_steps=3 format=3]
 
 [ext_resource type="Script" path="res://scripts/ui/menu.gd" id="1_menu"]
-[ext_resource type="Texture2D" path="res://assets/sprites/interface/menu_fundo.png" id="2_fundo"]
+[ext_resource type="Texture2D" path="res://assets/sprites/menu_fundo.png" id="2_fundo"]
 
 [node name="Menu" type="Control"]
 layout_mode = 3

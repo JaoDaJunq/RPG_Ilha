@@ -33,7 +33,7 @@ motion_mode = 1
 script = ExtResource("1_player")
 
 [node name="Visual" type="AnimatedSprite2D" parent="."]
-position = Vector2(0, -10)
+position = Vector2(0, -14)
 scale = Vector2(0.25, 0.25)
 
 [node name="Colisao" type="CollisionShape2D" parent="."]

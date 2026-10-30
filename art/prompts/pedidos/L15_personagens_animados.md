@@ -10,9 +10,9 @@
 **Uma folha por personagem** (6 folhas), com os quadros da animação.
 
 **Anexar, nesta ordem:**
-1. `art/sprites/desenho_hd/candidatos/hd_v1.png`: **acabamento do desenho** (traço, cor chapada, contorno grosso).
+1. `art/sprites/tiny/referencias/estilo_ilustracao.png`: **acabamento do desenho** (traço, cor chapada, contorno grosso).
 2. `art/prompts/reguas/personagens_4x.png`: **proporções e pose** do Tiny Swords (cabeça grande e redonda, corpo curto e roliço, perninhas curtas, de perfil para a direita).
-3. `art/sprites/tiny/candidatos/personagens_base_v1.png`: **quem é cada um** (roupa, cores, objeto na mão). Célula indicada na tabela.
+3. `art/sprites/tiny/referencias/personagens_identidade.png`: **quem é cada um** (roupa, cores, objeto na mão). Célula indicada na tabela.
 4. `evidence/comparacao/teste_pixelizado.png`: o resultado aprovado depois da conversão (os dois primeiros embaixo).
 
 ```text

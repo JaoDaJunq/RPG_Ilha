@@ -4,10 +4,15 @@ Co-op online de sobrevivência e exploração numa ilha de fantasia que reage ao
 
 ## Estado
 
-**Etapas 0 e 1 concluídas; Etapa 3 (personagem e classes) em andamento.** A base do jogo está em cenas e componentes, com placeholders CC0 do Ninja Adventure. A direção de arte foi aprovada (B = dia, A = noite) e o primeiro lote de sprites próprios espera aprovação. Tarefas em [design/backlog.md](design/backlog.md).
+**Etapas 0 e 1 concluídas; Etapa 3 (personagem e classes) em andamento.** A base do jogo está em cenas e componentes. Desde 30/10/2026 a arte segue o estilo do pacote **Tiny Swords** (Pixel Frog): terreno, árvores e interface vêm do pacote; personagens, acampamento, pedras, slime, efeitos e ícones são nossos, feitos pelo Codex no mesmo pixel do pacote (processo em [design/processo_arte.md](design/processo_arte.md)). Tarefas em [design/backlog.md](design/backlog.md).
 
 **O que já funciona (sozinho ou com amigos):**
-- Arte própria (Codex): personagens de cada raça e classe (frente, costas, perfil e caminhada), árvores, pedras, chão, plantas, acampamento, slime, armadilha e toda a interface (menu com a ilha à noite, painéis de madeira, ícones, teclinha E quando dá para coletar).
+- Arte no estilo Tiny Swords:
+  - ilha com mar e espuma animada, areia, grama, árvores balançando, arbustos e tocos;
+  - os 6 personagens nossos (Humano e Ogro x Guerreiro, Mago e Arqueiro), de perfil, parados, andando e golpeando;
+  - acampamento, pedras que racham, cogumelo azul que brilha à noite e slime;
+  - efeitos (bola de fogo, lança de gelo, gelo na água, cristais, golpe giratório, explosão, poeira, brilho de nível) e a armadilha;
+  - interface com painéis, botões, barras, retrato do personagem, ícones e teclinha E.
 - Mundo salvo: árvores cortadas, pedras, noite e o seu personagem (nível, pontos, itens, onde estava) voltam ao abrir de novo. Cada raça + classe é um personagem salvo separado. "Começar mundo novo" no menu apaga.
 - Criação de personagem no menu: raça (Humano ou Ogro) e classe (Guerreiro, Mago ou Arqueiro), com atributos que mudam vida, mana, velocidade, dano e coleta. Ficha na tecla C.
 - Níveis e experiência: derrotar slimes (dividido com quem está perto) e coletar dão experiência; cada nível dá 2 pontos de atributo (botões "+" na ficha) e 1 de habilidade (a árvore vem depois). Humano ganha 10% a mais.
@@ -23,7 +28,7 @@ Co-op online de sobrevivência e exploração numa ilha de fantasia que reage ao
 - Golpe com clique esquerdo; slimes perseguem e machucam; ao desmaiar, o jogador volta ao acampamento.
 - N alterna dia e noite; M liga/desliga o som.
 
-**Ainda não tem:** inventário com slots, fabricação, construção, classes e árvore de habilidades, efeitos próprios (bola de fogo, gelo, golpes ainda são do pacote placeholder) e fonte pixel própria.
+**Ainda não tem:** inventário com slots, fabricação, construção, as outras classes, árvore de habilidades e fonte pixel própria.
 
 ## Como rodar
 
@@ -89,7 +94,8 @@ game/
   scenes/            cenas de cada coisa (jogador, árvore, pedra, slime, bola de fogo, mundo)
   data/items/        itens como dados (.tres)
   tests/             testes de fumaça e prints
-  tools/             scripts de apoio (controles, bateria de testes, importar_folha: folha do Codex → sprite do jogo)
+  tools/             scripts de apoio: controles, bateria de testes e as ferramentas de arte
+                     (importar_folha, pixelizar, comparar_folhas, montar_regua, mascara_tileset)
 ```
 
 ## Como as coisas conversam
@@ -98,4 +104,4 @@ Cada objeto do mundo é montado com **componentes**. A bola de fogo não sabe o 
 
 ## Assets
 
-Placeholders: **Ninja Adventure** (Pixel-boy e AAA, CC0), escolhido por ser de um estilo só. A arte final vai ser própria, gerada pelo Codex a partir da bíblia visual. Tudo está em `assets/manifest.csv`.
+Arte: pacote **Tiny Swords** (Pixel Frog; uso comercial permitido, sem redistribuir) e peças nossas no estilo dele (Codex). Os sons e a música ainda são do **Ninja Adventure** (CC0). Tudo está em `assets/manifest.csv`.

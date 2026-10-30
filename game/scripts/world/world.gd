@@ -10,8 +10,6 @@ const ARVORE := preload("res://scenes/world/arvore.tscn")
 const PEDRA := preload("res://scenes/world/pedra.tscn")
 const SLIME := preload("res://scenes/enemies/slime.tscn")
 const JOGADOR := preload("res://scenes/player/player.tscn")
-const TEX_CHAO := preload("res://assets/sprites/chao/chao.png")
-const TEX_AGUA := preload("res://assets/placeholder/ninja/tilesets/TilesetWater.png")
 ## Nossas peças no estilo Tiny Swords (L14): acampamento e pedras/criaturas, quadros de
 ## 128x128 no MESMO pixel do pacote (escala 0,25 como as peças dele), base 8 px acima do fundo.
 const TEX_ACAMPAMENTO := preload("res://assets/sprites/tiny/acampamento.png")
@@ -21,10 +19,9 @@ const PE_NOSSO := 8
 const LUZ := preload("res://assets/luz/luz_radial.tres")
 
 const T := 16
-# Coordenadas (em tiles) dentro das folhas do Ninja Adventure.
-## Blocos de chão (L02): cada bloco tem 32x32 = 2x2 tiles, na ordem da folha.
-enum Bloco { GRAMA, GRAMA_FLORES, TERRA, AREIA, AGUA, GRAMA_ESCURA }
-const GELO := Vector2i(14, 1)  # gelo liso da folha de água (sem colisão: dá para andar)
+## Camada invisível de colisão (Chao): só dois tiles, chão (anda; também o gelo) e água (bloqueia).
+const TILE_CHAO := Vector2i(0, 0)
+const TILE_AGUA := Vector2i(1, 0)
 ## Árvores do Tiny Swords: 1 e 2 são pinheiros (quadro 192x256), 3 e 4 árvores de copa
 ## (192x192). Cada uma tem o seu toco. `pe`: pixels entre a base do tronco e o fundo do quadro.
 const ARVORES_TS := [[256, 15], [256, 15], [192, 22], [192, 22]]
@@ -79,8 +76,6 @@ var _id_por_peer: Dictionary[int, String] = {}
 var _restaurar_depois: Dictionary[int, Dictionary] = {}
 var _tempo_salvar := 0.0
 var _gelo: Dictionary[Vector2i, float] = {}  # célula congelada → segundos restantes
-var _id_agua := -1  # fonte do gelo
-var _id_chao := -1
 var _rng := RandomNumberGenerator.new()
 var _bosque := FastNoiseLite.new()  # onde ficam os bosques
 
@@ -217,16 +212,14 @@ func _definir_gelo(cel: Vector2i, congelado: bool) -> void:
 	if not Net.veio_do_anfitriao():
 		return
 	if congelado:
-		chao.set_cell(cel, _id_agua, GELO)
+		chao.set_cell(cel, 0, TILE_CHAO)  # gelo: dá para andar
+		_camada_gelo.set_cell(cel, 0, Vector2i.ZERO)
 		if not _gelo.has(cel):
 			_gelo[cel] = duracao_gelo
 	else:
-		_pintar(cel, Bloco.AGUA)
-		_gelo.erase(cel)
-	if congelado:
-		_camada_gelo.set_cell(cel, 0, Vector2i.ZERO)
-	else:
+		chao.set_cell(cel, 0, TILE_AGUA)
 		_camada_gelo.erase_cell(cel)
+		_gelo.erase(cel)
 
 
 @rpc("any_peer", "call_local", "reliable")
@@ -456,26 +449,17 @@ func _gerar_chao() -> void:
 	ts.tile_size = Vector2i(T, T)
 	ts.add_physics_layer()
 	ts.set_physics_layer_collision_layer(0, 1)
-	# Chão novo (L02): 6 blocos de 32x32 lado a lado = 12x2 tiles de 16.
-	var src_chao := TileSetAtlasSource.new()
-	src_chao.texture = TEX_CHAO
-	src_chao.texture_region_size = Vector2i(T, T)
-	_id_chao = ts.add_source(src_chao)
-	for y in 2:
-		for x in 12:
-			src_chao.create_tile(Vector2i(x, y))
+	# A camada não aparece (quem desenha é o Terreno); a textura só serve de suporte aos tiles.
+	var src := TileSetAtlasSource.new()
+	src.texture = preload("res://assets/sprites/tiny/fx/gelo.png")
+	src.texture_region_size = Vector2i(T, T)
+	ts.add_source(src, 0)
+	src.create_tile(TILE_CHAO)
+	src.create_tile(TILE_AGUA)
 	# A água não deixa passar.
-	for y in 2:
-		for x in 2:
-			var dados := src_chao.get_tile_data(Vector2i(Bloco.AGUA * 2 + x, y), 0)
-			dados.add_collision_polygon(0)
-			dados.set_collision_polygon_points(0, 0, PackedVector2Array([Vector2(-8, -8), Vector2(8, -8), Vector2(8, 8), Vector2(-8, 8)]))
-	# Gelo da lança de gelo (ainda o placeholder do Ninja Adventure).
-	var src_gelo := TileSetAtlasSource.new()
-	src_gelo.texture = TEX_AGUA
-	src_gelo.texture_region_size = Vector2i(T, T)
-	_id_agua = ts.add_source(src_gelo)
-	src_gelo.create_tile(GELO)
+	var dados := src.get_tile_data(TILE_AGUA, 0)
+	dados.add_collision_polygon(0)
+	dados.set_collision_polygon_points(0, 0, PackedVector2Array([Vector2(-8, -8), Vector2(8, -8), Vector2(8, 8), Vector2(-8, 8)]))
 	chao.tile_set = ts
 
 	var ruido := FastNoiseLite.new()
@@ -491,19 +475,13 @@ func _gerar_chao() -> void:
 			_distancia[cel] = d
 			if d > 1.0:
 				_tipo[cel] = Chao.AGUA
-				_pintar(cel, Bloco.AGUA)
 			elif d > 0.87:
 				_tipo[cel] = Chao.AREIA
-				_pintar(cel, Bloco.AREIA)
 			else:
 				_tipo[cel] = Chao.GRAMA
 				if Vector2(cel - c).length() <= 2.6:
-					_pintar(cel, Bloco.TERRA)  # clareira de terra em volta da fogueira
-					_terra[cel] = true
-				elif _bloco_com_flores(cel):
-					_pintar(cel, Bloco.GRAMA_FLORES)
-				else:
-					_pintar(cel, Bloco.GRAMA)
+					_terra[cel] = true  # clareira de areia em volta da fogueira
+			chao.set_cell(cel, 0, TILE_AGUA if _tipo[cel] == Chao.AGUA else TILE_CHAO)
 	_montar_terreno()
 
 
@@ -610,19 +588,6 @@ func _tile_ts(v: int) -> Vector2i:
 	var col := 1 if oeste and leste else (2 if oeste else (0 if leste else 3))
 	var lin := 1 if norte and sul else (2 if norte else (0 if sul else 3))
 	return Vector2i(col, lin)
-
-
-## Blocos de flores salpicados (alinhados de 2 em 2 tiles para o bloco ficar inteiro).
-## Usa a semente, então é igual em todos os jogadores.
-func _bloco_com_flores(cel: Vector2i) -> bool:
-	var b := Vector2i(floori(cel.x / 2.0), floori(cel.y / 2.0))
-	return hash(Vector3i(b.x, b.y, semente)) % 100 < 7
-
-
-## Pinta a célula com um bloco de 32x32, escolhendo o pedaço certo pela posição
-## (assim o desenho continua de um tile para o outro).
-func _pintar(cel: Vector2i, bloco: int, fonte := -1) -> void:
-	chao.set_cell(cel, _id_chao if fonte < 0 else fonte, Vector2i(bloco * 2 + posmod(cel.x, 2), posmod(cel.y, 2)))
 
 
 func _montar_acampamento() -> void:

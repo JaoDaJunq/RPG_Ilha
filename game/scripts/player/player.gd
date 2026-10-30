@@ -586,38 +586,19 @@ var _lado: StringName = &"direita"
 ## Nossos personagens (L15) no estilo Tiny Swords: <raca>_<classe>.png com 6 quadros de
 ## 128x128 (0 parado, 1 respirando, 2 e 3 passos, 4 preparando o golpe, 5 golpe), no pixel
 ## do pacote (escala 0,25), de perfil para a direita; a esquerda é o espelho.
-## Sem a folha, usa a unidade do pacote (quadros de 192x192): Guerreiro = guerreiro,
-## Arqueiro = arqueiro, Mago = monge; Humano azul e Ogro vermelho.
 const PASTA_NOSSOS := "res://assets/sprites/tiny/personagens/"
 const QUADRO_NOSSO := Vector2i(128, 128)
 const ANIM_NOSSA := {&"parado": [[0, 1], 2.5], &"andar": [[2, 0, 3, 0], 9.0], &"golpe": [[4, 5], 9.0]}
-const QUADRO_TS := Vector2i(192, 192)
-const FPS := {&"parado": 8.0, &"andar": 10.0, &"golpe": 14.0}
 
 
 func _montar_frames() -> SpriteFrames:
 	var f := SpriteFrames.new()
 	f.remove_animation(&"default")
-	var nossa := PASTA_NOSSOS + "%s_%s.png" % [raca, classe]
-	if ResourceLoader.exists(nossa):
-		var folha: Texture2D = load(nossa)
-		visual.position.y = -14  # pés 8 px acima do fundo do quadro de 128
-		for tipo in ANIM_NOSSA:
-			for lado in [&"direita", &"esquerda"]:
-				var quadros: Array[Texture2D] = []
-				for i in ANIM_NOSSA[tipo][0]:
-					quadros.append(SpriteSheets.quadro(folha, i, QUADRO_NOSSO, lado == &"esquerda"))
-				SpriteSheets.adicionar_quadros(f, StringName("%s_%s" % [tipo, lado]), quadros, ANIM_NOSSA[tipo][1])
-		return f
-	var cor := "vermelho" if raca == &"ogro" else "azul"
-	var pasta := "res://assets/tiny_swords/unidades/%s/" % cor
-	var nome := String(classe) if ResourceLoader.exists(pasta + "%s_parado.png" % classe) else "trabalhador"
-	for tipo in FPS:
-		var tira: Texture2D = load(pasta + "%s_%s.png" % [nome, tipo])
-		var n := tira.get_width() / QUADRO_TS.x
+	var folha: Texture2D = load(PASTA_NOSSOS + "%s_%s.png" % [raca, classe])
+	for tipo in ANIM_NOSSA:
 		for lado in [&"direita", &"esquerda"]:
 			var quadros: Array[Texture2D] = []
-			for i in n:
-				quadros.append(SpriteSheets.quadro(tira, i, QUADRO_TS, lado == &"esquerda"))
-			SpriteSheets.adicionar_quadros(f, StringName("%s_%s" % [tipo, lado]), quadros, FPS[tipo])
+			for i in ANIM_NOSSA[tipo][0]:
+				quadros.append(SpriteSheets.quadro(folha, i, QUADRO_NOSSO, lado == &"esquerda"))
+			SpriteSheets.adicionar_quadros(f, StringName("%s_%s" % [tipo, lado]), quadros, ANIM_NOSSA[tipo][1])
 	return f

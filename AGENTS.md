@@ -28,6 +28,15 @@ codex exec -m gpt-6-luna -c model_reasoning_effort='"high"' -s workspace-write "
 
 Fluxo de arte: o Claude escreve o pedido em `art/prompts/pedidos/` → o Codex gera e salva como **candidato** → o Claude avalia e **copia as imagens inteiras para a pasta de aprovações do João** → o João aprova ou pede ajuste → o Claude integra, ou escreve a correção. Nada vai para `game/` sem aprovação do João.
 
+**Estilo e método (desde 30/10/2026, ver `design/processo_arte.md`):**
+
+- O estilo é o do pacote **Tiny Swords** (`art/terceiros/tiny_swords/`).
+- Todo pedido anexa a **folha-régua** do pacote (`art/prompts/reguas/`) e traz três blocos: **FAÇA**, **NÃO FAÇA** e **NÃO SIGA**.
+- **Objetos simples:** pixel art em 4x. Converter com `importar_folha.gd --pixel=4 --paleta_de=res://assets/tiny_swords/paleta.png --sombra`.
+- **Personagens:** ilustração lisa. Converter com `pixelizar.gd`.
+- **Antes de pôr no jogo:** comparar lado a lado com o pacote (`comparar_folhas.gd`).
+- Toda peça nossa entra com escala 0,25, igual às do pacote.
+
 **Pasta de aprovações:** `C:\Users\jpach\Aprovações Ilhas Vivas\`. Uma subpasta por pedido, com o status no nome: `<pedido> - <assunto> (aguardando)`, `(aprovado)` ou `(refazer)`, e um `LEIA-ME.txt` dizendo o que é cada imagem e o que olhar. Ao mudar o status, renomear a subpasta. Prints de dentro do jogo que dependem da aprovação dele também vão para a subpasta do pedido.
 
 ## Regras

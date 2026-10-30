@@ -423,26 +423,12 @@ func _barra(cor: Color, altura: int, moldura := false) -> ProgressBar:
 	return b
 
 
-## Retrato do pacote: 5 por cor (guerreiro, lanceiro, arqueiro, monge, trabalhador),
-## azul de 1 a 5 e vermelho de 6 a 10, como os personagens provisórios.
-const RETRATO := {&"guerreiro": 1, &"arqueiro": 3, &"mago": 4}
-
-
-## Com o nosso personagem (L15), o retrato é a cabeça e o tronco do quadro parado; sem ele,
-## o retrato do pacote.
+## Retrato: a cabeça e o tronco do quadro parado do nosso personagem (L15).
 func _retrato_de(p: Player) -> Texture2D:
-	var nossa := Player.PASTA_NOSSOS + "%s_%s.png" % [p.raca, p.classe]
-	if ResourceLoader.exists(nossa):
-		var a := AtlasTexture.new()
-		a.atlas = load(nossa)
-		a.region = Rect2(24, 18, 80, 80)
-		return a
-	return load(_caminho_retrato(p))
-
-
-func _caminho_retrato(p: Player) -> String:
-	var n: int = RETRATO.get(p.classe, 5) + (5 if p.raca == &"ogro" else 0)
-	return Tema.PASTA + "Human Avatars/Avatars_%02d.png" % n
+	var a := AtlasTexture.new()
+	a.atlas = load(Player.PASTA_NOSSOS + "%s_%s.png" % [p.raca, p.classe])
+	a.region = Rect2(24, 18, 80, 80)
+	return a
 
 
 func _painel() -> PanelContainer:
