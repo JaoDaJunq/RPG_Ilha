@@ -12,8 +12,9 @@ const SLIME := preload("res://scenes/enemies/slime.tscn")
 const JOGADOR := preload("res://scenes/player/player.tscn")
 const TEX_CHAO := preload("res://assets/sprites/chao/chao.png")
 const TEX_AGUA := preload("res://assets/placeholder/ninja/tilesets/TilesetWater.png")
-const TEX_PLANTAS := preload("res://assets/sprites/natureza/plantas.png")
-const TEX_ACAMPAMENTO := preload("res://assets/sprites/acampamento/acampamento.png")
+## Nossas peças no estilo Tiny Swords (L12): acampamento e natureza, quadros de 96x96.
+const TEX_ACAMPAMENTO := preload("res://assets/sprites/tiny/acampamento.png")
+const TEX_NATUREZA := preload("res://assets/sprites/tiny/natureza.png")
 const LUZ := preload("res://assets/luz/luz_radial.tres")
 
 const T := 16
@@ -28,9 +29,11 @@ const ARVORES_TS := [[256, 15], [256, 15], [192, 22], [192, 22]]
 ## que brilha à noite (ainda sem versão no estilo novo).
 const ARBUSTO_PE := 49
 const CHANCE_COGUMELO := 0.08
-const COGUMELO_AZUL := 5
-## Objetos do acampamento (L02), na ordem da folha.
-enum Acamp { BARRACA, FOGUEIRA, BAU, BARRIL, BANCADA, VARAL }
+const COGUMELO_AZUL := 3  # quadro na folha de natureza
+## Objetos do acampamento (L12), na ordem da folha, e a escala de cada um. A IA desenhou
+## o pixel maior que o do pacote; a escala é inteira na tela (0,5 = 2 px, 0,75 = 3 px).
+enum Acamp { FOGUEIRA, BARRACA, BAU, BARRIL, BANCADA, VARAL }
+const ESCALA_ACAMP := [0.5, 0.75, 0.5, 0.5, 0.75, 0.75]
 ## Raio sem árvores em volta da fogueira.
 const RAIO_CLAREIRA := 120.0
 const COR_DIA := Color(1, 1, 1)
@@ -514,7 +517,7 @@ const TS := 64
 const ESCALA_TS := 0.25
 const TEX_TS_AGUA := preload("res://assets/tiny_swords/terreno/agua.png")
 const TEX_TS_ESPUMA := preload("res://assets/tiny_swords/terreno/espuma.png")
-const TEX_TS_AREIA := preload("res://assets/tiny_swords/terreno/grama_oliva.png")
+const TEX_TS_AREIA := preload("res://assets/sprites/tiny/areia.png")  # L12, feita sobre a grama deles
 const TEX_TS_GRAMA := preload("res://assets/tiny_swords/terreno/grama.png")
 
 var _terra: Dictionary[Vector2i, bool] = {}
@@ -626,26 +629,26 @@ func _montar_acampamento() -> void:
 	luz.texture = LUZ
 	luz.color = Color(1, 0.55, 0.25)
 	luz.energy = 0.8
-	luz.texture_scale = 1.6
-	luz.position = Vector2(0, -10)
+	luz.texture_scale = 3.2  # o sprite da fogueira tem escala 0,5
+	luz.position = Vector2(0, -20)
 	luz.add_to_group(&"luzes_noturnas")
 	fogueira.add_child(luz)
 	var t := luz.create_tween().set_loops()
 	t.tween_property(luz, "energy", 0.65, 0.18)
 	t.tween_property(luz, "energy", 0.85, 0.23)
-	_objeto_acampamento(Acamp.BARRACA, centro + Vector2(-50, -16), Vector2(46, 12))
-	_objeto_acampamento(Acamp.BANCADA, centro + Vector2(50, -16), Vector2(40, 10))
-	_objeto_acampamento(Acamp.BAU, centro + Vector2(56, 18), Vector2(28, 10))
-	_objeto_acampamento(Acamp.BARRIL, centro + Vector2(-44, 20), Vector2(18, 8))
-	_objeto_acampamento(Acamp.VARAL, centro + Vector2(-90, 6), Vector2.ZERO)
+	_objeto_acampamento(Acamp.BARRACA, centro + Vector2(-50, -16), Vector2(24, 8))
+	_objeto_acampamento(Acamp.BANCADA, centro + Vector2(50, -16), Vector2(26, 8))
+	_objeto_acampamento(Acamp.BAU, centro + Vector2(48, 18), Vector2(12, 6))
+	_objeto_acampamento(Acamp.BARRIL, centro + Vector2(-40, 20), Vector2(9, 5))
+	_objeto_acampamento(Acamp.VARAL, centro + Vector2(-84, 6), Vector2.ZERO)
 
 
-## Um objeto do acampamento (sprite da folha L02). Com `colisao`, ninguém atravessa.
+## Um objeto do acampamento (sprite da folha L12). Com `colisao`, ninguém atravessa.
 func _objeto_acampamento(qual: int, pos: Vector2, colisao: Vector2) -> Node2D:
-	var regiao := Rect2(qual * 64, 0, 64, 64)
+	var regiao := Rect2(qual * 96, 0, 96, 96)
 	_ocupados.append(pos)
 	if colisao == Vector2.ZERO:
-		return _sprite(TEX_ACAMPAMENTO, regiao, pos)
+		return _sprite(TEX_ACAMPAMENTO, regiao, pos, null, ESCALA_ACAMP[qual])
 	var corpo := StaticBody2D.new()
 	corpo.position = pos
 	var forma := CollisionShape2D.new()
@@ -655,7 +658,7 @@ func _objeto_acampamento(qual: int, pos: Vector2, colisao: Vector2) -> Node2D:
 	forma.position = Vector2(0, -colisao.y / 2.0 - 2.0)
 	corpo.add_child(forma)
 	entidades.add_child(corpo)
-	_sprite(TEX_ACAMPAMENTO, regiao, Vector2.ZERO, corpo)
+	_sprite(TEX_ACAMPAMENTO, regiao, Vector2.ZERO, corpo, ESCALA_ACAMP[qual])
 	return corpo
 
 
@@ -696,13 +699,11 @@ func _espalhar() -> void:
 			break
 		var p := _ponto_em(celulas_grama)
 		if p.distance_to(centro) > 70.0 and _livre(p, 26.0):
-			var tipo := _rng.randi() % 4
 			_ocupados.append(p)
 			colocadas += 1
 			if gerar_recursos:
 				var pd: ResourceNode = PEDRA.instantiate()
 				pd.name = "Pedra%d" % colocadas
-				pd.textura_inteiro = load("res://assets/tiny_swords/natureza/pedra%d.png" % (tipo + 1))
 				pd.position = p
 				entidades.add_child(pd)
 
@@ -718,13 +719,13 @@ func _espalhar() -> void:
 			_ocupados.append(p)
 			if _rng.randf() < CHANCE_COGUMELO:
 				# O cogumelo azul brilha à noite (conceito A).
-				var s := _sprite(TEX_PLANTAS, Rect2(COGUMELO_AZUL * 32, 0, 32, 32), p)
+				var s := _sprite(TEX_NATUREZA, Rect2(COGUMELO_AZUL * 96, 0, 96, 96), p, null, 0.5)
 				var luz := PointLight2D.new()
 				luz.texture = LUZ
 				luz.color = Color(0.3, 0.95, 0.9)
 				luz.energy = 0.7
-				luz.texture_scale = 0.35
-				luz.position = Vector2(0, -6)
+				luz.texture_scale = 0.7  # o sprite do cogumelo tem escala 0,5
+				luz.position = Vector2(0, -12)
 				luz.add_to_group(&"luzes_noturnas")
 				s.add_child(luz)
 			else:
@@ -770,13 +771,15 @@ func _livre(p: Vector2, raio: float) -> bool:
 	return true
 
 
-func _sprite(textura: Texture2D, regiao: Rect2, pos: Vector2, pai: Node = null) -> Sprite2D:
+## As folhas L12 deixam a base 4 px acima do fundo do quadro (`pe`).
+func _sprite(textura: Texture2D, regiao: Rect2, pos: Vector2, pai: Node = null, escala := 1.0, pe := 4) -> Sprite2D:
 	var s := Sprite2D.new()
 	s.texture = textura
 	s.region_enabled = true
 	s.region_rect = regiao
 	s.centered = false
-	s.offset = Vector2(-regiao.size.x / 2.0, -regiao.size.y)
+	s.offset = Vector2(-regiao.size.x / 2.0, -regiao.size.y + pe)
+	s.scale = Vector2(escala, escala)
 	s.position = pos
 	(pai if pai else entidades).add_child(s)
 	return s

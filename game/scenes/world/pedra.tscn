@@ -1,7 +1,7 @@
 [gd_scene load_steps=8 format=3]
 
 [ext_resource type="Script" path="res://scripts/world/resource_node.gd" id="1_recurso"]
-[ext_resource type="Texture2D" path="res://assets/tiny_swords/natureza/pedra1.png" id="2_pedra"]
+[ext_resource type="Texture2D" path="res://assets/sprites/tiny/natureza.png" id="2_pedra"]
 [ext_resource type="Script" path="res://scripts/components/interactable.gd" id="3_inter"]
 [ext_resource type="Script" path="res://scripts/components/hurtbox.gd" id="4_hurt"]
 
@@ -20,9 +20,10 @@ acao = "Minerar"
 golpes = 4
 item_id = &"pedra"
 some_ao_esgotar = true
-regiao_inteiro = Rect2(0, 0, 64, 64)
-escala = 0.5
-pe = 12
+regiao_inteiro = Rect2(0, 0, 96, 96)
+regioes_por_golpe = Array[Rect2]([Rect2(0, 0, 96, 96), Rect2(96, 0, 96, 96)])
+escala = 0.75
+pe = 4
 
 [node name="Sprite2D" type="Sprite2D" parent="."]
 texture = ExtResource("2_pedra")

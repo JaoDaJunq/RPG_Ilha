@@ -8,8 +8,8 @@ extends CharacterBody2D
 ##   físico num congelado → ESTILHAÇA: dano dobrado e descongela
 ##   fogo   → dano dobrado; num congelado, só derrete o gelo
 
-## Folha do slime (L02): 0 parado, 1 se preparando, 2 pulando, 3 caindo, 4 tomando dano.
-const TEXTURA := preload("res://assets/sprites/criaturas/slime.png")
+## Slime no estilo Tiny Swords (L12): quadros 4 (parado) e 5 (achatado) da folha de natureza.
+const TEXTURA := preload("res://assets/sprites/tiny/natureza.png")
 const TEMPO_CONGELADO := 2.5
 ## Experiência para cada jogador perto quando o slime é derrotado.
 const XP_DERROTA := 10
@@ -38,10 +38,12 @@ func _ready() -> void:
 	add_to_group(&"inimigos")
 	var f := SpriteFrames.new()
 	f.remove_animation(&"default")
-	var t := Vector2i(32, 32)
-	SpriteSheets.adicionar_quadros(f, &"parado", [SpriteSheets.quadro(TEXTURA, 0, t)], 1.0)
-	SpriteSheets.adicionar_quadros(f, &"pulo", [SpriteSheets.quadro(TEXTURA, 0, t), SpriteSheets.quadro(TEXTURA, 1, t), SpriteSheets.quadro(TEXTURA, 2, t), SpriteSheets.quadro(TEXTURA, 3, t)], 7.0)
-	SpriteSheets.adicionar_quadros(f, &"dano", [SpriteSheets.quadro(TEXTURA, 4, t)], 1.0)
+	var t := Vector2i(96, 96)
+	var parado := SpriteSheets.quadro(TEXTURA, 4, t)
+	var achatado := SpriteSheets.quadro(TEXTURA, 5, t)
+	SpriteSheets.adicionar_quadros(f, &"parado", [parado], 1.0)
+	SpriteSheets.adicionar_quadros(f, &"pulo", [achatado, parado, parado, achatado], 7.0)
+	SpriteSheets.adicionar_quadros(f, &"dano", [achatado], 1.0)
 	visual.sprite_frames = f
 	visual.play(animacao)
 	if multiplayer.is_server():

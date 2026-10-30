@@ -28,7 +28,8 @@ motion_mode = 1
 script = ExtResource("1_slime")
 
 [node name="Visual" type="AnimatedSprite2D" parent="."]
-position = Vector2(0, -14)
+position = Vector2(0, -33)
+scale = Vector2(0.75, 0.75)
 
 [node name="Colisao" type="CollisionShape2D" parent="."]
 position = Vector2(0, -3)
