@@ -2,16 +2,16 @@
 
 importer="texture"
 type="CompressedTexture2D"
-uid="uid://bjwh2b20l4b52"
-path="res://.godot/imported/natureza.png-4740d09d316c14f0b074ad28ccba1f89.ctex"
+uid="uid://bclk8wuqrcrgs"
+path="res://.godot/imported/paleta.png-2bd52e89aa3cb0bd2ebd3ef9efa2d993.ctex"
 metadata={
 "vram_texture": false
 }
 
 [deps]
 
-source_file="res://assets/sprites/tiny/natureza.png"
-dest_files=["res://.godot/imported/natureza.png-4740d09d316c14f0b074ad28ccba1f89.ctex"]
+source_file="res://assets/tiny_swords/paleta.png"
+dest_files=["res://.godot/imported/paleta.png-2bd52e89aa3cb0bd2ebd3ef9efa2d993.ctex"]
 
 [params]
 

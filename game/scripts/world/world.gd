@@ -12,9 +12,12 @@ const SLIME := preload("res://scenes/enemies/slime.tscn")
 const JOGADOR := preload("res://scenes/player/player.tscn")
 const TEX_CHAO := preload("res://assets/sprites/chao/chao.png")
 const TEX_AGUA := preload("res://assets/placeholder/ninja/tilesets/TilesetWater.png")
-## Nossas peças no estilo Tiny Swords (L12): acampamento e natureza, quadros de 96x96.
+## Nossas peças no estilo Tiny Swords (L14): acampamento e pedras/criaturas, quadros de
+## 128x128 no MESMO pixel do pacote (escala 0,25 como as peças dele), base 8 px acima do fundo.
 const TEX_ACAMPAMENTO := preload("res://assets/sprites/tiny/acampamento.png")
-const TEX_NATUREZA := preload("res://assets/sprites/tiny/natureza.png")
+const TEX_NATUREZA := preload("res://assets/sprites/tiny/pedras_slime.png")
+const QUADRO_NOSSO := 128
+const PE_NOSSO := 8
 const LUZ := preload("res://assets/luz/luz_radial.tres")
 
 const T := 16
@@ -29,11 +32,9 @@ const ARVORES_TS := [[256, 15], [256, 15], [192, 22], [192, 22]]
 ## que brilha à noite (ainda sem versão no estilo novo).
 const ARBUSTO_PE := 49
 const CHANCE_COGUMELO := 0.08
-const COGUMELO_AZUL := 3  # quadro na folha de natureza
-## Objetos do acampamento (L12), na ordem da folha, e a escala de cada um. A IA desenhou
-## o pixel maior que o do pacote; a escala é inteira na tela (0,5 = 2 px, 0,75 = 3 px).
+const COGUMELO_AZUL := 3  # quadro na folha de pedras e criaturas
+## Objetos do acampamento (L14), na ordem da folha.
 enum Acamp { FOGUEIRA, BARRACA, BAU, BARRIL, BANCADA, VARAL }
-const ESCALA_ACAMP := [0.5, 0.75, 0.5, 0.5, 0.75, 0.75]
 ## Raio sem árvores em volta da fogueira.
 const RAIO_CLAREIRA := 120.0
 const COR_DIA := Color(1, 1, 1)
@@ -629,26 +630,26 @@ func _montar_acampamento() -> void:
 	luz.texture = LUZ
 	luz.color = Color(1, 0.55, 0.25)
 	luz.energy = 0.8
-	luz.texture_scale = 3.2  # o sprite da fogueira tem escala 0,5
-	luz.position = Vector2(0, -20)
+	luz.texture_scale = 6.4  # o sprite da fogueira tem escala 0,25
+	luz.position = Vector2(0, -40)
 	luz.add_to_group(&"luzes_noturnas")
 	fogueira.add_child(luz)
 	var t := luz.create_tween().set_loops()
 	t.tween_property(luz, "energy", 0.65, 0.18)
 	t.tween_property(luz, "energy", 0.85, 0.23)
-	_objeto_acampamento(Acamp.BARRACA, centro + Vector2(-50, -16), Vector2(24, 8))
-	_objeto_acampamento(Acamp.BANCADA, centro + Vector2(50, -16), Vector2(26, 8))
-	_objeto_acampamento(Acamp.BAU, centro + Vector2(48, 18), Vector2(12, 6))
-	_objeto_acampamento(Acamp.BARRIL, centro + Vector2(-40, 20), Vector2(9, 5))
+	_objeto_acampamento(Acamp.BARRACA, centro + Vector2(-50, -16), Vector2(22, 8))
+	_objeto_acampamento(Acamp.BANCADA, centro + Vector2(50, -16), Vector2(24, 8))
+	_objeto_acampamento(Acamp.BAU, centro + Vector2(48, 18), Vector2(13, 6))
+	_objeto_acampamento(Acamp.BARRIL, centro + Vector2(-40, 20), Vector2(10, 5))
 	_objeto_acampamento(Acamp.VARAL, centro + Vector2(-84, 6), Vector2.ZERO)
 
 
 ## Um objeto do acampamento (sprite da folha L12). Com `colisao`, ninguém atravessa.
 func _objeto_acampamento(qual: int, pos: Vector2, colisao: Vector2) -> Node2D:
-	var regiao := Rect2(qual * 96, 0, 96, 96)
+	var regiao := Rect2(qual * QUADRO_NOSSO, 0, QUADRO_NOSSO, QUADRO_NOSSO)
 	_ocupados.append(pos)
 	if colisao == Vector2.ZERO:
-		return _sprite(TEX_ACAMPAMENTO, regiao, pos, null, ESCALA_ACAMP[qual])
+		return _sprite(TEX_ACAMPAMENTO, regiao, pos, null, ESCALA_TS, PE_NOSSO)
 	var corpo := StaticBody2D.new()
 	corpo.position = pos
 	var forma := CollisionShape2D.new()
@@ -658,7 +659,7 @@ func _objeto_acampamento(qual: int, pos: Vector2, colisao: Vector2) -> Node2D:
 	forma.position = Vector2(0, -colisao.y / 2.0 - 2.0)
 	corpo.add_child(forma)
 	entidades.add_child(corpo)
-	_sprite(TEX_ACAMPAMENTO, regiao, Vector2.ZERO, corpo, ESCALA_ACAMP[qual])
+	_sprite(TEX_ACAMPAMENTO, regiao, Vector2.ZERO, corpo, ESCALA_TS, PE_NOSSO)
 	return corpo
 
 
@@ -719,13 +720,13 @@ func _espalhar() -> void:
 			_ocupados.append(p)
 			if _rng.randf() < CHANCE_COGUMELO:
 				# O cogumelo azul brilha à noite (conceito A).
-				var s := _sprite(TEX_NATUREZA, Rect2(COGUMELO_AZUL * 96, 0, 96, 96), p, null, 0.5)
+				var s := _sprite(TEX_NATUREZA, Rect2(COGUMELO_AZUL * QUADRO_NOSSO, 0, QUADRO_NOSSO, QUADRO_NOSSO), p, null, ESCALA_TS, PE_NOSSO)
 				var luz := PointLight2D.new()
 				luz.texture = LUZ
 				luz.color = Color(0.3, 0.95, 0.9)
 				luz.energy = 0.7
-				luz.texture_scale = 0.7  # o sprite do cogumelo tem escala 0,5
-				luz.position = Vector2(0, -12)
+				luz.texture_scale = 1.4  # o sprite do cogumelo tem escala 0,25
+				luz.position = Vector2(0, -24)
 				luz.add_to_group(&"luzes_noturnas")
 				s.add_child(luz)
 			else:
@@ -771,7 +772,6 @@ func _livre(p: Vector2, raio: float) -> bool:
 	return true
 
 
-## As folhas L12 deixam a base 4 px acima do fundo do quadro (`pe`).
 func _sprite(textura: Texture2D, regiao: Rect2, pos: Vector2, pai: Node = null, escala := 1.0, pe := 4) -> Sprite2D:
 	var s := Sprite2D.new()
 	s.texture = textura

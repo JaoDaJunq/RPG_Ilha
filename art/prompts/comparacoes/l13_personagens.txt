@@ -1,0 +1,12 @@
+pacote | res://assets/tiny_swords/unidades/azul/guerreiro_parado.png | 0 0 192 192 | 0.25
+pacote | res://assets/tiny_swords/unidades/azul/mago_parado.png | 0 0 192 192 | 0.25
+pacote | res://assets/tiny_swords/unidades/azul/arqueiro_parado.png | 0 0 192 192 | 0.25
+pacote | res://assets/tiny_swords/unidades/vermelho/guerreiro_parado.png | 0 0 192 192 | 0.25
+pacote | res://assets/tiny_swords/unidades/azul/trabalhador_parado.png | 0 0 192 192 | 0.25
+pacote | res://assets/tiny_swords/unidades/vermelho/arqueiro_parado.png | 0 0 192 192 | 0.25
+nosso | ../art/sprites/tiny/convertido/personagens_base.png | 0 0 64 64 | 0.5
+nosso | ../art/sprites/tiny/convertido/personagens_base.png | 64 0 64 64 | 0.5
+nosso | ../art/sprites/tiny/convertido/personagens_base.png | 128 0 64 64 | 0.5
+nosso | ../art/sprites/tiny/convertido/personagens_base.png | 192 0 64 64 | 0.5
+nosso | ../art/sprites/tiny/convertido/personagens_base.png | 256 0 64 64 | 0.5
+nosso | ../art/sprites/tiny/convertido/personagens_base.png | 320 0 64 64 | 0.5

@@ -8,8 +8,8 @@ extends CharacterBody2D
 ##   físico num congelado → ESTILHAÇA: dano dobrado e descongela
 ##   fogo   → dano dobrado; num congelado, só derrete o gelo
 
-## Slime no estilo Tiny Swords (L12): quadros 4 (parado) e 5 (achatado) da folha de natureza.
-const TEXTURA := preload("res://assets/sprites/tiny/natureza.png")
+## Slime no estilo Tiny Swords (L14): quadros 4 (parado) e 5 (achatado) da folha de pedras.
+const TEXTURA := preload("res://assets/sprites/tiny/pedras_slime.png")
 const TEMPO_CONGELADO := 2.5
 ## Experiência para cada jogador perto quando o slime é derrotado.
 const XP_DERROTA := 10
@@ -38,7 +38,7 @@ func _ready() -> void:
 	add_to_group(&"inimigos")
 	var f := SpriteFrames.new()
 	f.remove_animation(&"default")
-	var t := Vector2i(96, 96)
+	var t := Vector2i(128, 128)
 	var parado := SpriteSheets.quadro(TEXTURA, 4, t)
 	var achatado := SpriteSheets.quadro(TEXTURA, 5, t)
 	SpriteSheets.adicionar_quadros(f, &"parado", [parado], 1.0)
