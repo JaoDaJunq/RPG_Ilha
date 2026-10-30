@@ -93,7 +93,7 @@ func _init() -> void:
 		var destino := Vector2i(i * quadro + (quadro - caixa.size.x) / 2, quadro - base - caixa.size.y)
 		tira.blit_rect(pequeno, caixa, destino)
 		if _args.has("sombra"):
-			_por_sombra(tira, Rect2i(destino, caixa.size))
+			SombraTiny.por(tira, Rect2i(destino, caixa.size))  # a sombra do pacote embaixo
 		if _args.has("preencher"):
 			# Chão: o quadro inteiro tem de ficar opaco (um bloco de 31 px deixaria um risco).
 			_preencher_buracos(tira, Rect2i(i * quadro, 0, quadro, quadro))
@@ -104,59 +104,6 @@ func _init() -> void:
 	if _args.has("previa"):
 		_salvar_previa(tira, _caminho(_args["previa"]))
 	quit(0 if erro == OK else 1)
-
-
-## --sombra: a sombra no chão do Tiny Swords, por baixo do desenho. A IA não consegue
-## fazer transparência sobre o magenta, então a sombra vem do próprio pacote: a elipse
-## (#161c2e a 27%) que fica embaixo do trabalhador, preenchida linha a linha onde os pés
-## a cobrem, e esticada (vizinho mais próximo) para ~80% da largura da base do desenho.
-func _por_sombra(tira: Image, caixa: Rect2i) -> void:
-	if _sombra == null:
-		var u := Image.load_from_file(ProjectSettings.globalize_path("res://assets/tiny_swords/unidades/azul/trabalhador_parado.png"))
-		u.convert(Image.FORMAT_RGBA8)
-		var q := u.get_region(Rect2i(0, 0, 192, 192))
-		var linhas := {}
-		for y in q.get_height():
-			for x in q.get_width():
-				var a := q.get_pixel(x, y).a
-				if a > 0.15 and a < 0.4:
-					var l: Vector2i = linhas.get(y, Vector2i(x, x))
-					linhas[y] = Vector2i(mini(l.x, x), maxi(l.y, x))
-		var ys: Array = linhas.keys()
-		ys.sort()
-		var x0 := 9999
-		var x1 := 0
-		for y in ys:
-			x0 = mini(x0, linhas[y].x)
-			x1 = maxi(x1, linhas[y].y)
-		_sombra = Image.create(x1 - x0 + 1, ys.size(), false, Image.FORMAT_RGBA8)
-		for k in ys.size():
-			var l: Vector2i = linhas[ys[k]]
-			for x in range(l.x, l.y + 1):
-				_sombra.set_pixel(x - x0, k, _COR_SOMBRA)
-	# Largura da base: a linha mais larga entre as 4 de baixo do desenho.
-	var base_l := 0
-	for y in range(caixa.end.y - 4, caixa.end.y):
-		var e := caixa.end.x
-		var d := caixa.position.x
-		for x in range(caixa.position.x, caixa.end.x):
-			if tira.get_pixel(x, y).a > 0.0:
-				e = mini(e, x)
-				d = maxi(d, x)
-		base_l = maxi(base_l, d - e + 1)
-	var largura := maxi(8, roundi(maxf(base_l, caixa.size.x * 0.6) * 0.85))
-	var s := _sombra.duplicate() as Image
-	s.resize(largura, maxi(3, roundi(largura * _sombra.get_height() / float(_sombra.get_width()))), Image.INTERPOLATE_NEAREST)
-	var origem := Vector2i(caixa.position.x + (caixa.size.x - largura) / 2, caixa.end.y - s.get_height() / 2 - 1)
-	for y in s.get_height():
-		for x in s.get_width():
-			var p := origem + Vector2i(x, y)
-			if s.get_pixel(x, y).a > 0.0 and p.x >= 0 and p.y >= 0 and p.x < tira.get_width() and p.y < tira.get_height() and tira.get_pixelv(p).a == 0.0:
-				tira.set_pixelv(p, _COR_SOMBRA)
-
-
-const _COR_SOMBRA := Color("161c2e45")  # #161c2e com 27% (alfa 0x45)
-var _sombra: Image
 
 
 func _caminho(p: String) -> String:

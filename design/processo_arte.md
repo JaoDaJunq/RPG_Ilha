@@ -110,3 +110,17 @@ A comparação lado a lado (`evidence/comparacao/l12_atual.png`, em cima o pacot
 5. **Referências erradas.** Anexávamos imagens do pacote em tamanhos diferentes do pedido, e também a arte antiga, que a IA acabava copiando. **Regra nova:** anexar uma **folha-régua** (`game/tools/montar_regua.gd`): peças do pacote ampliadas EXATAMENTE 4x, na MESMA grade do pedido. A arte antiga só vai com um aviso explícito de "NÃO SIGA".
 
 **Validação antes de pôr no jogo:** rodar `game/tools/comparar_folhas.gd`, que coloca a peça do pacote e a nossa lado a lado, no tamanho do jogo. Só entra no jogo o que passar nessa comparação, e o João vê a comparação.
+
+## O que aprendemos com os personagens (L13, L13b, L13c)
+
+- **A IA não desenha pixel art fino.** Pedindo pixel art, ela escolhe sozinha um desenho de ~30 a 60 pixels no total, por mais que o pedido diga "8x8" ou "4x4":
+  - 6 por folha (L13): pixel 2x mais grosso que o do pacote;
+  - 1 por imagem (L13b): ainda mais grosso, ~30 pixels de altura.
+- **Objetos simples deram certo em 4x (L14)**, porque a medida pedida em pixels do jogo cabia no jeito dela desenhar. Mesmo assim, é preciso converter no grade do pacote (`--pixel=4`).
+- **Personagens: pedir ILUSTRAÇÃO e pixelizar aqui** (`game/tools/pixelizar.gd`):
+  1. a IA desenha liso, de perfil, com contorno grosso e cor chapada;
+  2. a ferramenta reduz para ~88 pixels de altura e troca as cores pelas da paleta do pacote;
+  3. ela pinta a borda com #161c2e e põe a sombra do pacote.
+
+  O teste (`evidence/comparacao/teste_pixelizado.png`) ficou na densidade exata do pacote.
+- O pedido de ilustração precisa de: "NÃO desenhe pixel art", "nada fino demais" (some ao reduzir) e "de perfil para a direita".
