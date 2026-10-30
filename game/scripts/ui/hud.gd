@@ -1,6 +1,6 @@
 class_name Hud
 extends CanvasLayer
-## Interface do jogo (arte L04): painel do personagem (nível, vida, mana, experiência),
+## Interface do jogo (estilo Tiny Swords, ver Tema): painel do personagem (nível, vida, mana, experiência),
 ## recursos, barra de habilidades, avisos, ficha (C), nomes dos outros jogadores e a
 ## teclinha E em cima do que dá para coletar quando o jogador está perto.
 
@@ -22,6 +22,7 @@ var jogador: Player
 var _raiz: Control
 var _contagens: Dictionary[StringName, Label] = {}
 var _titulo_personagem: Label
+var _retrato: TextureRect
 var _barra_vida: ProgressBar
 var _barra_mana: ProgressBar
 var _barra_xp: ProgressBar
@@ -51,6 +52,7 @@ func configurar(p: Player) -> void:
 	jogador.inventario.mudou.connect(_atualizar_itens)
 	jogador.vida.mudou.connect(func(atual: float, maximo: float) -> void: _barra_vida.value = atual / maximo * 100.0)
 	jogador.progresso_mudou.connect(_atualizar_progresso)
+	_retrato.texture = load(_caminho_retrato(p))
 	var hab := jogador.habilidades()
 	for i in _slots.size():
 		var tem := i < hab.size()
@@ -189,21 +191,31 @@ func _montar() -> void:
 	_raiz.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	add_child(_raiz)
 
-	# Personagem: nível, vida, mana e experiência (cima-esquerda).
+	# Personagem: retrato, nível, vida, mana e experiência (cima-esquerda).
 	var pers := _painel()
 	pers.position = Vector2(12, 10)
+	var ph := HBoxContainer.new()
+	ph.add_theme_constant_override(&"separation", 8)
+	pers.add_child(ph)
+	_retrato = TextureRect.new()
+	_retrato.custom_minimum_size = Vector2(64, 64)
+	_retrato.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+	_retrato.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+	_retrato.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+	_retrato.texture_filter = CanvasItem.TEXTURE_FILTER_LINEAR  # retrato de 256 px reduzido a 64
+	ph.add_child(_retrato)
 	var pv := VBoxContainer.new()
-	pv.add_theme_constant_override(&"separation", 4)
-	pers.add_child(pv)
+	pv.add_theme_constant_override(&"separation", 2)
+	ph.add_child(pv)
 	_titulo_personagem = _rotulo("", 16)
 	pv.add_child(_titulo_personagem)
-	_barra_vida = _barra(Color("d0564a"), 12)
+	_barra_vida = _barra(Color("d0564a"), 22, true)
 	_barra_vida.value = 100.0
 	pv.add_child(_linha_com_icone(ICONES_ATRIBUTO[&"vitalidade"], _barra_vida))
-	_barra_mana = _barra(Color("4a86d0"), 10)
+	_barra_mana = _barra(Color("4a86d0"), 20, true)
 	_barra_mana.value = 100.0
 	pv.add_child(_linha_com_icone(ICONES_ATRIBUTO[&"espirito"], _barra_mana))
-	_barra_xp = _barra(Color("e7c46e"), 8)
+	_barra_xp = _barra(Color("e7c46e"), 18, true)
 	pv.add_child(_linha_com_icone(ICONE_XP, _barra_xp))
 	pv.add_child(_rotulo("C · ficha", 16, COR_TEXTO_2))
 
@@ -306,15 +318,22 @@ func _montar() -> void:
 	_tecla_e.add_child(_tecla_progresso)
 
 
-## Um espaço da barra (arte L04, ampliado 2x): fundo, ícone, sombra de recarga e tecla.
+## Um espaço da barra (quadradinho azul do pacote): fundo, ícone, sombra de recarga e
+## tecla. O selecionado (carregando) ganha uma borda dourada.
 func _slot(tecla: String) -> Dictionary:
-	var fundo := TextureRect.new()
-	fundo.texture = Tema.ampliada("espaco")
-	fundo.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
+	var fundo := Panel.new()
+	fundo.add_theme_stylebox_override(&"panel", Tema.espaco())
+	fundo.custom_minimum_size = Vector2(64, 64)
 	fundo.mouse_filter = Control.MOUSE_FILTER_PASS
-	var selecionado := TextureRect.new()
-	selecionado.texture = Tema.ampliada("espaco_selecionado")
-	selecionado.position = Vector2(-4, -5)
+	var selecionado := Panel.new()
+	var borda := StyleBoxFlat.new()
+	borda.draw_center = false
+	borda.border_color = Tema.COR_DESTAQUE
+	borda.set_border_width_all(3)
+	borda.set_corner_radius_all(6)
+	selecionado.add_theme_stylebox_override(&"panel", borda)
+	selecionado.position = Vector2(-3, -3)
+	selecionado.size = Vector2(70, 70)
 	selecionado.visible = false
 	selecionado.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	fundo.add_child(selecionado)
@@ -322,13 +341,13 @@ func _slot(tecla: String) -> Dictionary:
 	icone.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
 	icone.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
 	icone.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
-	icone.position = Vector2(13, 13)
+	icone.position = Vector2(8, 8)
 	icone.size = Vector2(48, 48)
 	icone.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	fundo.add_child(icone)
 	var area := Control.new()
-	area.position = Vector2(10, 10)
-	area.size = Vector2(54, 54)
+	area.position = Vector2(6, 6)
+	area.size = Vector2(52, 52)
 	area.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	fundo.add_child(area)
 	var sombra := ColorRect.new()
@@ -337,8 +356,8 @@ func _slot(tecla: String) -> Dictionary:
 	sombra.anchor_top = 1.0
 	sombra.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	area.add_child(sombra)
-	var num := _rotulo(tecla, 16, COR_TEXTO_2)
-	num.position = Vector2(12, 6)
+	var num := _rotulo(tecla, 14, COR_TEXTO_2)
+	num.position = Vector2(7, 2)
 	fundo.add_child(num)
 	return {fundo = fundo, selecionado = selecionado, icone = icone, sombra = sombra}
 
@@ -373,11 +392,26 @@ func _caixinha(destaque: bool) -> StyleBoxFlat:
 	return s
 
 
-func _barra(cor: Color, altura: int) -> ProgressBar:
+## Barra de valor. Com `moldura`, usa a barra de vida do pacote: a moldura é desenhada
+## inteira e a cor preenche só o miolo escuro dela.
+func _barra(cor: Color, altura: int, moldura := false) -> ProgressBar:
 	var b := ProgressBar.new()
 	b.custom_minimum_size = Vector2(0, altura)
 	b.show_percentage = false
 	b.mouse_filter = Control.MOUSE_FILTER_PASS
+	if moldura:
+		var vazio := StyleBoxEmpty.new()
+		b.add_theme_stylebox_override(&"background", vazio)
+		b.add_theme_stylebox_override(&"fill", vazio)
+		var caixa := Tema.moldura_barra()
+		b.draw.connect(func() -> void:
+			b.draw_style_box(caixa, Rect2(Vector2.ZERO, b.size))
+			var cima := roundf(b.size.y * 0.24)
+			var baixo := roundf(b.size.y * 0.32)
+			var miolo := Rect2(7, cima, (b.size.x - 14) * b.ratio, b.size.y - cima - baixo)
+			if miolo.size.x > 0.0:
+				b.draw_rect(miolo, cor))
+		return b
 	var fundo := StyleBoxFlat.new()
 	fundo.bg_color = Color("2a2a22")
 	fundo.border_color = Color("0e100d")
@@ -387,6 +421,16 @@ func _barra(cor: Color, altura: int) -> ProgressBar:
 	b.add_theme_stylebox_override(&"background", fundo)
 	b.add_theme_stylebox_override(&"fill", cheio)
 	return b
+
+
+## Retrato do pacote: 5 por cor (guerreiro, lanceiro, arqueiro, monge, trabalhador),
+## azul de 1 a 5 e vermelho de 6 a 10, como os personagens provisórios.
+const RETRATO := {&"guerreiro": 1, &"arqueiro": 3, &"mago": 4}
+
+
+func _caminho_retrato(p: Player) -> String:
+	var n: int = RETRATO.get(p.classe, 5) + (5 if p.raca == &"ogro" else 0)
+	return Tema.PASTA + "Human Avatars/Avatars_%02d.png" % n
 
 
 func _painel() -> PanelContainer:
