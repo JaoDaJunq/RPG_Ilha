@@ -1,12 +1,12 @@
 [gd_scene load_steps=8 format=3]
 
 [ext_resource type="Script" path="res://scripts/world/resource_node.gd" id="1_recurso"]
-[ext_resource type="Texture2D" path="res://assets/sprites/natureza/pedra.png" id="2_pedra"]
+[ext_resource type="Texture2D" path="res://assets/tiny_swords/natureza/pedra1.png" id="2_pedra"]
 [ext_resource type="Script" path="res://scripts/components/interactable.gd" id="3_inter"]
 [ext_resource type="Script" path="res://scripts/components/hurtbox.gd" id="4_hurt"]
 
 [sub_resource type="CircleShape2D" id="Shape_base"]
-radius = 12.0
+radius = 7.0
 
 [sub_resource type="RectangleShape2D" id="Shape_selecao"]
 size = Vector2(38, 30)
@@ -20,14 +20,15 @@ acao = "Minerar"
 golpes = 4
 item_id = &"pedra"
 some_ao_esgotar = true
-regiao_inteiro = Rect2(0, 0, 48, 48)
-regioes_por_golpe = Array[Rect2]([Rect2(48, 0, 48, 48), Rect2(48, 0, 48, 48), Rect2(96, 0, 48, 48)])
+regiao_inteiro = Rect2(0, 0, 64, 64)
+escala = 0.5
+pe = 12
 
 [node name="Sprite2D" type="Sprite2D" parent="."]
 texture = ExtResource("2_pedra")
 
 [node name="Colisao" type="CollisionShape2D" parent="."]
-position = Vector2(0, -9)
+position = Vector2(0, -5)
 shape = SubResource("Shape_base")
 
 [node name="Interactable" type="Area2D" parent="."]

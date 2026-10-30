@@ -8,7 +8,6 @@ extends CharacterBody2D
 ## (coletar, golpear, habilidades) é um PEDIDO ao anfitrião, que confere e executa.
 ## Vida, mana e inventário são do anfitrião, que manda os valores ao dono.
 
-const TEXTURA_FRENTE := preload("res://assets/sprites/personagens/frente.png")
 const DURACAO_ESQUIVA := 0.2
 const VELOCIDADE_ESQUIVA := 230.0
 const CARGA_MAXIMA := 1.0  # segundos segurando para a carga completa
@@ -22,7 +21,7 @@ const SONS := {
 @export var recarga_golpe := 0.35
 
 ## Animação atual (sincronizada para os outros jogadores verem).
-@export var animacao: StringName = &"parado_baixo"
+@export var animacao: StringName = &"parado_direita"
 ## Personagem (sincronizado ao nascer).
 @export var raca: StringName = &"humano"
 @export var classe: StringName = &"guerreiro"
@@ -566,57 +565,44 @@ func _processar_interacao(delta: float) -> void:
 
 
 func _animar(entrada: Vector2) -> void:
+	var tipo := &"parado"
 	if _atacando > 0.0 or _carregando >= 0:
 		if _carregando >= 0:
 			_direcao = SpriteSheets.direcao_de(direcao_mira())
-		animacao = StringName("golpe_%s" % _direcao)
+		tipo = &"golpe"
 	elif entrada != Vector2.ZERO:
 		_direcao = SpriteSheets.direcao_de(entrada)
-		animacao = StringName("andar_%s" % _direcao)
-	else:
-		animacao = StringName("parado_%s" % _direcao)
+		tipo = &"andar"
+	# Os personagens do Tiny Swords são vistos de lado: indo para cima ou para baixo,
+	# continuam olhando para o último lado.
+	if _direcao == &"direita" or _direcao == &"esquerda":
+		_lado = _direcao
+	animacao = StringName("%s_%s" % [tipo, _lado])
 	visual.play(animacao)
 
 
-## Personagens (L03/L05), quadros de 40x40 com os pés 2 px acima do fundo.
-## frente.png: os 6 personagens de frente (Humano e Ogro x Guerreiro, Mago, Arqueiro).
-## <raca>_<classe>.png (L05): 0 costas, 1 perfil direita, 2 e 3 andando de frente,
-## 4 andando de perfil, 5 andando de costas. Sem ela, o personagem fica sempre de frente.
+var _lado: StringName = &"direita"
+
+## Personagens provisórios do Tiny Swords (quadros de 192x192, escala 0,25, de perfil):
+## Guerreiro = guerreiro deles, Arqueiro = arqueiro, Mago = monge (cajado). Humano usa o
+## time azul e Ogro o vermelho, até chegarem os nossos desenhos no mesmo estilo.
+## <cor>/<classe>_parado.png, _andar.png e _golpe.png; a esquerda é o espelho da direita.
+const QUADRO_TS := Vector2i(192, 192)
+const FPS := {&"parado": 8.0, &"andar": 10.0, &"golpe": 14.0}
+
+
 func _montar_frames() -> SpriteFrames:
-	var t := Vector2i(40, 40)
-	var indice := RacaData.TODAS.find(raca) * ClasseData.TODAS.size() + ClasseData.TODAS.find(classe)
-	var frente: Texture2D = SpriteSheets.quadro(TEXTURA_FRENTE, maxi(indice, 0), t)
-	var caminho := "res://assets/sprites/personagens/%s_%s.png" % [raca, classe]
-	var costas := frente
-	var direita := frente
-	var esquerda := frente
-	var passo_frente: Texture2D = SpriteSheets.quadro(TEXTURA_FRENTE, maxi(indice, 0), t, false, 1)
-	var passo_frente_b := passo_frente
-	var passo_costas := passo_frente
-	var passo_direita := passo_frente
-	var passo_esquerda := passo_frente
-	if ResourceLoader.exists(caminho):
-		var folha: Texture2D = load(caminho)
-		costas = SpriteSheets.quadro(folha, 0, t)
-		direita = SpriteSheets.quadro(folha, 1, t)
-		esquerda = SpriteSheets.quadro(folha, 1, t, true)
-		passo_frente = SpriteSheets.quadro(folha, 2, t)
-		passo_frente_b = SpriteSheets.quadro(folha, 3, t)
-		passo_direita = SpriteSheets.quadro(folha, 4, t)
-		passo_esquerda = SpriteSheets.quadro(folha, 4, t, true)
-		passo_costas = SpriteSheets.quadro(folha, 5, t)
+	var cor := "vermelho" if raca == &"ogro" else "azul"
+	var pasta := "res://assets/tiny_swords/unidades/%s/" % cor
+	var nome := String(classe) if ResourceLoader.exists(pasta + "%s_parado.png" % classe) else "trabalhador"
 	var f := SpriteFrames.new()
 	f.remove_animation(&"default")
-	SpriteSheets.adicionar_quadros(f, &"parado_baixo", [frente], 1.0)
-	SpriteSheets.adicionar_quadros(f, &"parado_cima", [costas], 1.0)
-	SpriteSheets.adicionar_quadros(f, &"parado_direita", [direita], 1.0)
-	SpriteSheets.adicionar_quadros(f, &"parado_esquerda", [esquerda], 1.0)
-	SpriteSheets.adicionar_quadros(f, &"andar_baixo", [passo_frente, frente, passo_frente_b, frente], 7.0)
-	SpriteSheets.adicionar_quadros(f, &"andar_cima", [passo_costas, costas], 5.0)
-	SpriteSheets.adicionar_quadros(f, &"andar_direita", [passo_direita, direita], 6.0)
-	SpriteSheets.adicionar_quadros(f, &"andar_esquerda", [passo_esquerda, esquerda], 6.0)
-	SpriteSheets.adicionar_quadros(f, &"golpe_baixo", [passo_frente], 1.0)
-	SpriteSheets.adicionar_quadros(f, &"golpe_cima", [passo_costas], 1.0)
-	SpriteSheets.adicionar_quadros(f, &"golpe_direita", [passo_direita], 1.0)
-	SpriteSheets.adicionar_quadros(f, &"golpe_esquerda", [passo_esquerda], 1.0)
+	for tipo in FPS:
+		var tira: Texture2D = load(pasta + "%s_%s.png" % [nome, tipo])
+		var n := tira.get_width() / QUADRO_TS.x
+		for lado in [&"direita", &"esquerda"]:
+			var quadros: Array[Texture2D] = []
+			for i in n:
+				quadros.append(SpriteSheets.quadro(tira, i, QUADRO_TS, lado == &"esquerda"))
+			SpriteSheets.adicionar_quadros(f, StringName("%s_%s" % [tipo, lado]), quadros, FPS[tipo])
 	return f

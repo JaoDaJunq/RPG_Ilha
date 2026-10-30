@@ -28,6 +28,16 @@ const TEXTURA_CHAMAS := preload("res://assets/placeholder/ninja/fx/chamas.png")
 ## Aparência depois de cada golpe (1º, 2º...). O último vale para os golpes seguintes.
 ## Vazio: não muda até esgotar (ex.: a variação rosa ainda não tem marca de machado).
 @export var regioes_por_golpe: Array[Rect2] = []
+## Arte do Tiny Swords (tile de 64 px): entra com escala 0,25. `pe`: quantos pixels da arte
+## há entre a base do desenho e o fundo do quadro. `quadros`: a arte "inteira" é uma tira
+## animada (árvore balançando ao vento). Texturas vazias = a do Sprite2D da cena.
+@export var escala := 1.0
+@export var pe := 0
+@export var quadros := 1
+@export var textura_inteiro: Texture2D
+@export var textura_esgotado: Texture2D
+## Sem arte de árvore queimada no pacote: por enquanto ela escurece (provisório).
+@export var cor_queimado := Color.WHITE
 ## Fogo: depois de quanto tempo queimando passa para as vizinhas, e até que distância.
 @export var espalhar_apos := 2.0
 @export var raio_do_fogo := 42.0
@@ -45,6 +55,12 @@ var _golpes_restantes: int
 func _ready() -> void:
 	add_to_group(&"recursos")
 	_golpes_restantes = golpes
+	if textura_inteiro:
+		sprite.texture = textura_inteiro
+	_textura_inteiro = sprite.texture
+	sprite.scale = Vector2(escala, escala)
+	_tempo_animacao = randf() * 2.0
+	set_process(quadros > 1)
 	hurtbox.atingido.connect(_on_atingido)
 	if inflamavel:
 		inflamavel.apagou_queimado.connect(_on_queimou)
@@ -119,6 +135,8 @@ func _definir_estado(novo: Estado, restantes: int, com_golpe: bool) -> void:
 		Estado.QUEIMANDO:
 			Sfx.tocar(&"fogo")
 		Estado.QUEIMADO:
+			set_process(false)
+			sprite.self_modulate = cor_queimado
 			_mostrar(regiao_queimado)
 		Estado.ESGOTADO:
 			destacar(false)
@@ -127,6 +145,10 @@ func _definir_estado(novo: Estado, restantes: int, com_golpe: bool) -> void:
 					get_tree().call_group(&"mundo", &"registrar_removido", name)
 				queue_free()
 			else:
+				set_process(false)
+				sprite.self_modulate = Color.WHITE
+				if textura_esgotado:
+					sprite.texture = textura_esgotado
 				_mostrar(regiao_esgotado)
 
 
@@ -172,8 +194,21 @@ func _mostrar(regiao: Rect2) -> void:
 	sprite.region_enabled = true
 	sprite.region_rect = regiao
 	sprite.centered = false
-	sprite.offset = Vector2(-regiao.size.x / 2.0, -regiao.size.y)
-	_altura_visivel = _medir_altura(sprite.texture, regiao)
+	sprite.offset = Vector2(-regiao.size.x / 2.0, -regiao.size.y + pe)
+	_altura_visivel = (_medir_altura(sprite.texture, regiao) - pe) * escala
+
+
+var _textura_inteiro: Texture2D
+var _tempo_animacao := 0.0
+
+
+## Árvore balançando: troca o quadro da tira enquanto está inteira (e sem marca de golpe).
+func _process(delta: float) -> void:
+	if estado != Estado.INTEIRO or sprite.texture != _textura_inteiro or sprite.region_rect.size != regiao_inteiro.size:
+		return
+	_tempo_animacao += delta
+	var q := int(_tempo_animacao * 8.0) % quadros
+	sprite.region_rect.position = regiao_inteiro.position + Vector2(q * regiao_inteiro.size.x, 0)
 
 
 ## Altura do desenho que aparece agora (do chão até o topo), para a teclinha E ficar

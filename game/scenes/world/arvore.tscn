@@ -1,11 +1,12 @@
-[gd_scene load_steps=11 format=3]
+[gd_scene load_steps=12 format=3]
 
 [ext_resource type="Script" path="res://scripts/world/resource_node.gd" id="1_recurso"]
-[ext_resource type="Texture2D" path="res://assets/sprites/natureza/arvore.png" id="2_arvore"]
+[ext_resource type="Texture2D" path="res://assets/tiny_swords/natureza/arvore1.png" id="2_arvore"]
 [ext_resource type="Script" path="res://scripts/components/interactable.gd" id="3_inter"]
 [ext_resource type="Script" path="res://scripts/components/hurtbox.gd" id="4_hurt"]
 [ext_resource type="Script" path="res://scripts/components/flammable.gd" id="5_fogo"]
 [ext_resource type="Texture2D" path="res://assets/luz/luz_radial.tres" id="6_luz"]
+[ext_resource type="Texture2D" path="res://assets/tiny_swords/natureza/toco1.png" id="7_toco"]
 
 [sub_resource type="CircleShape2D" id="Shape_tronco"]
 radius = 7.0
@@ -18,10 +19,14 @@ size = Vector2(32, 50)
 
 [node name="Arvore" type="StaticBody2D"]
 script = ExtResource("1_recurso")
-regiao_inteiro = Rect2(0, 0, 64, 64)
-regiao_queimado = Rect2(128, 0, 64, 64)
-regiao_esgotado = Rect2(192, 0, 64, 64)
-regioes_por_golpe = Array[Rect2]([Rect2(64, 0, 64, 64)])
+regiao_inteiro = Rect2(0, 0, 192, 256)
+regiao_queimado = Rect2(0, 0, 192, 256)
+regiao_esgotado = Rect2(0, 0, 192, 256)
+escala = 0.25
+pe = 15
+quadros = 8
+textura_esgotado = ExtResource("7_toco")
+cor_queimado = Color(0.32, 0.27, 0.27, 1)
 
 [node name="Sprite2D" type="Sprite2D" parent="."]
 texture = ExtResource("2_arvore")

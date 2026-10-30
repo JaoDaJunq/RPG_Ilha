@@ -33,7 +33,8 @@ motion_mode = 1
 script = ExtResource("1_player")
 
 [node name="Visual" type="AnimatedSprite2D" parent="."]
-position = Vector2(0, -18)
+position = Vector2(0, -10)
+scale = Vector2(0.25, 0.25)
 
 [node name="Colisao" type="CollisionShape2D" parent="."]
 position = Vector2(0, -3)
@@ -62,7 +63,7 @@ texture_scale = 0.6
 
 [node name="Camera2D" type="Camera2D" parent="."]
 position = Vector2(0, -14)
-zoom = Vector2(3, 3)
+zoom = Vector2(4, 4)
 position_smoothing_enabled = true
 position_smoothing_speed = 8.0
 

@@ -47,7 +47,7 @@ func _ready() -> void:
 	var cortada := w.entidades.get_node_or_null(NodePath(nome_cortada)) as ResourceNode
 	var marcada := w.entidades.get_node_or_null(NodePath(nome_marcada)) as ResourceNode
 	checar(cortada != null and cortada.estado == ResourceNode.Estado.ESGOTADO, "árvore cortada continua toco")
-	checar(marcada != null and marcada.golpes_restantes() == marcada.golpes - 1 and marcada.sprite.region_rect == marcada.regioes_por_golpe[0],
+	checar(marcada != null and marcada.golpes_restantes() == marcada.golpes - 1 and (marcada.regioes_por_golpe.is_empty() or marcada.sprite.region_rect == marcada.regioes_por_golpe[0]),
 		"árvore com 1 golpe continua marcada")
 	checar(not w.entidades.has_node(NodePath(nome_pedra)), "pedra minerada continua sumida")
 	checar(w.noite, "a noite continua")

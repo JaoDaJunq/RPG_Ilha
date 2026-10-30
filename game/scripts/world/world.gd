@@ -21,14 +21,13 @@ const T := 16
 ## Blocos de chão (L02): cada bloco tem 32x32 = 2x2 tiles, na ordem da folha.
 enum Bloco { GRAMA, GRAMA_FLORES, TERRA, AREIA, AGUA, GRAMA_ESCURA }
 const GELO := Vector2i(14, 1)  # gelo liso da folha de água (sem colisão: dá para andar)
-# Regiões (em pixels) na folha de natureza.
-## Variações da árvore na folha L01: verde (mais comum) e flor rosa.
-const COPA_VERDE := Rect2(0, 0, 64, 64)
-const COPA_ROSA := Rect2(256, 0, 64, 64)
-const PEDRA_MARROM := Rect2(144, 0, 48, 48)
-## Plantas (L02): arbusto vermelho, arbusto azul, samambaia, flores, cogumelo vermelho,
-## cogumelo azul (brilha à noite). Peso de cada uma no sorteio.
-const PLANTAS_PESO: Array[int] = [3, 3, 4, 5, 2, 1]
+## Árvores do Tiny Swords: 1 e 2 são pinheiros (quadro 192x256), 3 e 4 árvores de copa
+## (192x192). Cada uma tem o seu toco. `pe`: pixels entre a base do tronco e o fundo do quadro.
+const ARVORES_TS := [[256, 15], [256, 15], [192, 22], [192, 22]]
+## Plantas: os arbustos animados do Tiny Swords e, de vez em quando, o cogumelo azul (L02),
+## que brilha à noite (ainda sem versão no estilo novo).
+const ARBUSTO_PE := 49
+const CHANCE_COGUMELO := 0.08
 const COGUMELO_AZUL := 5
 ## Objetos do acampamento (L02), na ordem da folha.
 enum Acamp { BARRACA, FOGUEIRA, BAU, BARRIL, BANCADA, VARAL }
@@ -82,7 +81,6 @@ var _rng := RandomNumberGenerator.new()
 var _bosque := FastNoiseLite.new()  # onde ficam os bosques
 
 @onready var chao: TileMapLayer = $Chao
-@onready var chao_suave: Sprite2D = $ChaoSuave  # desenha o chão com divisas suaves
 @onready var entidades: Node2D = $Entidades
 @onready var ambiente: CanvasModulate = $Ambiente
 @onready var hud: Hud = $HUD
@@ -221,7 +219,10 @@ func _definir_gelo(cel: Vector2i, congelado: bool) -> void:
 	else:
 		_pintar(cel, Bloco.AGUA)
 		_gelo.erase(cel)
-	_atualizar_mapa(cel)
+	if congelado:
+		_camada_gelo.set_cell(cel, 0, GELO)
+	else:
+		_camada_gelo.erase_cell(cel)
 
 
 @rpc("any_peer", "call_local", "reliable")
@@ -499,66 +500,111 @@ func _gerar_chao() -> void:
 					_pintar(cel, Bloco.GRAMA_FLORES)
 				else:
 					_pintar(cel, Bloco.GRAMA)
-	_montar_chao_suave()
+	_montar_terreno()
 
 
-# --- Divisas suaves entre os chãos ------------------------------------------------
+# --- Terreno no estilo Tiny Swords ------------------------------------------------
 ## A camada de tiles (Chao) fica invisível: só serve para a colisão da água e para saber o
-## chão de cada tile. Quem desenha é o ChaoSuave, com o shader chao_suave.gdshader, que
-## arredonda as divisas pixel a pixel usando o mapa abaixo (1 pixel por tile).
+## chão de cada tile. Quem desenha é o Terreno, com a arte do Tiny Swords (tile de 64 px,
+## escala 0,25): água lisa no fundo, espuma animada embaixo da beira, a ilha inteira em
+## grama oliva (no lugar da areia, que o pacote não tem) e a grama por cima. Cada camada
+## escolhe o tile pelos 4 vizinhos: o terreno deles tem as 16 combinações (bloco 3x3,
+## tira vertical, tira horizontal e tile sozinho).
+const TS := 64
+const ESCALA_TS := 0.25
+const TEX_TS_AGUA := preload("res://assets/tiny_swords/terreno/agua.png")
+const TEX_TS_ESPUMA := preload("res://assets/tiny_swords/terreno/espuma.png")
+const TEX_TS_AREIA := preload("res://assets/tiny_swords/terreno/grama_oliva.png")
+const TEX_TS_GRAMA := preload("res://assets/tiny_swords/terreno/grama.png")
+
 var _terra: Dictionary[Vector2i, bool] = {}
-var _mapa: Image
+var _camada_gelo: TileMapLayer  # gelo da lança de gelo, por cima da água
 
 
-func _montar_chao_suave() -> void:
-	_mapa = Image.create(largura, altura, false, Image.FORMAT_RGBA8)
-	for cel in _tipo:
-		_atualizar_mapa(cel)
-	chao_suave.texture = ImageTexture.create_from_image(_mapa)  # também dá o tamanho do sprite
-	chao_suave.centered = false
-	chao_suave.scale = Vector2(T, T)
-	chao_suave.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
-	var mat := ShaderMaterial.new()
-	mat.shader = preload("res://shaders/chao_suave.gdshader")
-	mat.set_shader_parameter(&"chao_tex", TEX_CHAO)
-	mat.set_shader_parameter(&"gelo_tex", TEX_AGUA)
-	mat.set_shader_parameter(&"gelo_origem", Vector2(GELO * T))
-	mat.set_shader_parameter(&"tile", float(T))
-	mat.set_shader_parameter(&"mapa", chao_suave.texture)
-	mat.set_shader_parameter(&"cobertura", ImageTexture.create_from_image(_cobertura()))
-	chao_suave.material = mat
+func _montar_terreno() -> void:
 	chao.visible = false
+	var raiz := Node2D.new()
+	raiz.name = "Terreno"
+	raiz.scale = Vector2(ESCALA_TS, ESCALA_TS)
+	add_child(raiz)
+	move_child(raiz, chao.get_index() + 1)
+	var agua := Sprite2D.new()
+	agua.texture = TEX_TS_AGUA
+	agua.texture_repeat = CanvasItem.TEXTURE_REPEAT_ENABLED
+	agua.region_enabled = true
+	agua.region_rect = Rect2(0, 0, (largura + 40) * TS, (altura + 40) * TS)
+	agua.centered = false
+	agua.position = Vector2(-20, -20) * TS
+	raiz.add_child(agua)
+
+	var terra := func(cel: Vector2i) -> bool: return tipo_do_chao(cel) != Chao.AGUA
+	var grama := func(cel: Vector2i) -> bool: return tipo_do_chao(cel) == Chao.GRAMA and not _terra.has(cel)
+	var espuma := SpriteFrames.new()
+	espuma.remove_animation(&"default")
+	SpriteSheets.adicionar_tira(espuma, TEX_TS_ESPUMA, &"onda", Vector2i(192, 192), 16, 10.0)
+	for cel in _tipo:
+		if terra.call(cel) and _vizinhos(cel, terra) != 15:
+			var a := AnimatedSprite2D.new()
+			a.sprite_frames = espuma
+			a.play(&"onda")
+			a.frame = (cel.x * 7 + cel.y * 3) % 16
+			a.position = Vector2(cel * TS) + Vector2(TS, TS) / 2.0
+			raiz.add_child(a)
+	raiz.add_child(_camada_ts(TEX_TS_AREIA, terra))
+	raiz.add_child(_camada_ts(TEX_TS_GRAMA, grama))
+
+	# O gelo ainda é o tile provisório do Ninja Adventure, no tamanho do nosso tile.
+	_camada_gelo = TileMapLayer.new()
+	var ts := TileSet.new()
+	ts.tile_size = Vector2i(T, T)
+	var src := TileSetAtlasSource.new()
+	src.texture = TEX_AGUA
+	src.texture_region_size = Vector2i(T, T)
+	ts.add_source(src, 0)
+	src.create_tile(GELO)
+	_camada_gelo.tile_set = ts
+	add_child(_camada_gelo)
+	move_child(_camada_gelo, raiz.get_index() + 1)
 
 
-## Para cada tile, quanto dele e dos 8 vizinhos é (R) areia ou mais alto, (G) grama ou terra,
-## (B) terra. O próprio tile pesa mais (4 de 6 em cada direção), então uma faixa de areia de
-## um tile só não some, mas a escada de tiles vira curva.
-func _cobertura() -> Image:
-	var img := Image.create(largura, altura, false, Image.FORMAT_RGBA8)
-	const PESO := [1.0, 4.0, 1.0]
-	for y in altura:
-		for x in largura:
-			var soma := Vector3.ZERO
-			for dy in 3:
-				for dx in 3:
-					var n := _nivel(Vector2i(clampi(x + dx - 1, 0, largura - 1), clampi(y + dy - 1, 0, altura - 1)))
-					soma += Vector3(float(n >= 1), float(n >= 2), float(n >= 3)) * PESO[dx] * PESO[dy]
-			soma /= 36.0
-			img.set_pixel(x, y, Color(soma.x, soma.y, soma.z))
-	return img
+func _camada_ts(textura: Texture2D, e_desta: Callable) -> TileMapLayer:
+	var ts := TileSet.new()
+	ts.tile_size = Vector2i(TS, TS)
+	var src := TileSetAtlasSource.new()
+	src.texture = textura
+	src.texture_region_size = Vector2i(TS, TS)
+	ts.add_source(src, 0)
+	for y in 4:
+		for x in 4:
+			src.create_tile(Vector2i(x, y))
+	var camada := TileMapLayer.new()
+	camada.tile_set = ts
+	for cel in _tipo:
+		if e_desta.call(cel):
+			camada.set_cell(cel, 0, _tile_ts(_vizinhos(cel, e_desta)))
+	return camada
 
 
-func _nivel(cel: Vector2i) -> int:
-	return 3 if _terra.has(cel) else tipo_do_chao(cel)  # Chao: AGUA 0, AREIA 1, GRAMA 2
+## Bits: 1 norte, 2 sul, 4 oeste, 8 leste (vizinho do mesmo terreno).
+func _vizinhos(cel: Vector2i, e_desta: Callable) -> int:
+	var n := 0
+	if e_desta.call(cel + Vector2i.UP): n |= 1
+	if e_desta.call(cel + Vector2i.DOWN): n |= 2
+	if e_desta.call(cel + Vector2i.LEFT): n |= 4
+	if e_desta.call(cel + Vector2i.RIGHT): n |= 8
+	return n
 
 
-## R: chão (0 água, 1/3 areia, 2/3 grama, 1 terra); G: bloco com flores; B: gelo.
-func _atualizar_mapa(cel: Vector2i) -> void:
-	if _mapa == null or not Rect2i(0, 0, largura, altura).has_point(cel):
-		return
-	_mapa.set_pixel(cel.x, cel.y, Color(_nivel(cel) / 3.0, 1.0 if _bloco_com_flores(cel) else 0.0, 1.0 if _gelo.has(cel) else 0.0))
-	if chao_suave.texture:
-		(chao_suave.texture as ImageTexture).update(_mapa)
+## Coluna: 0 começa à esquerda, 1 meio, 2 termina à direita, 3 tira vertical (sem lados).
+## Linha: 0 começa em cima, 1 meio, 2 termina embaixo, 3 tira horizontal (sem cima/baixo).
+func _tile_ts(v: int) -> Vector2i:
+	var oeste := v & 4 != 0
+	var leste := v & 8 != 0
+	var norte := v & 1 != 0
+	var sul := v & 2 != 0
+	var col := 1 if oeste and leste else (2 if oeste else (0 if leste else 3))
+	var lin := 1 if norte and sul else (2 if norte else (0 if sul else 3))
+	return Vector2i(col, lin)
 
 
 ## Blocos de flores salpicados (alinhados de 2 em 2 tiles para o bloco ficar inteiro).
@@ -629,15 +675,18 @@ func _espalhar() -> void:
 		# Árvores em bosques (manchas de ruído), deixando campos abertos entre eles.
 		var cel_arvore := Vector2i(p / T)
 		if p.distance_to(centro) > RAIO_CLAREIRA and _bosque.get_noise_2d(cel_arvore.x, cel_arvore.y) > 0.0 and _livre(p, 30.0):
-			var rosa := _rng.randf() < 0.22
+			var tipo := _rng.randi() % ARVORES_TS.size()
 			_ocupados.append(p)
 			colocadas += 1
 			if gerar_recursos:
 				var a: ResourceNode = ARVORE.instantiate()
 				a.name = "Arvore%d" % colocadas
-				if rosa:
-					a.regiao_inteiro = COPA_ROSA
-					a.regioes_por_golpe = []
+				var quadro := Vector2(192, ARVORES_TS[tipo][0])
+				a.textura_inteiro = load("res://assets/tiny_swords/natureza/arvore%d.png" % (tipo + 1))
+				a.textura_esgotado = load("res://assets/tiny_swords/natureza/toco%d.png" % (tipo + 1))
+				a.regiao_inteiro = Rect2(Vector2.ZERO, quadro)
+				a.regiao_queimado = Rect2(Vector2.ZERO, quadro)
+				a.pe = ARVORES_TS[tipo][1]
 				a.position = p
 				entidades.add_child(a)
 
@@ -647,26 +696,29 @@ func _espalhar() -> void:
 			break
 		var p := _ponto_em(celulas_grama)
 		if p.distance_to(centro) > 70.0 and _livre(p, 26.0):
-			var marrom := _rng.randf() < 0.35
+			var tipo := _rng.randi() % 4
 			_ocupados.append(p)
 			colocadas += 1
 			if gerar_recursos:
 				var pd: ResourceNode = PEDRA.instantiate()
 				pd.name = "Pedra%d" % colocadas
-				if marrom:
-					pd.regiao_inteiro = PEDRA_MARROM
-					pd.regioes_por_golpe = []
+				pd.textura_inteiro = load("res://assets/tiny_swords/natureza/pedra%d.png" % (tipo + 1))
 				pd.position = p
 				entidades.add_child(pd)
 
+	var arbustos: Array[SpriteFrames] = []
+	for k in 4:
+		var f := SpriteFrames.new()
+		f.remove_animation(&"default")
+		SpriteSheets.adicionar_tira(f, load("res://assets/tiny_swords/natureza/arbusto%d.png" % (k + 1)), &"vento", Vector2i(128, 128), 8, 8.0)
+		arbustos.append(f)
 	for i in plantas:
 		var p := _ponto_em(celulas_grama)
 		if p.distance_to(centro) > 100.0 and _livre(p, 14.0):
-			var qual := _sortear_planta()
-			var s := _sprite(TEX_PLANTAS, Rect2(qual * 32, 0, 32, 32), p)
 			_ocupados.append(p)
-			if qual == COGUMELO_AZUL:
+			if _rng.randf() < CHANCE_COGUMELO:
 				# O cogumelo azul brilha à noite (conceito A).
+				var s := _sprite(TEX_PLANTAS, Rect2(COGUMELO_AZUL * 32, 0, 32, 32), p)
 				var luz := PointLight2D.new()
 				luz.texture = LUZ
 				luz.color = Color(0.3, 0.95, 0.9)
@@ -675,18 +727,16 @@ func _espalhar() -> void:
 				luz.position = Vector2(0, -6)
 				luz.add_to_group(&"luzes_noturnas")
 				s.add_child(luz)
-
-
-func _sortear_planta() -> int:
-	var total := 0
-	for peso in PLANTAS_PESO:
-		total += peso
-	var r := _rng.randi() % total
-	for i in PLANTAS_PESO.size():
-		r -= PLANTAS_PESO[i]
-		if r < 0:
-			return i
-	return 0
+			else:
+				var a := AnimatedSprite2D.new()
+				a.sprite_frames = arbustos[_rng.randi() % arbustos.size()]
+				a.play(&"vento")
+				a.frame = _rng.randi() % 8
+				a.centered = false
+				a.offset = Vector2(-64, -128 + ARBUSTO_PE)
+				a.scale = Vector2(ESCALA_TS, ESCALA_TS)
+				a.position = p
+				entidades.add_child(a)
 
 
 ## Só o anfitrião cria os slimes; o MultiplayerSpawner copia para os outros.
