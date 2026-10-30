@@ -64,13 +64,17 @@ func _init() -> void:
 	# (peças de interface e ícones), salvo na pasta de --saida com esses nomes.
 	var separar: PackedStringArray = String(_args.get("separar", "")).split(",", false)
 	var tira := Image.create_empty(quadro * celulas.size(), quadro, false, Image.FORMAT_RGBA8)
-	var colunas := folha.get_width() / CELULA
+	# --celula=LxA: células que não são 512x512 (ex.: 512x768 para árvores altas).
+	var cel := Vector2i(CELULA, CELULA)
+	if _args.has("celula"):
+		cel = Vector2i(String(_args["celula"]).get_slice("x", 0).to_int(), String(_args["celula"]).get_slice("x", 1).to_int())
+	var colunas := folha.get_width() / cel.x
 	for i in celulas.size():
 		var c: int = celulas[i]
-		var x0 := ceili(((c % colunas) * CELULA - gx.y) / s)
-		var y0 := ceili(((c / colunas) * CELULA - gy.y) / s)
-		var x1 := floori(((c % colunas + 1) * CELULA - gx.y) / s)
-		var y1 := floori(((c / colunas + 1) * CELULA - gy.y) / s)
+		var x0 := ceili(((c % colunas) * cel.x - gx.y) / s)
+		var y0 := ceili(((c / colunas) * cel.y - gy.y) / s)
+		var x1 := floori(((c % colunas + 1) * cel.x - gx.y) / s)
+		var y1 := floori(((c / colunas + 1) * cel.y - gy.y) / s)
 		var pequeno := pequeno_folha.get_region(Rect2i(x0, y0, x1 - x0, y1 - y0))
 		_apagar_soltos(pequeno, 3)
 		var caixa := pequeno.get_used_rect()
@@ -210,7 +214,18 @@ func _reduzir(img: Image, s: float, inicio: Vector2) -> Image:
 			if escuro and soma_escura * 4 >= total and not _eh_magenta(Color.hex(escolhida)):
 				escolhida = escolhida_escura
 			out.set_pixel(bx, by, Color.hex(escolhida))
+			if not _eh_magenta(Color.hex(escolhida)) and total > 0:
+				_pureza += float(contagem[escolhida]) / total
+				_blocos += 1
+	if _blocos > 0:
+		# Pixel art de verdade: cada bloco é de uma cor só (perto de 100%). A "pintura com cara
+		# de pixel" da IA mistura cores dentro do bloco e fica bem abaixo.
+		print("nitidez da grade: %d%% (pixel feito à mão ≈ 100%%; IA crua costuma dar 30-55%%)" % roundi(_pureza / _blocos * 100.0))
 	return out
+
+
+var _pureza := 0.0
+var _blocos := 0
 
 
 func _eh_magenta(c: Color) -> bool:

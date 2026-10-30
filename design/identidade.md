@@ -1,5 +1,7 @@
 # Identidade visual (bíblia)
 
+> **Direção atual (30/10/2026): estilo Tiny Swords.** O João escolheu o estilo do pacote Tiny Swords (Pixel Frog): terreno, árvores, pedras, arbustos, animais, efeitos e interface vêm do pacote; os nossos personagens e o que faltar (areia, ogro, classes próprias) são feitos pelo Codex com as unidades do pacote anexadas como régua. Escala: arte de 64 px por tile, entra no jogo com escala 0,25 e câmera em zoom 4 (1 pixel da arte = 1 pixel da tela). Ver `design/processo_arte.md`. A direção C02 abaixo fica como histórico.
+>
 > **Direção atual — C02, aprovada pelo João em 29/10/2026:** **pixel art mais fina**, conforme `art/conceitos/estilo/estilo_pixel_fino_v1.png`. O João acrescentou **Forager** e **Moonlighter (o primeiro, em 2D)** como referências. A alternativa de desenho liso não foi escolhida.
 >
 > Continuam valendo as cores e o clima aprovados no **C01**: conceito **B = dia** (`art/conceitos/mundo/clareira_b_v1.png`), conceito **A = noite** (`art/conceitos/mundo/clareira_a_v1.png`). Os nomes A/B de C01 e C02 são independentes. Novos pedidos anexam o C02 aprovado e as referências de dia/noite do C01.
