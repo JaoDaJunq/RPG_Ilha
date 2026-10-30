@@ -29,6 +29,7 @@ const float B_FLORES = 1.0;
 const float B_TERRA = 2.0;
 const float B_AREIA = 3.0;
 const float B_AGUA = 4.0;
+const float B_LISA = 5.0;  // grama sem tufinhos
 
 float acaso(vec2 p) {
 	return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453);
@@ -79,7 +80,8 @@ vec4 cor_do_chao(float h, vec2 p) {
 	} else if (h == TERRA) {
 		bloco = B_TERRA;
 	} else if (h == GRAMA) {
-		bloco = t.g > 0.5 ? B_FLORES : B_GRAMA;
+		// Metade dos blocos de grama sem tufinhos, sorteado por bloco, para não formar grade.
+		bloco = t.g > 0.5 ? B_FLORES : (acaso(floor(p / 32.0)) < 0.5 ? B_LISA : B_GRAMA);
 	}
 	vec2 uv = (vec2(bloco * 32.0, 0.0) + mod(p, 32.0)) / vec2(textureSize(chao_tex, 0));
 	return texture(chao_tex, uv);
