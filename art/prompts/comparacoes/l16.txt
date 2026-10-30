@@ -1,0 +1,29 @@
+pacote | ../art/terceiros/tiny_swords/Tiny Swords (Free Pack)/UI Elements/UI Elements/Icons/Icon_01.png | 0 0 64 64 | 0.25
+pacote | ../art/terceiros/tiny_swords/Tiny Swords (Free Pack)/UI Elements/UI Elements/Icons/Icon_04.png | 0 0 64 64 | 0.25
+pacote | ../art/terceiros/tiny_swords/Tiny Swords (Free Pack)/UI Elements/UI Elements/Icons/Icon_05.png | 0 0 64 64 | 0.25
+pacote | ../art/terceiros/tiny_swords/Tiny Swords (Free Pack)/UI Elements/UI Elements/Icons/Icon_06.png | 0 0 64 64 | 0.25
+pacote | res://assets/tiny_swords/fx/flecha.png | 0 0 64 64 | 0.25
+pacote | res://assets/tiny_swords/fx/explosao.png | 576 0 192 192 | 0.25
+pacote | ../art/terceiros/tiny_swords/Tiny Swords (Free Pack)/Terrain/Resources/Meat/Sheep/Sheep_Idle.png | 0 0 128 128 | 0.25
+nosso | res://assets/sprites/tiny/fx/bola_de_fogo.png | 0 0 200 200 | 0.25
+nosso | res://assets/sprites/tiny/fx/lanca_gelo.png | 0 0 200 200 | 0.25
+nosso | res://assets/sprites/tiny/fx/cristais.png | 0 0 200 200 | 0.25
+nosso | res://assets/sprites/tiny/fx/giro.png | 0 0 200 200 | 0.25
+nosso | res://assets/sprites/tiny/fx/estrela.png | 0 0 200 200 | 0.25
+nosso | res://assets/sprites/tiny/armadilha.png | 0 0 128 128 | 0.25
+nosso | res://assets/sprites/tiny/armadilha.png | 128 0 128 128 | 0.25
+nosso | res://assets/sprites/tiny/armadilha.png | 256 0 128 128 | 0.25
+nosso | res://assets/sprites/tiny/armadilha.png | 384 0 128 128 | 0.25
+nosso | res://assets/sprites/tiny/icones/icone_bola_de_fogo.png | 0 0 100 100 | 0.25
+nosso | res://assets/sprites/tiny/icones/icone_lanca_gelo.png | 0 0 100 100 | 0.25
+nosso | res://assets/sprites/tiny/icones/icone_investida.png | 0 0 100 100 | 0.25
+nosso | res://assets/sprites/tiny/icones/icone_giro.png | 0 0 100 100 | 0.25
+nosso | res://assets/sprites/tiny/icones/icone_tiro.png | 0 0 100 100 | 0.25
+nosso | res://assets/sprites/tiny/icones/icone_armadilha.png | 0 0 100 100 | 0.25
+nosso | res://assets/sprites/tiny/icones/icone_esquiva.png | 0 0 100 100 | 0.25
+nosso | res://assets/sprites/tiny/icones/icone_forca.png | 0 0 100 100 | 0.25
+nosso | res://assets/sprites/tiny/icones/icone_vitalidade.png | 0 0 100 100 | 0.25
+nosso | res://assets/sprites/tiny/icones/icone_experiencia.png | 0 0 100 100 | 0.25
+nosso | res://assets/sprites/tiny/icones/item_pedra.png | 0 0 100 100 | 0.25
+nosso | res://assets/sprites/tiny/icones/item_carvao.png | 0 0 100 100 | 0.25
+nosso | res://assets/sprites/tiny/icones/tecla_e.png | 0 0 100 100 | 0.25

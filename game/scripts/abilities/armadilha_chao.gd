@@ -1,11 +1,12 @@
 class_name ArmadilhaChao
 extends Area2D
-## Armadilha de ferro do Arqueiro (arte L04): fica armada no chão e, quando um inimigo
+## Armadilha de ferro do Arqueiro: fica armada no chão e, quando um inimigo
 ## pisa, fecha, prende e machuca. Fica fechada enquanto prende; depois aparece gasta e some.
 ## Só o anfitrião confere quem pisou.
 
-## Folha (L04): 0 armada, 1 fechando, 2 fechada, 3 fechada e gasta. Quadros de 40x40.
-const FOLHA := preload("res://assets/sprites/habilidades/armadilha.png")
+## Folha (L16, estilo Tiny Swords): 0 armada, 1 fechando, 2 fechada, 3 gasta. Quadros de
+## 128x128 no pixel do pacote (escala 0,25).
+const FOLHA := preload("res://assets/sprites/tiny/armadilha.png")
 const TEMPO_PRESO := 3.0
 
 @export var dono_id := 1
@@ -21,7 +22,7 @@ func _ready() -> void:
 	collision_mask = 1 << 2  # "inimigos"
 	monitoring = multiplayer.is_server()
 	body_entered.connect(_on_body_entered)
-	var t := Vector2i(40, 40)
+	var t := Vector2i(128, 128)
 	var f := SpriteFrames.new()
 	f.remove_animation(&"default")
 	SpriteSheets.adicionar_quadros(f, &"armada", [SpriteSheets.quadro(FOLHA, 0, t)], 1.0)

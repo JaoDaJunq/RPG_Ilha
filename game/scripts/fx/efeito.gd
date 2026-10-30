@@ -6,9 +6,9 @@ extends AnimatedSprite2D
 ## tile de 64 px: escala 0,25 no nosso mundo.
 
 const TABELA := {
-	&"giro": [preload("res://assets/placeholder/ninja/fx/giro.png"), Vector2i(32, 32), 4, 16.0, 1.0],
+	&"giro": [preload("res://assets/sprites/tiny/fx/giro.png"), Vector2i(94, 67), 1, 4.0, 0.25],
 	&"poeira": [preload("res://assets/tiny_swords/fx/poeira.png"), Vector2i(64, 64), 8, 18.0, 0.25],
-	&"congelar": [preload("res://assets/placeholder/ninja/fx/congelar.png"), Vector2i(32, 32), 10, 16.0, 1.0],
+	&"congelar": [preload("res://assets/sprites/tiny/fx/cristais.png"), Vector2i(81, 63), 1, 1.5, 0.25],
 	&"subir_nivel": [preload("res://assets/tiny_swords/fx/brilho.png"), Vector2i(192, 192), 11, 14.0, 0.25],
 }
 

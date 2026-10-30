@@ -91,6 +91,8 @@ func _init() -> void:
 		if caixa.size.x > quadro - 2 or caixa.size.y > quadro - base:
 			push_warning("célula %d: desenho %dx%d não cabe no quadro de %d" % [c, caixa.size.x, caixa.size.y, quadro])
 		var destino := Vector2i(i * quadro + (quadro - caixa.size.x) / 2, quadro - base - caixa.size.y)
+		if _args.has("centro"):
+			destino.y = (quadro - caixa.size.y) / 2  # efeitos e projéteis: no meio do quadro
 		tira.blit_rect(pequeno, caixa, destino)
 		if _args.has("sombra"):
 			SombraTiny.por(tira, Rect2i(destino, caixa.size))  # a sombra do pacote embaixo

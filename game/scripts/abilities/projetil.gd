@@ -44,7 +44,8 @@ func _ready() -> void:
 	f.remove_animation(&"default")
 	SpriteSheets.adicionar_tira(f, textura, &"voando", quadro, quadros, fps)
 	if textura_impacto and quadros_impacto > 0:
-		SpriteSheets.adicionar_tira(f, textura_impacto, &"impacto", quadro_impacto, quadros_impacto, 20.0, false)
+		# Impacto de um quadro só (cristais de gelo) fica um terço de segundo na tela.
+		SpriteSheets.adicionar_tira(f, textura_impacto, &"impacto", quadro_impacto, quadros_impacto, 20.0 if quadros_impacto > 1 else 3.0, false)
 	visual.sprite_frames = f
 	visual.scale = Vector2(escala_arte, escala_arte)
 	visual.play(&"voando")

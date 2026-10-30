@@ -18,7 +18,8 @@ properties/1/replication_mode = 0
 script = ExtResource("1_armadilha")
 
 [node name="Visual" type="AnimatedSprite2D" parent="."]
-position = Vector2(0, -16)
+position = Vector2(0, -14)
+scale = Vector2(0.25, 0.25)
 
 [node name="Forma" type="CollisionShape2D" parent="."]
 position = Vector2(0, -3)

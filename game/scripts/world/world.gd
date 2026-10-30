@@ -224,7 +224,7 @@ func _definir_gelo(cel: Vector2i, congelado: bool) -> void:
 		_pintar(cel, Bloco.AGUA)
 		_gelo.erase(cel)
 	if congelado:
-		_camada_gelo.set_cell(cel, 0, GELO)
+		_camada_gelo.set_cell(cel, 0, Vector2i.ZERO)
 	else:
 		_camada_gelo.erase_cell(cel)
 
@@ -557,16 +557,17 @@ func _montar_terreno() -> void:
 	raiz.add_child(_camada_ts(TEX_TS_AREIA, terra))
 	raiz.add_child(_camada_ts(TEX_TS_GRAMA, grama))
 
-	# O gelo ainda é o tile provisório do Ninja Adventure, no tamanho do nosso tile.
+	# Gelo da lança de gelo (L16): bloco de 64 px no pixel do pacote, escala 0,25.
 	_camada_gelo = TileMapLayer.new()
 	var ts := TileSet.new()
-	ts.tile_size = Vector2i(T, T)
+	ts.tile_size = Vector2i(TS, TS)
 	var src := TileSetAtlasSource.new()
-	src.texture = TEX_AGUA
-	src.texture_region_size = Vector2i(T, T)
+	src.texture = preload("res://assets/sprites/tiny/fx/gelo.png")
+	src.texture_region_size = Vector2i(TS, TS)
 	ts.add_source(src, 0)
-	src.create_tile(GELO)
+	src.create_tile(Vector2i.ZERO)
 	_camada_gelo.tile_set = ts
+	_camada_gelo.scale = Vector2(ESCALA_TS, ESCALA_TS)
 	add_child(_camada_gelo)
 	move_child(_camada_gelo, raiz.get_index() + 1)
 

@@ -5,16 +5,16 @@ extends CanvasLayer
 ## teclinha E em cima do que dá para coletar quando o jogador está perto.
 
 const ITENS: Array[StringName] = [&"madeira", &"pedra", &"carvao"]
-const ICONE_ESQUIVA := preload("res://assets/placeholder/ninja/ui/icone_esquiva.png")
+const ICONE_ESQUIVA := preload("res://assets/sprites/tiny/icones/icone_esquiva.png")
 const ICONES_ATRIBUTO := {
-	&"forca": preload("res://assets/sprites/interface/icone_forca.png"),
-	&"vitalidade": preload("res://assets/sprites/interface/icone_vitalidade.png"),
-	&"agilidade": preload("res://assets/sprites/interface/icone_agilidade.png"),
-	&"intelecto": preload("res://assets/sprites/interface/icone_intelecto.png"),
-	&"espirito": preload("res://assets/sprites/interface/icone_espirito.png"),
+	&"forca": preload("res://assets/sprites/tiny/icones/icone_forca.png"),
+	&"vitalidade": preload("res://assets/sprites/tiny/icones/icone_vitalidade.png"),
+	&"agilidade": preload("res://assets/sprites/tiny/icones/icone_agilidade.png"),
+	&"intelecto": preload("res://assets/sprites/tiny/icones/icone_intelecto.png"),
+	&"espirito": preload("res://assets/sprites/tiny/icones/icone_espirito.png"),
 }
-const ICONE_XP := preload("res://assets/sprites/interface/icone_experiencia.png")
-const TECLA_E := preload("res://assets/sprites/interface/tecla_e.png")
+const ICONE_XP := preload("res://assets/sprites/tiny/icones/icone_experiencia.png")
+const TECLA_E := preload("res://assets/sprites/tiny/icones/tecla_e.png")
 const COR_TEXTO := Tema.COR_TEXTO
 const COR_TEXTO_2 := Tema.COR_TEXTO_2
 
@@ -228,7 +228,7 @@ func _montar() -> void:
 	recursos.add_child(linha)
 	for id in ITENS:
 		var dados := ItemData.carregar(id)
-		var icone := _icone(dados.icone, Vector2(32, 32))
+		var icone := _icone(dados.icone, Vector2(40, 36))
 		icone.modulate = dados.cor_icone
 		icone.tooltip_text = dados.nome
 		icone.mouse_filter = Control.MOUSE_FILTER_PASS
@@ -288,7 +288,7 @@ func _montar() -> void:
 		var la := HBoxContainer.new()
 		la.add_theme_constant_override(&"separation", 8)
 		fv.add_child(la)
-		la.add_child(_icone(ICONES_ATRIBUTO[a], Vector2(32, 32)))
+		la.add_child(_icone(ICONES_ATRIBUTO[a], Vector2(40, 36)))
 		var r := _rotulo("", 16)
 		r.custom_minimum_size = Vector2(230, 0)
 		la.add_child(r)
@@ -339,7 +339,7 @@ func _slot(tecla: String) -> Dictionary:
 	fundo.add_child(selecionado)
 	var icone := TextureRect.new()
 	icone.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
-	icone.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+	icone.stretch_mode = TextureRect.STRETCH_KEEP_CENTERED  # tamanho real: pixel nítido
 	icone.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
 	icone.position = Vector2(8, 8)
 	icone.size = Vector2(48, 48)
@@ -365,7 +365,7 @@ func _slot(tecla: String) -> Dictionary:
 func _linha_com_icone(icone: Texture2D, barra: ProgressBar) -> HBoxContainer:
 	var h := HBoxContainer.new()
 	h.add_theme_constant_override(&"separation", 6)
-	h.add_child(_icone(icone, Vector2(24, 24)))
+	h.add_child(_icone(icone, Vector2(36, 30)))
 	barra.custom_minimum_size.x = 200
 	barra.size_flags_vertical = Control.SIZE_SHRINK_CENTER
 	h.add_child(barra)
@@ -377,7 +377,7 @@ func _icone(textura: Texture2D, tamanho: Vector2) -> TextureRect:
 	t.texture = textura
 	t.custom_minimum_size = tamanho
 	t.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
-	t.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+	t.stretch_mode = TextureRect.STRETCH_KEEP_CENTERED  # ícones no tamanho real (pixel do pacote), sem esticar
 	t.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
 	t.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	return t
