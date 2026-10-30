@@ -71,7 +71,7 @@ L07: laboratório Godot isolado em `art/piloto_c02/abrir.cmd`, captura real revi
 - [x] A01d Lote L02 (chão, acampamento, plantas, slime): aprovado e no jogo (29/10). Chão convertido com --preencher (sem grade).
 - [x] A01e Lotes L03 (personagens) e L04 (interface, ícones, armadilha): aprovados e no jogo (29/10).
 - [ ] A01f L05 (costas, perfil e caminhada dos 6 personagens): no jogo para o João ver; aguardando aprovação. Ogros com "presinhas" que parecem lágrimas.
-- [ ] A01h L06 (chão liso e bordas arredondadas entre grama, areia, terra e água): no jogo; aguardando aprovação. Bordas numa camada por cima (TileMapLayer "Bordas").
+- [ ] A01h L06 (chão liso): no jogo; aguardando aprovação. As divisas entre grama, areia, terra e água agora são suaves e curvas (shader `chao_suave`), sem degraus de tile; a arte de bordas do L06 foi descartada.
 - [ ] A01g Fonte pixel própria (a do pacote placeholder tinha o "i" quebrado; hoje usa a fonte padrão do Godot). Ex.: Pixelify Sans (OFL), precisa de autorização para baixar.
 - [ ] A02 Tileset da clareira (grama, terra, areia, água) no padrão aprovado.
 - [ ] A03 Personagem provisório próprio (4 direções: parado, andar, atacar, coletar).

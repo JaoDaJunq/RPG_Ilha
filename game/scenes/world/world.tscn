@@ -8,7 +8,7 @@ script = ExtResource("1_mundo")
 
 [node name="Chao" type="TileMapLayer" parent="."]
 
-[node name="Bordas" type="TileMapLayer" parent="."]
+[node name="ChaoSuave" type="Sprite2D" parent="."]
 
 [node name="Entidades" type="Node2D" parent="."]
 y_sort_enabled = true

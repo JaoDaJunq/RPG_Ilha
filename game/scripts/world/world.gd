@@ -82,7 +82,7 @@ var _rng := RandomNumberGenerator.new()
 var _bosque := FastNoiseLite.new()  # onde ficam os bosques
 
 @onready var chao: TileMapLayer = $Chao
-@onready var camada_bordas: TileMapLayer = $Bordas  # bordas por cima do chão, com fundo transparente
+@onready var chao_suave: Sprite2D = $ChaoSuave  # desenha o chão com divisas suaves
 @onready var entidades: Node2D = $Entidades
 @onready var ambiente: CanvasModulate = $Ambiente
 @onready var hud: Hud = $HUD
@@ -221,6 +221,7 @@ func _definir_gelo(cel: Vector2i, congelado: bool) -> void:
 	else:
 		_pintar(cel, Bloco.AGUA)
 		_gelo.erase(cel)
+	_atualizar_mapa(cel)
 
 
 @rpc("any_peer", "call_local", "reliable")
@@ -498,161 +499,66 @@ func _gerar_chao() -> void:
 					_pintar(cel, Bloco.GRAMA_FLORES)
 				else:
 					_pintar(cel, Bloco.GRAMA)
-	_aplicar_bordas(ts)
+	_montar_chao_suave()
 
 
-# --- Bordas entre tipos de chão (arte L06) ----------------------------------------
-## bordas.png: 6 pedaços de 5x5 tiles lado a lado; em cada um há uma mancha 3x3 no meio.
-## Na arte, a curva fica DENTRO dos tiles da mancha. Então:
-## - o chão "de cima" (grama sobre areia, areia sobre água, terra sobre grama) usa os
-##   cantos e lados da MANCHA quando faz divisa com o de baixo;
-## - o chão "de baixo" usa os cantos do BURACO quando o de cima o abraça por dois lados
-##   (é onde o de cima faz curva para dentro).
-const BORDAS := "res://assets/sprites/chao/bordas.png"
-enum Borda { GRAMA_EM_AREIA, BURACO_DE_AREIA, AREIA_EM_AGUA, BURACO_DE_AGUA, TERRA_EM_GRAMA, GRAMA_EM_TERRA }
-## Em cada pedaço de borda, que chão é o "de fundo" (fica transparente: aparece o chão liso
-## da camada de baixo, sem emenda de cor).
-const FUNDO_DA_BORDA := [Bloco.AREIA, Bloco.AREIA, Bloco.AGUA, Bloco.AGUA, Bloco.GRAMA, Bloco.GRAMA]
-
+# --- Divisas suaves entre os chãos ------------------------------------------------
+## A camada de tiles (Chao) fica invisível: só serve para a colisão da água e para saber o
+## chão de cada tile. Quem desenha é o ChaoSuave, com o shader chao_suave.gdshader, que
+## arredonda as divisas pixel a pixel usando o mapa abaixo (1 pixel por tile).
 var _terra: Dictionary[Vector2i, bool] = {}
-var _id_agua_livre := -1  # água sem colisão, embaixo da beira da areia
+var _mapa: Image
 
 
-func _aplicar_bordas(ts: TileSet) -> void:
-	if not ResourceLoader.exists(BORDAS):
-		return
-	# Água que não bloqueia: fica embaixo da beira da areia (onde dá para andar).
-	var livre := TileSetAtlasSource.new()
-	livre.texture = TEX_CHAO
-	livre.texture_region_size = Vector2i(T, T)
-	_id_agua_livre = ts.add_source(livre)
-	for y in 2:
-		for x in 2:
-			livre.create_tile(Vector2i(Bloco.AGUA * 2 + x, y))
-	var ts_bordas := TileSet.new()
-	ts_bordas.tile_size = Vector2i(T, T)
-	var src := TileSetAtlasSource.new()
-	src.texture = _bordas_com_fundo_transparente()
-	src.texture_region_size = Vector2i(T, T)
-	ts_bordas.add_source(src, 0)
-	for y in 5:
-		for x in 30:
-			src.create_tile(Vector2i(x, y))
-	camada_bordas.tile_set = ts_bordas
-
-	var e_grama := func(c: Vector2i) -> bool: return tipo_do_chao(c) == Chao.GRAMA and not _terra.has(c)
-	var e_terra := func(c: Vector2i) -> bool: return _terra.has(c)
-	var nao_agua := func(c: Vector2i) -> bool: return tipo_do_chao(c) != Chao.AGUA
-	var grama_ou_terra := func(c: Vector2i) -> bool: return tipo_do_chao(c) == Chao.GRAMA
+func _montar_chao_suave() -> void:
+	_mapa = Image.create(largura, altura, false, Image.FORMAT_RGBA8)
 	for cel in _tipo:
-		match _tipo[cel]:
-			Chao.GRAMA:
-				if _terra.has(cel):
-					if _borda_de_cima(cel, Borda.TERRA_EM_GRAMA, e_terra):
-						_pintar(cel, Bloco.GRAMA)
-				elif _borda_de_cima(cel, Borda.GRAMA_EM_AREIA, grama_ou_terra):
-					_pintar(cel, Bloco.AREIA)
-				else:
-					_borda_de_baixo(cel, Borda.GRAMA_EM_TERRA, e_terra)
-			Chao.AREIA:
-				if _borda_de_cima(cel, Borda.AREIA_EM_AGUA, nao_agua):
-					_pintar(cel, Bloco.AGUA, _id_agua_livre)
-				else:
-					_borda_de_baixo(cel, Borda.BURACO_DE_AREIA, e_grama)
-			Chao.AGUA:
-				_borda_de_baixo(cel, Borda.BURACO_DE_AGUA, nao_agua)
+		_atualizar_mapa(cel)
+	chao_suave.texture = ImageTexture.create_from_image(_mapa)  # também dá o tamanho do sprite
+	chao_suave.centered = false
+	chao_suave.scale = Vector2(T, T)
+	chao_suave.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
+	var mat := ShaderMaterial.new()
+	mat.shader = preload("res://shaders/chao_suave.gdshader")
+	mat.set_shader_parameter(&"chao_tex", TEX_CHAO)
+	mat.set_shader_parameter(&"gelo_tex", TEX_AGUA)
+	mat.set_shader_parameter(&"gelo_origem", Vector2(GELO * T))
+	mat.set_shader_parameter(&"tile", float(T))
+	mat.set_shader_parameter(&"mapa", chao_suave.texture)
+	mat.set_shader_parameter(&"cobertura", ImageTexture.create_from_image(_cobertura()))
+	chao_suave.material = mat
+	chao.visible = false
 
 
-## A folha de bordas com o chão "de fundo" de cada pedaço transparente. Reconhece o fundo
-## pelas cores: a folha de bordas foi convertida com a paleta do chão liso (--paleta_de).
-func _bordas_com_fundo_transparente() -> Texture2D:
-	var img := (load(BORDAS) as Texture2D).get_image()
-	img.convert(Image.FORMAT_RGBA8)
-	var liso := TEX_CHAO.get_image()
-	var cores_do_bloco := func(bloco: int) -> Dictionary:
-		var cores := {}
-		for y in 32:
-			for x in 32:
-				cores[liso.get_pixel(bloco * 32 + x, y).to_rgba32()] = true
-		return cores
-	var fundo := {Bloco.AREIA: cores_do_bloco.call(Bloco.AREIA), Bloco.AGUA: cores_do_bloco.call(Bloco.AGUA)}
-	var grama: Dictionary = cores_do_bloco.call(Bloco.GRAMA)
-	grama.merge(cores_do_bloco.call(Bloco.GRAMA_FLORES))
-	grama.merge(cores_do_bloco.call(Bloco.GRAMA_ESCURA))
-	fundo[Bloco.GRAMA] = grama
-	# Os tons bem claros da água (espuma da beira, reflexos) continuam visíveis.
-	for c in fundo[Bloco.AGUA].keys():
-		if Color.hex(c).get_luminance() > 0.72:
-			fundo[Bloco.AGUA].erase(c)
-	for k in 6:
-		var transparente: Dictionary = fundo[FUNDO_DA_BORDA[k]]
-		for y in img.get_height():
-			for x in range(k * 80, (k + 1) * 80):
-				if transparente.has(img.get_pixel(x, y).to_rgba32()):
-					img.set_pixel(x, y, Color(0, 0, 0, 0))
-	# Sobras soltas (um pixel de areia perdido no meio da água) somem.
-	var copia := img.duplicate() as Image
-	for y in range(1, img.get_height() - 1):
-		for x in range(1, img.get_width() - 1):
-			if copia.get_pixel(x, y).a == 0.0:
-				continue
-			var vizinhos := 0
-			for d in [Vector2i.LEFT, Vector2i.RIGHT, Vector2i.UP, Vector2i.DOWN]:
-				if copia.get_pixel(x + d.x, y + d.y).a > 0.0:
-					vizinhos += 1
-			if vizinhos <= 1:
-				img.set_pixel(x, y, Color(0, 0, 0, 0))
-	return ImageTexture.create_from_image(img)
+## Para cada tile, quanto dele e dos 8 vizinhos é (R) areia ou mais alto, (G) grama ou terra,
+## (B) terra. O próprio tile pesa mais (4 de 6 em cada direção), então uma faixa de areia de
+## um tile só não some, mas a escada de tiles vira curva.
+func _cobertura() -> Image:
+	var img := Image.create(largura, altura, false, Image.FORMAT_RGBA8)
+	const PESO := [1.0, 4.0, 1.0]
+	for y in altura:
+		for x in largura:
+			var soma := Vector3.ZERO
+			for dy in 3:
+				for dx in 3:
+					var n := _nivel(Vector2i(clampi(x + dx - 1, 0, largura - 1), clampi(y + dy - 1, 0, altura - 1)))
+					soma += Vector3(float(n >= 1), float(n >= 2), float(n >= 3)) * PESO[dx] * PESO[dy]
+			soma /= 36.0
+			img.set_pixel(x, y, Color(soma.x, soma.y, soma.z))
+	return img
 
 
-## Chão "de cima" na divisa: canto ou lado da mancha, conforme os vizinhos.
-## `igual(c)`: o vizinho é do mesmo chão. Retorna se pôs borda.
-func _borda_de_cima(cel: Vector2i, mancha: int, igual: Callable) -> bool:
-	var n: bool = igual.call(cel + Vector2i.UP)
-	var s: bool = igual.call(cel + Vector2i.DOWN)
-	var o: bool = igual.call(cel + Vector2i.LEFT)
-	var l: bool = igual.call(cel + Vector2i.RIGHT)
-	var pedaco := Vector2i(-1, -1)
-	if not n and not o:
-		pedaco = Vector2i(1, 1)
-	elif not n and not l:
-		pedaco = Vector2i(3, 1)
-	elif not s and not o:
-		pedaco = Vector2i(1, 3)
-	elif not s and not l:
-		pedaco = Vector2i(3, 3)
-	elif not n:
-		pedaco = Vector2i(2, 1)
-	elif not s:
-		pedaco = Vector2i(2, 3)
-	elif not o:
-		pedaco = Vector2i(1, 2)
-	elif not l:
-		pedaco = Vector2i(3, 2)
-	if pedaco.x < 0:
-		return false
-	camada_bordas.set_cell(cel, 0, Vector2i(mancha * 5 + pedaco.x, pedaco.y))
-	return true
+func _nivel(cel: Vector2i) -> int:
+	return 3 if _terra.has(cel) else tipo_do_chao(cel)  # Chao: AGUA 0, AREIA 1, GRAMA 2
 
 
-## Chão "de baixo" abraçado pelo de cima em dois lados vizinhos: canto do buraco
-## (só a curva do chão de cima aparece). `de_cima(c)`: o vizinho é o chão de cima.
-func _borda_de_baixo(cel: Vector2i, buraco: int, de_cima: Callable) -> void:
-	var n: bool = de_cima.call(cel + Vector2i.UP)
-	var s: bool = de_cima.call(cel + Vector2i.DOWN)
-	var o: bool = de_cima.call(cel + Vector2i.LEFT)
-	var l: bool = de_cima.call(cel + Vector2i.RIGHT)
-	var pedaco := Vector2i(-1, -1)
-	if n and o:
-		pedaco = Vector2i(1, 1)
-	elif n and l:
-		pedaco = Vector2i(3, 1)
-	elif s and o:
-		pedaco = Vector2i(1, 3)
-	elif s and l:
-		pedaco = Vector2i(3, 3)
-	if pedaco.x >= 0:
-		camada_bordas.set_cell(cel, 0, Vector2i(buraco * 5 + pedaco.x, pedaco.y))
+## R: chão (0 água, 1/3 areia, 2/3 grama, 1 terra); G: bloco com flores; B: gelo.
+func _atualizar_mapa(cel: Vector2i) -> void:
+	if _mapa == null or not Rect2i(0, 0, largura, altura).has_point(cel):
+		return
+	_mapa.set_pixel(cel.x, cel.y, Color(_nivel(cel) / 3.0, 1.0 if _bloco_com_flores(cel) else 0.0, 1.0 if _gelo.has(cel) else 0.0))
+	if chao_suave.texture:
+		(chao_suave.texture as ImageTexture).update(_mapa)
 
 
 ## Blocos de flores salpicados (alinhados de 2 em 2 tiles para o bloco ficar inteiro).
