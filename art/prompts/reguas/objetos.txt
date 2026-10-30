@@ -1,0 +1,7 @@
+# Régua dos objetos: peças do pacote que cabem em 128x128 (ampliadas 4x = célula de 512)
+../art/terceiros/tiny_swords/Tiny Swords (Free Pack)/Terrain/Resources/Gold/Gold Stones/Gold Stone 3.png | 0 0 128 128
+../art/terceiros/tiny_swords/Tiny Swords (Free Pack)/Terrain/Resources/Meat/Sheep/Sheep_Idle.png | 0 0 128 128
+res://assets/tiny_swords/natureza/arbusto2.png | 0 0 128 128
+res://assets/tiny_swords/natureza/toco1.png | 0 0 192 256
+../art/terceiros/tiny_swords/Tiny Swords (Free Pack)/Terrain/Resources/Wood/Wood Resource/Wood Resource.png | 0 0 64 64
+../art/terceiros/tiny_swords/Tiny Swords (Free Pack)/Terrain/Decorations/Rocks/Rock3.png | 0 0 64 64

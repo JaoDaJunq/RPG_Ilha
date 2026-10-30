@@ -1,0 +1,7 @@
+# Régua dos personagens: unidades do pacote, quadro 1 de cada (parado, de perfil para a direita)
+res://assets/tiny_swords/unidades/azul/guerreiro_parado.png | 0 0 192 192
+res://assets/tiny_swords/unidades/azul/arqueiro_parado.png | 0 0 192 192
+res://assets/tiny_swords/unidades/azul/mago_parado.png | 0 0 192 192
+res://assets/tiny_swords/unidades/vermelho/guerreiro_parado.png | 0 0 192 192
+res://assets/tiny_swords/unidades/azul/trabalhador_parado.png | 0 0 192 192
+res://assets/tiny_swords/unidades/vermelho/arqueiro_parado.png | 0 0 192 192

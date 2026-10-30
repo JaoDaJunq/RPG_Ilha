@@ -98,3 +98,15 @@ O João escolheu o estilo do **Tiny Swords**. O pacote gratuito foi baixado em `
 - A IA desenhou com o pixel 2x maior que o do pacote. Dobrando, ficam com a mesma altura das unidades deles (88 px).
 - Ainda ficam um pouco mais detalhados, saturados e com contorno preto. Os deles são mais redondinhos e dessaturados, com contorno azul-escuro e sombra oval cinza.
 - Próxima versão: pedir exatamente isso.
+
+## Diagnóstico do L12 (30/10, o João reprovou o acampamento e as pedras)
+
+A comparação lado a lado (`evidence/comparacao/l12_atual.png`, em cima o pacote, embaixo o nosso) mostrou cinco erros:
+
+1. **Pixel 2 a 3 vezes maior que o do pacote.** O Codex desenhou com "pixels" de ~11 px e eu ampliei a peça para o tamanho certo no jogo (escala 0,5 a 0,75). Barraca, bancada e pedras ficaram em blocos grossos ao lado do pixel fino deles. **Regra nova:** toda peça nossa entra com escala 0,25, igual ao pacote. Se o desenho não tiver o tamanho certo no pixel do pacote, volta para o Codex; não se amplia.
+2. **Contorno preto e grosso.** O do pacote é uma cor só, **#161c2e**, com 1 pixel de largura.
+3. **Cores fortes.** A madeira laranja e o verde saturado são nossos. O pacote tem tons apagados e frios. **Regra nova:** a conversão troca cada cor pela mais próxima da paleta do pacote (`game/assets/tiny_swords/paleta.png`, 150 cores).
+4. **Sem sombra no chão.** No pacote, todo objeto tem uma elipse **#161c2e com 27% de opacidade**. A IA não sabe fazer transparência sobre magenta. **Regra nova:** o Codex NÃO desenha sombra; a conversão copia a sombra do próprio pacote para baixo da peça.
+5. **Referências erradas.** Anexávamos imagens do pacote em tamanhos diferentes do pedido, e também a arte antiga, que a IA acabava copiando. **Regra nova:** anexar uma **folha-régua** (`game/tools/montar_regua.gd`): peças do pacote ampliadas EXATAMENTE 4x, na MESMA grade do pedido. A arte antiga só vai com um aviso explícito de "NÃO SIGA".
+
+**Validação antes de pôr no jogo:** rodar `game/tools/comparar_folhas.gd`, que coloca a peça do pacote e a nossa lado a lado, no tamanho do jogo. Só entra no jogo o que passar nessa comparação, e o João vê a comparação.
