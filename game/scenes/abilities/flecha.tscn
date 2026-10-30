@@ -27,10 +27,11 @@ quadro = Vector2i(64, 64)
 quadros = 1
 fps = 1.0
 angulo_da_arte = 0.0
+escala_arte = 0.25
 
 
 [node name="Visual" type="AnimatedSprite2D" parent="."]
-scale = Vector2(0.25, 0.25)
+
 
 [node name="Forma" type="CollisionShape2D" parent="."]
 shape = SubResource("Shape_proj")

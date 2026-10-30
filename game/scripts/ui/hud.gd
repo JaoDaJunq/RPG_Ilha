@@ -52,7 +52,7 @@ func configurar(p: Player) -> void:
 	jogador.inventario.mudou.connect(_atualizar_itens)
 	jogador.vida.mudou.connect(func(atual: float, maximo: float) -> void: _barra_vida.value = atual / maximo * 100.0)
 	jogador.progresso_mudou.connect(_atualizar_progresso)
-	_retrato.texture = load(_caminho_retrato(p))
+	_retrato.texture = _retrato_de(p)
 	var hab := jogador.habilidades()
 	for i in _slots.size():
 		var tem := i < hab.size()
@@ -426,6 +426,18 @@ func _barra(cor: Color, altura: int, moldura := false) -> ProgressBar:
 ## Retrato do pacote: 5 por cor (guerreiro, lanceiro, arqueiro, monge, trabalhador),
 ## azul de 1 a 5 e vermelho de 6 a 10, como os personagens provisórios.
 const RETRATO := {&"guerreiro": 1, &"arqueiro": 3, &"mago": 4}
+
+
+## Com o nosso personagem (L15), o retrato é a cabeça e o tronco do quadro parado; sem ele,
+## o retrato do pacote.
+func _retrato_de(p: Player) -> Texture2D:
+	var nossa := Player.PASTA_NOSSOS + "%s_%s.png" % [p.raca, p.classe]
+	if ResourceLoader.exists(nossa):
+		var a := AtlasTexture.new()
+		a.atlas = load(nossa)
+		a.region = Rect2(24, 18, 80, 80)
+		return a
+	return load(_caminho_retrato(p))
 
 
 func _caminho_retrato(p: Player) -> String:

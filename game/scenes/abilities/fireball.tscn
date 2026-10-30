@@ -3,7 +3,7 @@
 [ext_resource type="Script" path="res://scripts/abilities/projetil.gd" id="1_projetil"]
 [ext_resource type="Texture2D" path="res://assets/luz/luz_radial.tres" id="2_luz"]
 [ext_resource type="Texture2D" path="res://assets/placeholder/ninja/fx/bola_de_fogo.png" id="3_textura"]
-[ext_resource type="Texture2D" path="res://assets/placeholder/ninja/fx/explosao_fogo.png" id="4_impacto"]
+[ext_resource type="Texture2D" path="res://assets/tiny_swords/fx/explosao.png" id="4_impacto"]
 
 [sub_resource type="CircleShape2D" id="Shape_proj"]
 radius = 4.0
@@ -28,8 +28,9 @@ quadros = 4
 fps = 12.0
 angulo_da_arte = -0.785398
 textura_impacto = ExtResource("4_impacto")
-quadro_impacto = Vector2i(25, 30)
+quadro_impacto = Vector2i(192, 192)
 quadros_impacto = 8
+escala_impacto = 0.2
 
 [node name="Visual" type="AnimatedSprite2D" parent="."]
 

@@ -42,21 +42,35 @@ func _init() -> void:
 	for x in pal.get_width():
 		_paleta.append(pal.get_pixel(x, 0))
 
+	# --animacao: quadros de uma animação. Todos usam a escala do 1º quadro (o personagem não
+	# cresce nem encolhe) e ficam no mesmo lugar da célula original (os pés não pulam): o
+	# ponto de referência é o centro da célula na linha dos pés do 1º quadro.
+	var animacao := _args.has("animacao")
+	var ref := Vector2.ZERO
+	var fator := 0.0
 	var tira := Image.create(quadro * celulas.size(), quadro, false, Image.FORMAT_RGBA8)
 	for i in celulas.size():
 		var c: int = celulas[i]
 		var parte := folha.get_region(Rect2i((c % colunas) * cel.x, (c / colunas) * cel.y, cel.x, cel.y))
 		_tirar_magenta(parte)
-		parte = parte.get_region(parte.get_used_rect())
-		var h: int = alturas[mini(i, alturas.size() - 1)]
-		var w := roundi(parte.get_width() * h / float(parte.get_height()))
+		var usado := parte.get_used_rect()
+		parte = parte.get_region(usado)
+		if not animacao or fator == 0.0:
+			fator = alturas[mini(i, alturas.size() - 1)] / float(usado.size.y)
+			ref = Vector2(cel.x / 2.0, usado.end.y)
+		var w := maxi(1, roundi(usado.size.x * fator))
+		var h := maxi(1, roundi(usado.size.y * fator))
 		parte.resize(w, h, Image.INTERPOLATE_LANCZOS)
 		_quantizar(parte)
 		_contorno(parte)
 		var destino := Vector2i(i * quadro + (quadro - w) / 2, quadro - base - h)
-		tira.blit_rect(parte, Rect2i(Vector2i.ZERO, parte.get_size()), destino)
-		SombraTiny.por(tira, Rect2i(destino, Vector2i(w, h)))
-		print("célula %d: %dx%d" % [c, w, h])
+		if animacao:
+			var rel := (Vector2(usado.position) - ref) * fator
+			destino = Vector2i(i * quadro + quadro / 2 + roundi(rel.x), quadro - base + roundi(rel.y))
+		var dentro := Rect2i(destino, Vector2i(w, h)).intersection(Rect2i(i * quadro, 0, quadro, quadro))
+		tira.blit_rect(parte, Rect2i(dentro.position - destino, dentro.size), dentro.position)
+		SombraTiny.por(tira, dentro)
+		print("célula %d: %dx%d%s" % [c, w, h, "" if dentro.size == Vector2i(w, h) else " (CORTADO: não coube no quadro)"])
 	var saida := _caminho(_args["saida"])
 	DirAccess.make_dir_recursive_absolute(saida.get_base_dir())
 	print("Salvo: ", saida, " (", error_string(tira.save_png(saida)), ")")

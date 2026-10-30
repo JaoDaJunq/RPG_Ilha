@@ -11,7 +11,8 @@ extends StaticBody2D
 
 enum Estado { INTEIRO, QUEIMANDO, QUEIMADO, ESGOTADO }
 
-const TEXTURA_CHAMAS := preload("res://assets/placeholder/ninja/fx/chamas.png")
+## Fogo do Tiny Swords (quadros de 64 px, escala 0,25).
+const TEXTURA_CHAMAS := preload("res://assets/tiny_swords/fx/fogo.png")
 
 @export var acao := "Cortar"
 @export var golpes := 3
@@ -68,10 +69,11 @@ func _ready() -> void:
 		chamas.visible = false
 		var f := SpriteFrames.new()
 		f.remove_animation(&"default")
-		SpriteSheets.adicionar_tira(f, TEXTURA_CHAMAS, &"queimando", Vector2i(12, 12), 8, 12.0)
+		SpriteSheets.adicionar_tira(f, TEXTURA_CHAMAS, &"queimando", Vector2i(64, 64), 8, 10.0)
 		for c in chamas.get_children():
 			if c is AnimatedSprite2D:
 				c.sprite_frames = f
+				c.scale = Vector2(0.25, 0.25)
 				c.play(&"queimando")
 				c.frame = randi() % 8
 	_mostrar(regiao_inteiro)

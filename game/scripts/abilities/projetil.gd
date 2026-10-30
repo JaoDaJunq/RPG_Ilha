@@ -23,6 +23,9 @@ extends Area2D
 @export var textura_impacto: Texture2D
 @export var quadro_impacto := Vector2i(16, 16)
 @export var quadros_impacto := 0
+## Escala da arte (o Tiny Swords é feito para tile de 64 px: 0,25 no nosso mundo).
+@export var escala_arte := 1.0
+@export var escala_impacto := 1.0
 
 var lancador: Node = null
 var _vida := 0.0
@@ -43,6 +46,7 @@ func _ready() -> void:
 	if textura_impacto and quadros_impacto > 0:
 		SpriteSheets.adicionar_tira(f, textura_impacto, &"impacto", quadro_impacto, quadros_impacto, 20.0, false)
 	visual.sprite_frames = f
+	visual.scale = Vector2(escala_arte, escala_arte)
 	visual.play(&"voando")
 	visual.rotation = direcao.angle() - angulo_da_arte
 
@@ -77,6 +81,7 @@ func _on_area_entered(area: Area2D) -> void:
 func _impacto() -> void:
 	if visual.sprite_frames.has_animation(&"impacto"):
 		visual.rotation = 0.0
+		visual.scale = Vector2(escala_impacto, escala_impacto)
 		visual.play(&"impacto")
 	else:
 		visual.visible = false

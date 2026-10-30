@@ -1,0 +1,11 @@
+pacote | res://assets/tiny_swords/unidades/azul/guerreiro_parado.png | 0 0 192 192 | 0.25
+pacote | res://assets/tiny_swords/unidades/azul/mago_parado.png | 0 0 192 192 | 0.25
+pacote | res://assets/tiny_swords/unidades/azul/arqueiro_parado.png | 0 0 192 192 | 0.25
+pacote | res://assets/tiny_swords/unidades/azul/trabalhador_parado.png | 0 0 192 192 | 0.25
+pacote | ../art/terceiros/tiny_swords/Tiny Swords (Free Pack)/Terrain/Resources/Meat/Sheep/Sheep_Idle.png | 0 0 128 128 | 0.25
+nosso | ../art/sprites/tiny/convertido/personagens/humano_guerreiro.png | 0 0 128 128 | 0.25
+nosso | ../art/sprites/tiny/convertido/personagens/humano_mago.png | 0 0 128 128 | 0.25
+nosso | ../art/sprites/tiny/convertido/personagens/humano_arqueiro.png | 0 0 128 128 | 0.25
+nosso | ../art/sprites/tiny/convertido/personagens/ogro_guerreiro.png | 0 0 128 128 | 0.25
+nosso | ../art/sprites/tiny/convertido/personagens/ogro_mago.png | 0 0 128 128 | 0.25
+nosso | ../art/sprites/tiny/convertido/personagens/ogro_arqueiro.png | 0 0 128 128 | 0.25
