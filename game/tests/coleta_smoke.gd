@@ -18,14 +18,14 @@ func _ready() -> void:
 	checar(inv.quantidade_de(&"madeira") == 0 and longe.golpes_restantes() == 3, "longe demais não corta")
 	longe.queue_free()
 
-	# Perto: 3 golpes de 0,5 s rendem 3 de madeira e viram toco.
+	# Perto, com machado de pedra: 3 golpes rendem 3 de madeira e viram toco.
 	var arvore: ResourceNode = colocar(w, ARVORE, p.position + Vector2(22, 0))
-	await segurar_e(p, arvore.global_position + Vector2(0, -20), 0.75)
-	checar(arvore.golpes_restantes() == 2, "segurar E 0,75 s dá 1 golpe (restam %d)" % arvore.golpes_restantes())
+	await segurar_e(p, arvore.global_position + Vector2(0, -20), 1.25)
+	checar(arvore.golpes_restantes() == 2, "segurar 1,25 s com machado de pedra dá 1 golpe (restam %d)" % arvore.golpes_restantes())
 	# Marca do machado: só quando a arte tem esse quadro (o Tiny Swords não tem, por enquanto).
 	if not arvore.regioes_por_golpe.is_empty():
 		checar(arvore.sprite.region_rect == arvore.regioes_por_golpe[0], "depois do 1º golpe a árvore mostra a marca do machado")
-	await segurar_e(p, arvore.global_position + Vector2(0, -20), 1.3)
+	await segurar_e(p, arvore.global_position + Vector2(0, -20), 2.2)
 	checar(inv.quantidade_de(&"madeira") == 3, "árvore cortada rende 3 de madeira (tem %d)" % inv.quantidade_de(&"madeira"))
 	checar(arvore.estado == ResourceNode.Estado.ESGOTADO, "árvore cortada vira toco")
 	checar(not arvore.pode_interagir(), "toco não é mais coletável")
@@ -33,7 +33,7 @@ func _ready() -> void:
 
 	# Pedra: 4 golpes rendem 3 de pedra e a pedra some.
 	var pedra: ResourceNode = colocar(w, PEDRA, p.position + Vector2(0, 22))
-	await segurar_e(p, pedra.global_position + Vector2(0, -12), 2.3)
+	await segurar_e(p, pedra.global_position + Vector2(0, -12), 3.6)
 	checar(inv.quantidade_de(&"pedra") == 3, "pedra minerada rende 3 de pedra (tem %d)" % inv.quantidade_de(&"pedra"))
 	checar(not is_instance_valid(pedra), "pedra esgotada some do mapa")
 

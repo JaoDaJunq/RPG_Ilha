@@ -1,0 +1,18 @@
+[gd_resource type="Resource" script_class="HabilidadeData" load_steps=3 format=3]
+
+[ext_resource type="Script" path="res://scripts/data/habilidade_data.gd" id="1_script"]
+[ext_resource type="Texture2D" path="res://assets/sprites/tiny/icones/icone_chuva_flechas.png" id="2_icone"]
+
+[resource]
+script = ExtResource("1_script")
+id = &"chuva_flechas"
+nome = "Chuva de flechas"
+descricao = "Marca um ponto: depois de um instante, flechas caem e machucam todos ali."
+icone = ExtResource("2_icone")
+modo = 0
+custo_mana = 10.0
+recarga = 6.0
+elemento = &"fisico"
+dano = 1.0
+alcance = 110.0
+logica = &"ChuvaFlechas"

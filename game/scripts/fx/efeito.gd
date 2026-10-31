@@ -9,6 +9,7 @@ const TABELA := {
 	&"giro": [preload("res://assets/sprites/tiny/fx/giro.png"), Vector2i(94, 67), 1, 4.0, 0.25],
 	&"poeira": [preload("res://assets/tiny_swords/fx/poeira.png"), Vector2i(64, 64), 8, 18.0, 0.25],
 	&"congelar": [preload("res://assets/sprites/tiny/fx/cristais.png"), Vector2i(81, 63), 1, 1.5, 0.25],
+	&"explosao": [preload("res://assets/tiny_swords/fx/explosao.png"), Vector2i(192, 192), 8, 20.0, 0.3],
 	&"subir_nivel": [preload("res://assets/tiny_swords/fx/brilho.png"), Vector2i(192, 192), 11, 14.0, 0.25],
 }
 

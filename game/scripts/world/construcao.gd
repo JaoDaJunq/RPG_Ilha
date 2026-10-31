@@ -56,6 +56,7 @@ func _ready() -> void:
 		&"fogueira":
 			_mostrar_acampamento(0)
 			_luz(3.6, 0.8, 60.0)
+			_area_de_uso()
 		&"bau":
 			_mostrar_acampamento(2)
 			_colisao(Vector2(13, 6), 1)
@@ -138,11 +139,11 @@ func _area_de_uso() -> void:
 # --- Bancada (Interactable) --------------------------------------------------------
 
 func pode_interagir() -> bool:
-	return tipo == &"bancada" or tipo == &"bau"
+	return tipo in [&"bancada", &"bau", &"fogueira"]
 
 
 func texto_acao() -> String:
-	return "Abrir baú" if tipo == &"bau" else "Usar bancada"
+	return {&"bau": "Abrir baú", &"fogueira": "Assar carne"}.get(tipo, "Usar bancada")
 
 
 func destacar(ligado: bool) -> void:
@@ -158,6 +159,15 @@ func interagir(quem: Player) -> void:
 		quem.inventario.na_bancada = true
 		quem.inventario.reenviar()
 		quem.abrir_mochila.rpc_id(quem.get_multiplayer_authority(), &"bancada")
+	elif tipo == &"fogueira":
+		# Assar: a carne crua da mão vira carne assada (uma por clique).
+		var i := quem.barra_escolhida
+		if quem.inventario.item_em(i) == &"carne_crua":
+			quem.inventario.gastar(i, 1)
+			quem.inventario.adicionar(&"carne_assada", 1)
+			quem.avisar("+1 carne assada", &"item")
+		else:
+			quem.avisar("Clique na fogueira com carne crua na mão para assar.")
 	elif tipo == &"bau":
 		if quem.inventario.abrir_bau(self):
 			quem.abrir_mochila.rpc_id(quem.get_multiplayer_authority(), &"bau")

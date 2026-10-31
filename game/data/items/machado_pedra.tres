@@ -10,5 +10,5 @@ nome = "Machado de pedra"
 icone = ExtResource("2_icone")
 pilha = 1
 ferramenta = &"machado"
-poder = 2.2
+poder = 3.6
 construcao = &""

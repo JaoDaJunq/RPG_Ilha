@@ -19,8 +19,8 @@ func _ready() -> void:
 	p.mira_forcada = b.global_position + Vector2(0, -6)
 	p.usar_habilidade_por_id(&"tiro_carregado", 1.0)
 	await esperar(0.5)
-	var dano_a := 3.0 - (a.vida.atual if is_instance_valid(a) else 0.0)
-	var dano_b := 3.0 - (b.vida.atual if is_instance_valid(b) else 0.0)
+	var dano_a := 4.0 - (a.vida.atual if is_instance_valid(a) else 0.0)
+	var dano_b := 4.0 - (b.vida.atual if is_instance_valid(b) else 0.0)
 	checar(dano_a > 0.0, "tiro rápido acerta (%.1f)" % dano_a)
 	checar(dano_b > dano_a * 2.0, "tiro carregado bate bem mais (%.1f contra %.1f)" % [dano_b, dano_a])
 
@@ -38,6 +38,6 @@ func _ready() -> void:
 	slime.set_physics_process(true)
 	slime.global_position = armadas[0].global_position
 	await esperar(0.3)
-	checar(slime.preso() and slime.vida.atual < 3.0, "armadilha prende e machuca o slime (vida %.1f)" % slime.vida.atual)
+	checar(slime.preso() and slime.vida.atual < 4.0, "armadilha prende e machuca o slime (vida %.1f)" % slime.vida.atual)
 
 	terminar()

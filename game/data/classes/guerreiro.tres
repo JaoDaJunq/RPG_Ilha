@@ -1,9 +1,11 @@
-[gd_resource type="Resource" script_class="ClasseData" load_steps=5 format=3]
+[gd_resource type="Resource" script_class="ClasseData" load_steps=7 format=3]
 
 [ext_resource type="Script" path="res://scripts/data/classe_data.gd" id="1_script"]
 [ext_resource type="Script" path="res://scripts/data/habilidade_data.gd" id="2_hab_script"]
 [ext_resource type="Resource" path="res://data/habilidades/investida.tres" id="3_hab1"]
 [ext_resource type="Resource" path="res://data/habilidades/giro.tres" id="4_hab2"]
+[ext_resource type="Resource" path="res://data/habilidades/bloqueio.tres" id="5_hab"]
+[ext_resource type="Resource" path="res://data/habilidades/furia.tres" id="6_hab"]
 
 [resource]
 script = ExtResource("1_script")
@@ -12,6 +14,6 @@ nome = "Guerreiro"
 familia = "Marcial"
 descricao = "Linha de frente: segura os inimigos e abre caminho."
 atributos = Dictionary[StringName, int]({&"forca": 7, &"vitalidade": 7, &"agilidade": 5, &"intelecto": 3, &"espirito": 3})
-habilidades = Array[ExtResource("2_hab_script")]([ExtResource("3_hab1"), ExtResource("4_hab2")])
+habilidades = Array[ExtResource("2_hab_script")]([ExtResource("3_hab1"), ExtResource("4_hab2"), ExtResource("5_hab"), ExtResource("6_hab")])
 ramo_a = "Guardião"
 ramo_b = "Berserker"

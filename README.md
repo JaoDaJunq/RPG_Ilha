@@ -12,6 +12,8 @@ Co-op online de sobrevivência e exploração numa ilha de fantasia que reage ao
 - Baú que guarda itens (27 espaços, como no Minecraft), salvo no mundo.
 - Personagens por peças (estilo Forager): cabeça, tronco, pezinhos e mãozinhas; o item da barra vai na mão. Cada classe começa com a sua arma.
 - Gosma curativa (2 gel de slime): botão direito com ela na mão recupera vida.
+- Animais (galinha, coelho, ovelha e javali): passeiam, fogem, o javali revida; deixam carne, pena, couro e ovo. Carne crua vira assada na fogueira.
+- Personagem de frente, de perfil e de costas; 4 habilidades por classe. Balanceamento em [design/balanceamento.md](design/balanceamento.md).
 - Noite perigosa: slimes mais fortes no escuro, que fogem da luz e derretem ao amanhecer; derrotados deixam gel de slime.
 - Arte no estilo Tiny Swords:
   - ilha com mar e espuma animada, areia, grama, árvores balançando, arbustos e tocos;
@@ -48,14 +50,15 @@ Atalhos para testar sem o menu: `-- --solo`, `-- --hospedar` ou `-- --entrar=IP`
 | Ação | Tecla |
 |---|---|
 | Andar | WASD ou setas |
-| Coletar (segurar) | E, com o mouse em cima do objeto |
+| Coletar e quebrar (segurar) | Clique esquerdo em cima do objeto |
 | Golpear (ou pôr a peça da mão) | Clique esquerdo (na direção do mouse) |
 | Barra de itens | 1 a 9 ou a rodinha do mouse |
 | Usar o item da mão (gosma curativa) | Botão direito |
-| Abrir baú, usar bancada | Segurar E |
+| Abrir baú, bancada, assar na fogueira | Um clique |
+| Girar parede e porta | Rodinha do mouse (com a peça na mão) |
 | Mochila e fabricação | I ou Tab (na bancada: segurar E) |
-| Esquivar | Espaço |
-| Habilidades da classe | Q e R (Tiro carregado: segure e solte) |
+| Dash (esquiva) | Shift |
+| Habilidades da classe | Q, R, T e E (Tiro carregado: segure e solte) |
 | Ficha do personagem | C |
 | Dia / noite | N |
 | Som | M |

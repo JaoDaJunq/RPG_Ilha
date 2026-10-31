@@ -26,7 +26,8 @@ func _ready() -> void:
 	var p := w.jogador
 	await esperar(1.0)
 
-	await segurar_e(p, arvore.global_position + Vector2(0, -20), 1.9)
+	# O cliente coleta com a mão (as ferramentas do teste são só do anfitrião): bem mais lento.
+	await segurar_e(p, arvore.global_position + Vector2(0, -20), 9.5)
 	Input.action_press(&"mover_direita")
 	await esperar(0.8)
 	Input.action_release(&"mover_direita")

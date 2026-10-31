@@ -35,6 +35,7 @@ shape = SubResource("Shape_base")
 [node name="Interactable" type="Area2D" parent="."]
 script = ExtResource("3_inter")
 alcance = 34.0
+tempo_segurar = 4.0
 
 [node name="Forma" type="CollisionShape2D" parent="Interactable"]
 position = Vector2(0, -16)

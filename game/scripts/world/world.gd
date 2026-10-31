@@ -105,6 +105,7 @@ func _ready() -> void:
 	if multiplayer.is_server():
 		_carregar_mundo()
 		_criar_slimes()
+		_criar_animais()
 		if Net.modo != Net.Modo.ENTRAR:
 			_criar_jogador(1, Net.raca, Net.classe, Net.id_jogador)
 	else:
@@ -604,20 +605,17 @@ func _tile_ts(v: int) -> Vector2i:
 
 
 func _montar_acampamento() -> void:
-	var fogueira := _objeto_acampamento(Acamp.FOGUEIRA, centro + Vector2(0, 12), Vector2.ZERO)
-	fogueira.add_to_group(&"luz_protege")  # os slimes da noite não chegam perto
+	# A fogueira do acampamento: ilumina, protege da noite e assa carne (clique com carne
+	# crua na mão). Igual à fogueira construída, mas não quebra.
+	var fogueira := Construcao.new()
+	fogueira.tipo = &"fogueira"
+	fogueira.item = &"fogueira"
+	fogueira.fixa = true
+	fogueira.name = "FogueiraAcampamento"
+	fogueira.position = centro + Vector2(0, 12)
+	entidades.add_child(fogueira)
 	fogueira.set_meta(&"raio_luz", 72.0)
-	var luz := PointLight2D.new()
-	luz.texture = LUZ
-	luz.color = Color(1, 0.55, 0.25)
-	luz.energy = 0.8
-	luz.texture_scale = 6.4  # o sprite da fogueira tem escala 0,25
-	luz.position = Vector2(0, -40)
-	luz.add_to_group(&"luzes_noturnas")
-	fogueira.add_child(luz)
-	var t := luz.create_tween().set_loops()
-	t.tween_property(luz, "energy", 0.65, 0.18)
-	t.tween_property(luz, "energy", 0.85, 0.23)
+	_ocupados.append(fogueira.position)
 	_objeto_acampamento(Acamp.BARRACA, centro + Vector2(-50, -16), Vector2(22, 8))
 	_objeto_acampamento(Acamp.BANCADA, centro + Vector2(50, -16), Vector2(24, 8))
 	# O baú do acampamento guarda coisas (igual ao baú construído, mas não quebra).
@@ -957,3 +955,31 @@ func _lista_construcoes() -> Array:
 		var c := _pecas[chave]
 		lista.append([String(c.item), c.celula.x, c.celula.y, c.conteudo] if c.tipo == &"bau" else [String(c.item), c.celula.x, c.celula.y, 1 if c.lateral else 0])
 	return lista
+
+
+# --- Animais -------------------------------------------------------------------------
+## Quantos de cada espécie nascem na ilha (só o anfitrião; o MultiplayerSpawner copia).
+@export var animais := {&"galinha": 4, &"coelho": 4, &"ovelha": 4, &"javali": 3}
+const ANIMAL := preload("res://scenes/animals/animal.tscn")
+
+
+func _criar_animais() -> void:
+	if not gerar_recursos:
+		return  # os testes com terreno limpo não querem bichos andando
+	var celulas: Array[Vector2i] = []
+	for cel in _tipo:
+		if _tipo[cel] == Chao.GRAMA and _distancia[cel] < 0.85:
+			celulas.append(cel)
+	var n := 0
+	for especie in animais:
+		for i in int(animais[especie]):
+			for tentativa in 20:
+				var p := _ponto_em(celulas)
+				if p.distance_to(centro) > 110.0 and _livre(p, 12.0):
+					n += 1
+					var a: Animal = ANIMAL.instantiate()
+					a.especie = especie
+					a.name = "Animal%d" % n
+					a.position = p
+					entidades.add_child(a, true)
+					break

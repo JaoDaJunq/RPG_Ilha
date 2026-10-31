@@ -29,7 +29,7 @@ func _ready() -> void:
 
 	# Coletar dá experiência.
 	var arvore: ResourceNode = colocar(w, ARVORE, p.global_position + Vector2(22, 0))
-	await segurar_e(p, arvore.global_position + Vector2(0, -20), 2.0)
+	await segurar_e(p, arvore.global_position + Vector2(0, -20), 3.0)
 	checar(p.xp == 13, "cortar uma árvore dá 2 de experiência (%d)" % p.xp)
 
 	# Subir de nível: pontos, cura, aviso.

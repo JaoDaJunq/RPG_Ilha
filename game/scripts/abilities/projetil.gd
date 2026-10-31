@@ -27,6 +27,9 @@ extends Area2D
 @export var escala_arte := 1.0
 @export var escala_impacto := 1.0
 
+## O projétil acabou: onde parou e se acertou algo (a bomba explode aqui). Só no anfitrião.
+signal terminou(pos: Vector2, acertou: bool)
+
 var lancador: Node = null
 var _vida := 0.0
 var _acertou := false
@@ -60,6 +63,7 @@ func _physics_process(delta: float) -> void:
 		World.congelar_agua_em(self, global_position + Vector2(0, 10))
 	_vida += delta
 	if _vida >= duracao:
+		terminou.emit(global_position, false)
 		queue_free()
 
 
@@ -71,6 +75,7 @@ func _on_area_entered(area: Area2D) -> void:
 	_acertou = true
 	(area as Hurtbox).receber(dano, elemento, lancador)
 	set_deferred(&"monitoring", false)
+	terminou.emit(global_position, true)
 	_impacto.rpc()
 	if visual.sprite_frames.has_animation(&"impacto"):
 		visual.animation_finished.connect(queue_free)

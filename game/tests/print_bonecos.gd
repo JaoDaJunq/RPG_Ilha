@@ -1,5 +1,5 @@
 extends TesteBase
-## Os 6 personagens por peças lado a lado (parado, andando e golpeando, com o item da
+## Os 6 personagens por peças lado a lado (de frente, de perfil golpeando e de costas, com o item da
 ## classe na mão), de perto. Precisa de janela. Salva evidence/fundacao/bonecos.png.
 
 const LISTA := [[&"humano", &"guerreiro", &"espada_ferro"], [&"humano", &"mago", &"cajado"], [&"humano", &"arqueiro", &"arco"],
@@ -19,7 +19,7 @@ func _ready() -> void:
 			w.entidades.add_child(b)
 			b.configurar(LISTA[i][0], LISTA[i][1])
 			b.item = LISTA[i][2]
-			b.play([&"parado_direita", &"andar_direita", &"golpe_direita"][k])
+			b.play([&"parado_baixo", &"golpe_direita", &"parado_cima"][k])
 			b._tempo = i * 0.3
 	var cam := Camera2D.new()
 	cam.zoom = Vector2(7, 7)

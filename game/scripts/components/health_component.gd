@@ -12,6 +12,8 @@ signal morreu
 
 var atual: float
 var _protecao := 0.0
+var _reducao := 0.0
+var _reducao_restante := 0.0
 
 
 func _ready() -> void:
@@ -20,6 +22,7 @@ func _ready() -> void:
 
 func _process(delta: float) -> void:
 	_protecao = maxf(0.0, _protecao - delta)
+	_reducao_restante = maxf(0.0, _reducao_restante - delta)
 
 
 func esta_vivo() -> bool:
@@ -33,6 +36,8 @@ func protegido() -> bool:
 func tomar_dano(quantidade: float, tipo: StringName = &"fisico") -> bool:
 	if not esta_vivo() or protegido() or quantidade <= 0.0:
 		return false
+	if _reducao_restante > 0.0:
+		quantidade *= 1.0 - _reducao
 	atual = maxf(0.0, atual - quantidade)
 	_protecao = invulneravel_por
 	dano_recebido.emit(quantidade, tipo)
@@ -45,6 +50,16 @@ func tomar_dano(quantidade: float, tipo: StringName = &"fisico") -> bool:
 ## Fica sem tomar dano por alguns segundos (esquiva).
 func proteger(segundos: float) -> void:
 	_protecao = maxf(_protecao, segundos)
+
+
+## Toma menos dano por alguns segundos (Bloqueio): `fracao` 0,6 = 60% a menos.
+func reduzir_dano(fracao: float, segundos: float) -> void:
+	_reducao = clampf(fracao, 0.0, 1.0)
+	_reducao_restante = segundos
+
+
+func reducao_ativa() -> bool:
+	return _reducao_restante > 0.0
 
 
 func curar(quantidade: float) -> void:

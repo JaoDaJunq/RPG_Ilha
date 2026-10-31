@@ -14,6 +14,8 @@ const CARGA_MAXIMA := 1.0  # segundos segurando para a carga completa
 const SONS := {
 	&"investida": &"esquiva", &"giro": &"giro", &"bola_de_fogo": &"bola_de_fogo",
 	&"lanca_gelo": &"esquiva", &"tiro_carregado": &"flecha", &"armadilha": &"golpe_coleta",
+	&"bloqueio": &"esquiva", &"furia": &"giro", &"raio": &"bola_de_fogo", &"nova_gelo": &"esquiva",
+	&"chuva_flechas": &"flecha", &"bomba": &"bola_de_fogo",
 }
 
 @export var dano_golpe := 1.0
@@ -125,7 +127,7 @@ func _physics_process(delta: float) -> void:
 		_impulso_restante -= delta
 		velocity = _impulso
 	else:
-		velocity = entrada * ficha.velocidade()
+		velocity = entrada * ficha.velocidade() * multiplicador_velocidade()
 	move_and_slide()
 
 	_atualizar_alvo()
@@ -326,7 +328,7 @@ func _pedir_golpe(dir: Vector2) -> void:
 	for r in get_world_2d().direct_space_state.intersect_shape(consulta, 16):
 		var area := r.collider as Hurtbox
 		if area and area != hurtbox and not area.get_parent() is Player:
-			area.receber(dano_golpe * ficha.multiplicador_fisico() * poder_da_mao(&"espada"), &"fisico", self)
+			area.receber(dano_golpe * ficha.multiplicador_fisico() * bonus_dano_fisico() * poder_da_mao(&"espada"), &"fisico", self)
 
 
 @rpc("any_peer", "call_local", "reliable")
@@ -459,6 +461,10 @@ func registro() -> Dictionary:
 
 ## Só o anfitrião chama, logo depois de criar o jogador: devolve o progresso salvo.
 func restaurar(reg: Dictionary) -> void:
+	if reg.is_empty():
+		# Personagem novo: só ganha a arma da classe (sem zerar o que já ganhou ao entrar).
+		dar_kit()
+		return
 	nivel = clampi(int(reg.get("nivel", 1)), 1, Ficha.NIVEL_MAXIMO)
 	xp = int(reg.get("xp", 0))
 	pontos_atributo = int(reg.get("pontos_atributo", 0))
@@ -622,11 +628,10 @@ func _animar(entrada: Vector2) -> void:
 	elif entrada != Vector2.ZERO:
 		_direcao = SpriteSheets.direcao_de(entrada)
 		tipo = &"andar"
-	# Os personagens do Tiny Swords são vistos de lado: indo para cima ou para baixo,
-	# continuam olhando para o último lado.
+	# O boneco tem perfil (direita e esquerda), frente (baixo) e costas (cima).
 	if _direcao == &"direita" or _direcao == &"esquerda":
 		_lado = _direcao
-	animacao = StringName("%s_%s" % [tipo, _lado])
+	animacao = StringName("%s_%s" % [tipo, _direcao])
 	visual.play(animacao)
 
 
@@ -745,3 +750,41 @@ var _tempo_segurando := 0.0
 var _ignorar_clique := false  # o clique pôs uma peça: não abre nem golpeia
 ## Peça de construção girada (0 de frente, 1 de lado), escolhida com a rodinha.
 var rotacao := 0
+
+
+# --- Buffs de habilidade (Bloqueio e Fúria) ---------------------------------------------
+## O anfitrião aplica; a Fúria também é avisada ao dono, que é quem anda (velocidade).
+const BONUS_FURIA_DANO := 1.5
+const BONUS_FURIA_VELOCIDADE := 1.25
+var _furia_ate_ms := 0
+
+
+## Só o anfitrião chama (Bloqueio): `fracao` do dano a menos por `segundos`.
+func bloquear(fracao: float, segundos: float) -> void:
+	vida.reduzir_dano(fracao, segundos)
+
+
+## Só o anfitrião chama (Fúria): mais dano físico e mais velocidade por `segundos`.
+func enfurecer(segundos: float) -> void:
+	_furia_ate_ms = Time.get_ticks_msec() + int(segundos * 1000.0)
+	if not eh_local():
+		_furia_sync.rpc_id(id_rede(), segundos)
+
+
+func furia_ativa() -> bool:
+	return Time.get_ticks_msec() < _furia_ate_ms
+
+
+## Multiplicador do dano físico (golpe e habilidades físicas) com a Fúria.
+func bonus_dano_fisico() -> float:
+	return BONUS_FURIA_DANO if furia_ativa() else 1.0
+
+
+func multiplicador_velocidade() -> float:
+	return BONUS_FURIA_VELOCIDADE if furia_ativa() else 1.0
+
+
+@rpc("any_peer", "reliable")
+func _furia_sync(segundos: float) -> void:
+	if Net.veio_do_anfitriao():
+		_furia_ate_ms = Time.get_ticks_msec() + int(segundos * 1000.0)

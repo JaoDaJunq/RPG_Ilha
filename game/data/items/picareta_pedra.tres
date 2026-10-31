@@ -10,5 +10,5 @@ nome = "Picareta de pedra"
 icone = ExtResource("2_icone")
 pilha = 1
 ferramenta = &"picareta"
-poder = 2.2
+poder = 5.3
 construcao = &""

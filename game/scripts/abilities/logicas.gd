@@ -92,6 +92,99 @@ class Armadilha extends HabilidadeLogica:
 		quem.get_parent().add_child(a, true)
 
 
+## Guerreiro: por 3 s toma 60% menos dano.
+class Bloqueio extends HabilidadeLogica:
+	const DURACAO := 3.0
+	const REDUCAO := 0.6
+
+	func executar(quem: Player, _hab: HabilidadeData, _dir: Vector2, _alvo: Vector2, _carga: float) -> void:
+		quem.bloquear(REDUCAO, DURACAO)
+		World.efeito_todos(quem, &"poeira", quem.global_position)
+
+
+## Guerreiro: por 5 s, +50% de dano físico e +25% de velocidade.
+class Furia extends HabilidadeLogica:
+	const DURACAO := 5.0
+
+	func executar(quem: Player, _hab: HabilidadeData, _dir: Vector2, _alvo: Vector2, _carga: float) -> void:
+		quem.enfurecer(DURACAO)
+		World.efeito_todos(quem, &"subir_nivel", quem.global_position + Vector2(0, -14))
+
+
+## Mago: raio no inimigo mais perto do ponto do mouse (até o alcance do mago); atordoa.
+class Raio extends HabilidadeLogica:
+	const ALCANCE_MAGO := 120.0
+	const RAIO_MIRA := 28.0
+	const ATORDOAR := 1.2
+
+	func executar(quem: Player, hab: HabilidadeData, _dir: Vector2, alvo: Vector2, _carga: float) -> void:
+		var melhor: Node2D = null
+		var menor := RAIO_MIRA
+		for n in quem.get_tree().get_nodes_in_group(&"inimigos"):
+			var e := n as Node2D
+			if e == null or e.global_position.distance_to(quem.global_position) > ALCANCE_MAGO:
+				continue
+			var d := e.global_position.distance_to(alvo)
+			if d <= menor:
+				menor = d
+				melhor = e
+		if melhor == null:
+			return
+		var area := melhor.get_node_or_null("Hurtbox") as Hurtbox
+		if area:
+			area.receber(dano_de(quem, hab), &"raio", quem)
+		if is_instance_valid(melhor) and melhor.has_method(&"prender"):
+			melhor.prender(ATORDOAR)
+		World.efeito_todos(quem, &"subir_nivel", melhor.global_position + Vector2(0, -6))
+
+
+## Mago: congela tudo em volta.
+class NovaGelo extends HabilidadeLogica:
+	const RAIO := 36.0
+
+	func executar(quem: Player, hab: HabilidadeData, _dir: Vector2, _alvo: Vector2, _carga: float) -> void:
+		var centro := quem.global_position + Vector2(0, -8)
+		acertar_em_volta(quem, centro, RAIO, dano_de(quem, hab), &"gelo")
+		World.efeito_todos(quem, &"congelar", centro)
+
+
+## Arqueiro: no ponto da mira, depois de um instante, flechas caem e machucam todos ali.
+class ChuvaFlechas extends HabilidadeLogica:
+	const ATRASO := 0.4
+	const RAIO := 30.0
+	const FLECHAS := 5
+
+	func executar(quem: Player, hab: HabilidadeData, _dir: Vector2, alvo: Vector2, _carga: float) -> void:
+		var de := quem.global_position
+		var ponto := de + (alvo - de).limit_length(hab.alcance)
+		var dano := dano_de(quem, hab)
+		quem.get_tree().create_timer(ATRASO).timeout.connect(func() -> void:
+			if not is_instance_valid(quem):
+				return
+			acertar_em_volta(quem, ponto, RAIO, dano, &"fisico")
+			for i in FLECHAS:
+				var ang := TAU * i / FLECHAS
+				World.efeito_todos(quem, &"poeira", ponto + Vector2.from_angle(ang) * RAIO * 0.6))
+
+
+## Arqueiro: bomba que explode ao bater em algo ou depois de 0,8 s.
+class Bomba extends HabilidadeLogica:
+	const RAIO := 34.0
+	const TEMPO := 0.8
+
+	func executar(quem: Player, hab: HabilidadeData, dir: Vector2, _alvo: Vector2, _carga: float) -> void:
+		var dano := dano_de(quem, hab)
+		# O projétil só leva a bomba (e acende o que encostar); quem machuca é a explosão.
+		var p := Logicas.lancar(Logicas.BOLA_DE_FOGO, quem, dir, 0.0, 0.85)
+		p.duracao = TEMPO
+		p.terminou.connect(func(pos: Vector2, acertou: bool) -> void:
+			if not is_instance_valid(quem):
+				return
+			acertar_em_volta(quem, pos, RAIO, dano, &"fogo")
+			if not acertou:  # batendo, o próprio projétil já toca a explosão dele
+				World.efeito_todos(quem, &"explosao", pos))
+
+
 static func criar(nome: StringName) -> HabilidadeLogica:
 	match nome:
 		&"Investida": return Investida.new()
@@ -100,5 +193,11 @@ static func criar(nome: StringName) -> HabilidadeLogica:
 		&"LancaGelo": return LancaGelo.new()
 		&"TiroCarregado": return TiroCarregado.new()
 		&"Armadilha": return Armadilha.new()
+		&"Bloqueio": return Bloqueio.new()
+		&"Furia": return Furia.new()
+		&"Raio": return Raio.new()
+		&"NovaGelo": return NovaGelo.new()
+		&"ChuvaFlechas": return ChuvaFlechas.new()
+		&"Bomba": return Bomba.new()
 	push_error("Lógica de habilidade desconhecida: %s" % nome)
 	return HabilidadeLogica.new()

@@ -37,7 +37,16 @@ func _init() -> void:
 		_paleta.append(pal.get_pixel(x, 0))
 	var alvo_altura := float(_args.get("altura", "80"))
 
-	var montado := _celula(folha, 0)
+	# Vista de frente ou de costas (L21): a folha tem o montado e só a cabeça e o tronco;
+	# o pé e a mão vêm da folha de perfil (--extras), que é a mesma peça.
+	var vista: String = _args.get("vista", "")
+	var extras := folha
+	if _args.has("extras"):
+		extras = Image.load_from_file(_caminho(_args["extras"]))
+		extras.convert(Image.FORMAT_RGBA8)
+	var celulas := {"cabeca": [folha, int(_args.get("cabeca", "1"))], "tronco": [folha, int(_args.get("tronco", "2"))],
+		"pe": [extras, int(_args.get("pe", "3"))], "mao": [extras, int(_args.get("mao", "4"))]}
+	var montado := _celula(folha, int(_args.get("montado", "0")))
 	var caixa := _caixa_principal(montado)
 	var fator := alvo_altura / caixa.size.y
 	var ref := Vector2(caixa.position.x + caixa.size.x / 2.0, caixa.end.y)  # pés
@@ -48,7 +57,7 @@ func _init() -> void:
 	var posicoes := {}
 	for i in PECAS.size():
 		var nome: String = PECAS[i]
-		var peca := _celula(folha, i + 1)
+		var peca := _celula(celulas[nome][0], celulas[nome][1])
 		peca = peca.get_region(_caixa_principal(peca))
 		var achado := _achar(peca, pequeno, nome, 0.0, Vector2.INF)
 		var escala: float = achado.escala
@@ -64,7 +73,8 @@ func _init() -> void:
 		px.resize(w, h, Image.INTERPOLATE_LANCZOS)
 		_quantizar(px)
 		_contorno(px)
-		px.save_png(pasta.path_join(nome + ".png"))
+		if vista == "" or nome == "cabeca" or nome == "tronco":
+			px.save_png(pasta.path_join(nome + vista + ".png"))
 		var rels := []
 		for p in lugares:
 			if p == Vector2.INF:
@@ -76,12 +86,20 @@ func _init() -> void:
 		posicoes[nome] = rels
 		print("%s: escala %.2f, %dx%d, lugar %s (custo %.2f)" % [nome, escala, w, h, rels, achado.custo])
 
+	# De frente e de costas, as mãozinhas ficam sempre dos dois lados do tronco, na altura do
+	# peito (a busca às vezes acha a mão dentro do tronco, que tem a mesma cor de luva).
+	if vista != "":
+		var tr := Image.load_from_file(pasta.path_join("tronco" + vista + ".png"))
+		var mw := Image.load_from_file(pasta.path_join("mao.png")).get_width()
+		var t0: Array = posicoes["tronco"][0]
+		var y := roundi(t0[1] + tr.get_height() * 0.3)
+		posicoes["mao"] = [[t0[0] + tr.get_width() - 3, y], [t0[0] - mw + 3, y]]
 	# Duas peças iguais: a da frente é a mais à direita (o personagem olha para a direita).
 	for nome in ["pe", "mao"]:
 		var r: Array = posicoes[nome]
 		if r[1] == null:
 			# Não achou a de trás: espelha a da frente em volta do meio do tronco.
-			var meio_tronco: float = posicoes["tronco"][0][0] + Image.load_from_file(pasta.path_join("tronco.png")).get_width() / 2.0
+			var meio_tronco: float = posicoes["tronco"][0][0] + Image.load_from_file(pasta.path_join("tronco" + vista + ".png")).get_width() / 2.0
 			var largura := Image.load_from_file(pasta.path_join(nome + ".png")).get_width()
 			r[1] = [roundi(2.0 * meio_tronco - r[0][0] - largura), r[0][1]]
 		if r[1][0] > r[0][0]:
@@ -89,9 +107,13 @@ func _init() -> void:
 	var json := {"cabeca": posicoes["cabeca"][0], "tronco": posicoes["tronco"][0],
 		"pe_frente": posicoes["pe"][0], "pe_tras": posicoes["pe"][1],
 		"mao_frente": posicoes["mao"][0], "mao_tras": posicoes["mao"][1]}
-	var f := FileAccess.open(pasta.path_join("pecas.json"), FileAccess.WRITE)
+	var f := FileAccess.open(pasta.path_join("pecas" + vista + ".json"), FileAccess.WRITE)
 	f.store_string(JSON.stringify(json, "  "))
 	f.close()
+	if vista != "":
+		print("Salvo: ", pasta, " (vista ", vista, ")")
+		quit()
+		return
 
 	# O personagem montado inteiro, em pixel art com sombra (retrato e conferência).
 	var inteiro := montado.get_region(caixa)
@@ -187,7 +209,9 @@ func _reduzir(img: Image) -> Image:
 ## nos pixels da peça (fundo do montado conta como diferença máxima).
 func _achar(peca: Image, montado: Image, nome: String, escala_fixa := 0.0, evitar := Vector2.INF) -> Dictionary:
 	var melhor := {custo = INF, escala = 1.0, pos = Vector2.ZERO}
-	var escalas: Array = [escala_fixa] if escala_fixa > 0.0 else range(40, 165, 5).map(func(n: int) -> float: return n / 100.0)
+	# A cabeça sempre sai entre 80% e 105% (a busca solta às vezes acha uma cabeça pequena demais).
+	var faixa := [80, 110] if nome == "cabeca" else [40, 165]
+	var escalas: Array = [escala_fixa] if escala_fixa > 0.0 else range(faixa[0], faixa[1], 5).map(func(n: int) -> float: return n / 100.0)
 	var mw := montado.get_width()
 	var mh := montado.get_height()
 	var md := montado.get_data()
