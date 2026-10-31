@@ -50,6 +50,16 @@ Atalhos para testar sem o menu: `-- --solo`, `-- --hospedar` ou `-- --entrar=IP`
 | Dia / noite | N |
 | Som | M |
 
+## Gerar o jogo para enviar a amigos
+
+Cria `builds/IlhaViva.exe` (um arquivo só, sem precisar do Godot):
+
+```bash
+"$LOCALAPPDATA/Programs/Godot/4.7.2/Godot_v4.7.2-stable_win64_console.exe" --headless --path game --export-release "Windows Desktop" ../builds/IlhaViva.exe
+```
+
+Para enviar: zipar o `.exe` junto com um `COMO JOGAR.txt` (como abrir, controles e como entrar pelo Hamachi). A pasta `builds/` fica fora do git.
+
 ## Testes
 
 Da raiz do repositório (rodam sem janela):
