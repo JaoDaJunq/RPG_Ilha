@@ -7,7 +7,7 @@
 script = ExtResource("1_script")
 id = &"furia"
 nome = "Fúria"
-descricao = "Por 5 segundos, bate 50% mais forte e corre 25% mais rápido."
+descricao = "Por 5 s, você bate 50% mais forte e corre 25% mais rápido."
 icone = ExtResource("2_icone")
 modo = 1
 custo_mana = 8.0

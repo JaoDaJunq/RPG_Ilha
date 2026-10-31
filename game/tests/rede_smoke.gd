@@ -46,6 +46,9 @@ func _ready() -> void:
 	await esperar(0.5)
 	w.jogador.mira_forcada = w.jogador.global_position + Vector2(-200, 0)
 	w.jogador.lancar_bola_de_fogo()
+	# Um golpe num slime (vida 4, leva 1): o cliente tem de ver a barra de vida dele (75%).
+	var slime_golpeado: Slime = w.entidades.get_node("Slime1")
+	slime_golpeado.hurtbox.receber(1.0, &"fisico", null)
 
 	t = 0.0
 	while relatorio.is_empty() and t < 25.0:
@@ -67,6 +70,12 @@ func _ready() -> void:
 	checar(relatorio.get("madeira", 0) == 3, "cliente recebeu 3 de madeira (%s)" % relatorio.get("madeira"))
 	checar(relatorio.get("arvore_estado", -1) == ResourceNode.Estado.ESGOTADO, "cliente vê a árvore virar toco")
 	checar(relatorio.get("viu_bola", false), "cliente viu a bola de fogo do anfitrião")
+	var niveis: Dictionary = relatorio.get("niveis_slime", {})
+	var niveis_certos := not niveis.is_empty()
+	for nome in niveis:
+		niveis_certos = niveis_certos and niveis[nome] == ("3" if String(nome).begins_with("SlimeNoite") else "1")
+	checar(niveis_certos, "cliente vê o nível dos slimes (1 e, os da noite, 3): %s" % str(niveis))
+	checar(absf(float(relatorio.get("barra_slime", -1.0)) - 75.0) < 0.5, "cliente vê a barra de vida do slime que apanhou (%s)" % relatorio.get("barra_slime"))
 	var esperado := Ficha.criar(&"ogro", &"arqueiro")
 	checar(relatorio.get("vida_vista", 0.0) == esperado.vida_maxima(), "cliente recebe a própria vida do anfitrião (%s)" % relatorio.get("vida_vista"))
 	checar(relatorio.get("titulo", "") == "Ogro Arqueiro", "cliente escolheu Ogro Arqueiro (%s)" % relatorio.get("titulo"))

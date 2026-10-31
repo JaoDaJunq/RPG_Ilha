@@ -7,7 +7,7 @@
 script = ExtResource("1_script")
 id = &"bomba"
 nome = "Bomba"
-descricao = "Lança uma bomba que explode ao bater ou depois de um instante. Queima árvores."
+descricao = "Lança uma bomba que explode ao bater em algo ou depois de 0,8 s e machuca tudo num raio de 2,1 blocos. Slimes levam o dobro de dano e as árvores pegam fogo."
 icone = ExtResource("2_icone")
 modo = 0
 custo_mana = 9.0

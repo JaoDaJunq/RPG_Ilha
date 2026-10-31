@@ -7,7 +7,7 @@
 script = ExtResource("1_script")
 id = &"armadilha"
 nome = "Armadilha"
-descricao = "Arma espinhos no chão que prendem e machucam quem pisar."
+descricao = "Arma uma armadilha no chão, até 3,5 blocos de você. O inimigo que pisar fica preso por 3 s e leva dano. Só 2 armadilhas por vez."
 icone = ExtResource("2_icone")
 modo = 0
 custo_mana = 8.0

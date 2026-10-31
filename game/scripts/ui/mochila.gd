@@ -33,6 +33,8 @@ func _ready() -> void:
 func configurar(p: Player) -> void:
 	jogador = p
 	p.inventario.mudou.connect(_atualizar)
+	# Aberta, o jogador não esquiva nem lança habilidades (o Shift é do Shift + clique).
+	visibility_changed.connect(func() -> void: p.menu_aberto = visible)
 
 
 func aberta() -> bool:

@@ -7,7 +7,7 @@
 script = ExtResource("1_script")
 id = &"chuva_flechas"
 nome = "Chuva de flechas"
-descricao = "Marca um ponto: depois de um instante, flechas caem e machucam todos ali."
+descricao = "Marca um ponto até 6,9 blocos de você. Depois de 0,4 s, chovem flechas ali e machucam todos num raio de 1,9 bloco."
 icone = ExtResource("2_icone")
 modo = 0
 custo_mana = 10.0

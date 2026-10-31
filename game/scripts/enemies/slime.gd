@@ -13,6 +13,9 @@ const TEXTURA := preload("res://assets/sprites/tiny/pedras_slime.png")
 const TEMPO_CONGELADO := 2.5
 ## Experiência para cada jogador perto quando o slime é derrotado.
 const XP_DERROTA := 10
+## Nível mostrado em cima da cabeça (o slime comum e o da noite).
+const NIVEL := 1
+const NIVEL_NOTURNO := 3
 
 @export var velocidade := 28.0
 @export var raio_visao := 90.0
@@ -35,6 +38,7 @@ var _ultimo_atacante: Player
 @onready var visual: AnimatedSprite2D = $Visual
 @onready var vida: HealthComponent = $HealthComponent
 @onready var hurtbox: Hurtbox = $Hurtbox
+@onready var barra: BarraCabeca = $BarraCabeca
 
 
 func _ready() -> void:
@@ -55,6 +59,8 @@ func _ready() -> void:
 		dano_contato *= 1.5
 		velocidade *= 1.15
 		raio_visao *= 1.4
+	barra.definir_nivel(NIVEL_NOTURNO if noturno else NIVEL)
+	barra.ajustar_ao_sprite(visual)
 	if multiplayer.is_server():
 		hurtbox.atingido.connect(_on_atingido)
 		vida.morreu.connect(_on_morreu)
@@ -141,11 +147,16 @@ func _on_atingido(quantidade: float, tipo: StringName, origem: Node) -> void:
 		return
 	if origem is Node2D and not parado:
 		_empurrao = (global_position - origem.global_position).normalized() * 160.0
-	_piscar.rpc()
+	_piscar.rpc(vida.atual, vida.maximo)
 
 
+## Todos veem o golpe; a vida vai junto para a barra em cima da cabeça aparecer nos clientes.
 @rpc("authority", "call_local", "reliable")
-func _piscar() -> void:
+func _piscar(atual: float, maximo: float) -> void:
+	if not multiplayer.is_server():
+		vida.maximo = maximo
+		vida.atual = atual
+	barra.mostrar_dano()
 	Sfx.tocar(&"acerto", -10.0)
 	_dano_visivel = 0.3
 	var t := create_tween()

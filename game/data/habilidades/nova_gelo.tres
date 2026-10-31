@@ -7,7 +7,7 @@
 script = ExtResource("1_script")
 id = &"nova_gelo"
 nome = "Nova de gelo"
-descricao = "Congela todos os inimigos em volta de você."
+descricao = "Explosão de gelo em volta de você (2,3 blocos): machuca e congela os inimigos por 2,5 s."
 icone = ExtResource("2_icone")
 modo = 1
 custo_mana = 12.0

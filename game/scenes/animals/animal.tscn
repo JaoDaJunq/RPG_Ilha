@@ -1,8 +1,9 @@
-[gd_scene load_steps=7 format=3]
+[gd_scene load_steps=8 format=3]
 
 [ext_resource type="Script" path="res://scripts/animals/animal.gd" id="1_animal"]
 [ext_resource type="Script" path="res://scripts/components/health_component.gd" id="2_vida"]
 [ext_resource type="Script" path="res://scripts/components/hurtbox.gd" id="3_hurt"]
+[ext_resource type="Script" path="res://scripts/components/barra_cabeca.gd" id="4_barra"]
 
 [sub_resource type="CircleShape2D" id="Shape_corpo"]
 radius = 5.0
@@ -48,6 +49,9 @@ script = ExtResource("3_hurt")
 [node name="Forma" type="CollisionShape2D" parent="Hurtbox"]
 position = Vector2(0, -6)
 shape = SubResource("Shape_hurt")
+
+[node name="BarraCabeca" type="Node" parent="."]
+script = ExtResource("4_barra")
 
 [node name="Sync" type="MultiplayerSynchronizer" parent="."]
 replication_config = SubResource("Replicacao")

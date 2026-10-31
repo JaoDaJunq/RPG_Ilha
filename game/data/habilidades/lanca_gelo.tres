@@ -7,7 +7,7 @@
 script = ExtResource("1_script")
 id = &"lanca_gelo"
 nome = "Lança de gelo"
-descricao = "Congela o inimigo. Sobre a água, deixa um caminho de gelo."
+descricao = "Dispara uma lança de gelo que congela o inimigo por 2,5 s. Um golpe físico num inimigo congelado dá dano dobrado. Sobre a água, deixa um caminho de gelo."
 icone = ExtResource("2_icone")
 modo = 0
 custo_mana = 8.0
