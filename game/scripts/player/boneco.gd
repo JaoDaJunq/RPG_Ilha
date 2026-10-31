@@ -35,50 +35,112 @@ var _vista := ""
 
 
 ## Customização (L24): `aparencia` = {raca, rosto (0 a 2), pele (0 a 2)} e `equipado` =
-## {cabeca: id do item ou &"", corpo: id do item ou &""}. Sem roupa, o boneco fica com a
-## roupinha branca da raça; cada peça de roupa troca o tronco ou põe o chapéu por cima.
-## PROVISÓRIO até a arte do L24 chegar: usa as peças antigas da classe da roupa do corpo
-## (roupa_<classe>), ou as do guerreiro sem roupa.
+## {cabeca: id do item ou &"", corpo: id do item ou &""}. As peças ficam em
+## <PASTA>/<raca>/base/ (roupinha branca), <raca>/rosto_2/ e rosto_3/ (outras cabeças) e
+## <raca>/<classe>/ (tronco com a roupa e o chapéu ou elmo, que vai por cima da cabeça).
+## A roupa de um item é a da classe do fim do id: roupa_guerreiro, elmo_guerreiro...
+## Raça sem a arte nova ainda: as peças antigas da classe da roupa (L19/L21).
 func vestir(aparencia: Dictionary, equipado: Dictionary) -> void:
-	var raca: StringName = aparencia.get("raca", &"humano")
+	var raca := String(aparencia.get("raca", &"humano"))
+	var pasta := PASTA + raca + "/"
 	var corpo := String(equipado.get("corpo", &""))
-	var classe := corpo.trim_prefix("roupa_") if corpo.begins_with("roupa_") else "guerreiro"
-	configurar(raca, StringName(classe))
-
-
-## Retrato para o HUD (a cabeça do boneco).
-static func retrato(aparencia: Dictionary, equipado: Dictionary) -> Texture2D:
-	var corpo := String(equipado.get("corpo", &""))
-	var classe := corpo.trim_prefix("roupa_") if corpo.begins_with("roupa_") else "guerreiro"
-	return load(PASTA + "%s_%s/cabeca.png" % [aparencia.get("raca", &"humano"), classe])
-
-
-func configurar(raca: StringName, classe: StringName) -> void:
-	for c in get_children():
-		c.queue_free()
-	var pasta := PASTA + "%s_%s/" % [raca, classe]
-	_vistas.clear()
+	if not FileAccess.file_exists(pasta + "base/pecas.json"):
+		configurar(StringName(raca), StringName(_classe_da_roupa(corpo, "guerreiro")))
+		return
+	var rosto := pasta + "rosto_%d/" % (int(aparencia.get("rosto", 0)) + 1)
+	var roupa := pasta + _classe_da_roupa(corpo, "") + "/"
+	var chapeu := pasta + _classe_da_roupa(String(equipado.get("cabeca", &"")), "") + "/"
+	var vistas := {}
 	for v in ["", "_frente", "_costas"]:
-		if not FileAccess.file_exists(pasta + "pecas" + v + ".json"):
+		var pos := _ler_pecas(pasta + "base/pecas" + v + ".json")
+		if pos.is_empty():
 			continue
-		var jv: Dictionary = JSON.parse_string(FileAccess.get_file_as_string(pasta + "pecas" + v + ".json"))
-		var base := {}
-		for k in jv:
-			base[k] = Vector2(jv[k][0], jv[k][1])
-		_vistas[v] = {base = base, cabeca = load(pasta + "cabeca" + v + ".png"), tronco = load(pasta + "tronco" + v + ".png")}
-	var j: Dictionary = JSON.parse_string(FileAccess.get_file_as_string(pasta + "pecas.json"))
-	var sombra := _sprite(load(pasta + "sombra.png") if ResourceLoader.exists(pasta + "sombra.png") else null)
-	if sombra.texture:
-		sombra.position = Vector2(-sombra.texture.get_width() / 2.0, -sombra.texture.get_height() / 2.0 - 1.0)
+		var d := {base = pos, cabeca = load(pasta + "base/cabeca" + v + ".png"), tronco = load(pasta + "base/tronco" + v + ".png"), chapeu = null}
+		var pr := _ler_pecas(rosto + "pecas" + v + ".json")
+		if pr.has("cabeca"):
+			d.cabeca = load(rosto + "cabeca" + v + ".png")
+			pos["cabeca"] = pr["cabeca"]
+		var pt := _ler_pecas(roupa + "pecas" + v + ".json") if corpo != "" else {}
+		if pt.has("tronco"):
+			d.tronco = load(roupa + "tronco" + v + ".png")
+			pos["tronco"] = pt["tronco"]
+		var pc := _ler_pecas(chapeu + "pecas" + v + ".json") if equipado.get("cabeca", &"") != &"" else {}
+		if pc.has("cabeca"):
+			d.chapeu = load(chapeu + "cabeca" + v + ".png")
+			# O chapéu acompanha a cabeça: guarda o lugar dele em relação à cabeça base.
+			pos["chapeu"] = pc["cabeca"]
+		vistas[v] = d
+	var pele := int(aparencia.get("pele", 0))
+	for v in vistas:
+		vistas[v].cabeca = _tingir(vistas[v].cabeca, pele)
+	_montar(vistas, load(pasta + "base/pe.png"), _tingir(load(pasta + "base/mao.png"), pele), load(pasta + "base/sombra.png"))
+
+
+## Retrato para o HUD: a cabeça de perfil, com o chapéu se tiver.
+static func retrato(aparencia: Dictionary, equipado: Dictionary) -> Texture2D:
+	var b := Boneco.new()
+	b.vestir(aparencia, equipado)
+	var d: Dictionary = b._vistas.get("", {})
+	var tex: Texture2D = d.get("cabeca")
+	if d.get("chapeu") != null:
+		var cab: Image = (d.cabeca as Texture2D).get_image()
+		var cha: Image = (d.chapeu as Texture2D).get_image()
+		var pc: Vector2 = d.base["cabeca"]
+		var ph: Vector2 = d.base["chapeu"]
+		var r := Rect2i(Vector2i(pc), cab.get_size()).merge(Rect2i(Vector2i(ph), cha.get_size()))
+		var img := Image.create(r.size.x, r.size.y, false, Image.FORMAT_RGBA8)
+		img.blend_rect(cab, Rect2i(Vector2i.ZERO, cab.get_size()), Vector2i(pc) - r.position)
+		img.blend_rect(cha, Rect2i(Vector2i.ZERO, cha.get_size()), Vector2i(ph) - r.position)
+		tex = ImageTexture.create_from_image(img)
+	b.free()
+	return tex
+
+
+static func _classe_da_roupa(id: String, padrao: String) -> String:
+	return id.get_slice("_", 1) if id.contains("_") else padrao
+
+
+static func _ler_pecas(caminho: String) -> Dictionary:
+	if not FileAccess.file_exists(caminho):
+		return {}
+	var j: Dictionary = JSON.parse_string(FileAccess.get_file_as_string(caminho))
+	var pos := {}
+	for k in j:
+		pos[k] = Vector2(j[k][0], j[k][1])
+	return pos
+
+
+## Peças antigas (L19/L21): uma pasta por raça e classe, sem roupa separada.
+func configurar(raca: StringName, classe: StringName) -> void:
+	var pasta := PASTA + "%s_%s/" % [raca, classe]
+	var vistas := {}
+	for v in ["", "_frente", "_costas"]:
+		var pos := _ler_pecas(pasta + "pecas" + v + ".json")
+		if not pos.is_empty():
+			vistas[v] = {base = pos, cabeca = load(pasta + "cabeca" + v + ".png"), tronco = load(pasta + "tronco" + v + ".png"), chapeu = null}
+	_montar(vistas, load(pasta + "pe.png"), load(pasta + "mao.png"), load(pasta + "sombra.png") if ResourceLoader.exists(pasta + "sombra.png") else null)
+
+
+## Monta os sprites das peças. `vistas`: "" (perfil), "_frente", "_costas" -> {base (lugar de
+## cada peça), cabeca, tronco, chapeu (ou null)}. Os pés e as mãos são os mesmos nas três.
+func _montar(vistas: Dictionary, pe: Texture2D, mao: Texture2D, sombra_tex: Texture2D) -> void:
+	for c in get_children():
+		remove_child(c)
+		c.queue_free()
+	_pecas.clear()
+	_vistas = vistas
+	var sombra := _sprite(sombra_tex)
+	if sombra_tex:
+		sombra.position = Vector2(-sombra_tex.get_width() / 2.0, -sombra_tex.get_height() / 2.0 - 1.0)
 	# Ordem de desenho: o que fica atrás primeiro.
-	for parte in [["mao_tras", "mao"], ["pe_tras", "pe"], ["tronco", "tronco"], ["cabeca", "cabeca"], ["pe_frente", "pe"]]:
-		_pecas[parte[0]] = _sprite(load(pasta + parte[1] + ".png"))
-		_base[parte[0]] = Vector2(j[parte[0]][0], j[parte[0]][1])
+	var base: Dictionary = vistas[""].base
+	for parte in [["mao_tras", mao], ["pe_tras", pe], ["tronco", null], ["cabeca", null], ["chapeu", null], ["pe_frente", pe]]:
+		_pecas[parte[0]] = _sprite(parte[1])
 	_item = _sprite(null)
 	_flecha = _sprite(FLECHA)
 	_flecha.visible = false
-	_pecas["mao_frente"] = _sprite(load(pasta + "mao.png"))
-	_base["mao_frente"] = Vector2(j["mao_frente"][0], j["mao_frente"][1])
+	_pecas["mao_frente"] = _sprite(mao)
+	_base = base.duplicate()
 	_pecas["mao_tras"].self_modulate = Color(0.82, 0.82, 0.86)  # a de trás um pouco na sombra
 	_pecas["pe_tras"].self_modulate = Color(0.82, 0.82, 0.86)
 	_vista = "?"
@@ -97,6 +159,9 @@ func _usar_vista(v: String) -> void:
 	_base = d.base.duplicate()
 	(_pecas["cabeca"] as Sprite2D).texture = d.cabeca
 	(_pecas["tronco"] as Sprite2D).texture = d.tronco
+	var chapeu := _pecas["chapeu"] as Sprite2D
+	chapeu.texture = d.chapeu
+	chapeu.visible = d.chapeu != null
 	# De costas, o item fica atrás do corpo; nas outras vistas, na frente.
 	move_child(_item, 1 if v == "_costas" else get_child_count() - 3)
 	move_child(_flecha, get_child_count() - 2)
@@ -139,7 +204,10 @@ func _process(delta: float) -> void:
 func _posar(passo: float, respira: float, golpe: float) -> void:
 	var corpo := Vector2(0, roundf(-absf(passo) * 2.0) if passo != 0.0 else roundf(respira * 0.6 - 0.4))
 	_por("tronco", corpo)
-	_por("cabeca", corpo + Vector2(0, roundf(respira * 0.5)) if passo == 0.0 else corpo)
+	var cabeca := corpo + Vector2(0, roundf(respira * 0.5)) if passo == 0.0 else corpo
+	_por("cabeca", cabeca)
+	if _base.has("chapeu"):
+		_por("chapeu", cabeca)
 	# De perfil os pés vão para a frente e para trás; de frente e de costas, só sobem e descem.
 	var ida := 0.0 if _vista != "" else 4.0
 	_por("pe_frente", Vector2(roundf(passo * ida), minf(0.0, roundf(-passo * 3.0))))
@@ -223,3 +291,37 @@ static func _caixa(tex: Texture2D, q: int) -> Rect2i:
 		var img := tex.get_image()
 		_caixas[chave] = img.get_region(Rect2i(q * QUADRO_ARCO, 0, QUADRO_ARCO, img.get_height())).get_used_rect()
 	return _caixas[chave]
+
+
+## Cores de pele (L24): o tom 0 é o da arte; nos outros, só os pixels com as cores de pele da
+## arte (cabeça e mãos) escurecem. A roupa e o cabelo não mudam. A cópia tingida é feita uma
+## vez por textura e tom (pixel a pixel, sem shader: o pixel continua exato).
+const PELE := [Color("f4d296"), Color("f8d4a6"), Color("ffbc88"), Color("f8cb93"), Color("f4a47b"), Color("f2e7a0"), Color("ea9461"), Color("db9c68")]
+const TONS_PELE := [Color(1, 1, 1), Color(0.82, 0.68, 0.55), Color(0.58, 0.43, 0.33)]
+static var _tingidas := {}
+
+
+static func _tingir(tex: Texture2D, tom: int) -> Texture2D:
+	if tex == null or tom <= 0:
+		return tex
+	var chave := "%s|%d" % [tex.resource_path, tom]
+	if not _tingidas.has(chave):
+		var img := tex.get_image()
+		if img.is_compressed():
+			img.decompress()
+		img.convert(Image.FORMAT_RGBA8)
+		var t: Color = TONS_PELE[clampi(tom, 0, TONS_PELE.size() - 1)]
+		for y in img.get_height():
+			for x in img.get_width():
+				var c := img.get_pixel(x, y)
+				if c.a > 0.0 and _eh_pele(c):
+					img.set_pixel(x, y, Color(c.r * t.r, c.g * t.g, c.b * t.b, c.a))
+		_tingidas[chave] = ImageTexture.create_from_image(img)
+	return _tingidas[chave]
+
+
+static func _eh_pele(c: Color) -> bool:
+	for p: Color in PELE:
+		if Vector3(c.r - p.r, c.g - p.g, c.b - p.b).length() < 0.03:
+			return true
+	return false
