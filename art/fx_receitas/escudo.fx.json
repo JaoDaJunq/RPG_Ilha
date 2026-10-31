@@ -1,0 +1,156 @@
+{
+  "format": "pixelforge-fx",
+  "version": 1,
+  "name": "escudo",
+  "width": 120,
+  "height": 120,
+  "anchor": [
+    60,
+    100
+  ],
+  "palette": {
+    "d": "#161c2e",
+    "n": "#485884",
+    "b": "#4697ac",
+    "c": "#c6f0db",
+    "W": "#ffffff"
+  },
+  "symbols": {
+    "glint": [
+      ".W.",
+      "WcW",
+      ".W."
+    ],
+    "mote": [
+      "c"
+    ],
+    "mote-hot": [
+      "W"
+    ]
+  },
+  "effects": {
+    "shield": {
+      "frames": 12,
+      "duration": 80,
+      "loop": true,
+      "seed": 4,
+      "looks": {
+        "bubble": {
+          "colors": [
+            "n",
+            "b",
+            "c",
+            "W"
+          ],
+          "thresholds": [
+            0.18,
+            0.4,
+            0.68,
+            0.9
+          ],
+          "dither": 0.35,
+          "halo": {
+            "color": "d",
+            "width": 2
+          }
+        },
+        "shine": {
+          "colors": [
+            "c",
+            "W"
+          ],
+          "thresholds": [
+            0.3,
+            0.75
+          ]
+        }
+      },
+      "layers": [
+        {
+          "kind": "ring",
+          "look": "bubble",
+          "at": [
+            60,
+            60
+          ],
+          "radius": 40,
+          "width": 7.5,
+          "noise": 0.45,
+          "scale": 5,
+          "boil": 10
+        },
+        {
+          "kind": "slash",
+          "look": "shine",
+          "at": [
+            60,
+            60
+          ],
+          "radius": 32.5,
+          "width": 6.25,
+          "arc": [
+            195,
+            255
+          ],
+          "reveal": 0
+        }
+      ],
+      "emitters": [
+        {
+          "at": [
+            60,
+            60
+          ],
+          "ring": {
+            "radius": [
+              6,
+              15
+            ],
+            "fill": true
+          },
+          "rate": 0.4,
+          "life": [
+            3,
+            4
+          ],
+          "speed": 0,
+          "shapes": [
+            "glint"
+          ]
+        },
+        {
+          "at": [
+            60,
+            60
+          ],
+          "ring": {
+            "radius": 17,
+            "outward": true
+          },
+          "angle": 90,
+          "rate": 1.2,
+          "speed": [
+            1.5,
+            2.25
+          ],
+          "life": [
+            6,
+            9
+          ],
+          "attract": {
+            "at": [
+              24,
+              24
+            ],
+            "strength": 0.06,
+            "swirl": 0.05
+          },
+          "shapes": [
+            "mote-hot",
+            "mote"
+          ]
+        }
+      ]
+    }
+  }
+}

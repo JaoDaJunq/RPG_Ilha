@@ -79,3 +79,29 @@ impacto.name = "gelo_impacto";
 salvar("gelo_impacto.fx.json", impacto);
 fs.unlinkSync("art/fx_receitas/gelo.fx.json");
 console.log("bola de fogo 2x, lança 1,5x");
+
+// 5) Efeitos das habilidades 3 e 4 (01/11): escudo (Bloqueio), aura de fogo (Fúria),
+//    raio caindo (Raio) e anel de gelo (Nova de gelo). A Fúria usa o círculo de fogo no chão.
+const AZUL = { d: "#161c2e", n: "#485884", b: "#4697ac", c: "#c6f0db", W: "#ffffff" };
+const escudo = ler("shield.fx.json");
+escudo.name = "escudo";
+escudo.palette = { ...AZUL };
+salvar("escudo.fx.json", aumentar(escudo, 2.5));
+
+const furia = ler("fire-spells.fx.json");
+furia.name = "furia";
+furia.palette = { ...furia.palette, ...FOGO, ...FUMACA };
+for (const k of Object.keys(furia.effects)) if (k !== "area") delete furia.effects[k];
+salvar("furia.fx.json", aumentar(furia, 2));
+
+const raio = ler("lightning-strike.fx.json");
+raio.name = "raio";
+raio.palette = { g: "#484444", v: "#955c3c", b: "#cf8935", c: "#ffdc00", W: "#ffffff" };
+salvar("raio.fx.json", aumentar(raio, 1.5));
+
+const nova = ler("ice-spells.fx.json");
+nova.name = "nova_gelo";
+nova.palette = { ...GELO };
+for (const k of Object.keys(nova.effects)) if (k !== "area") delete nova.effects[k];
+salvar("nova_gelo.fx.json", aumentar(nova, 2.5));
+console.log("receitas novas: escudo, furia, raio, nova_gelo");

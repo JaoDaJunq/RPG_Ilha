@@ -230,6 +230,58 @@ func _efeito(nome: StringName, pos: Vector2) -> void:
 		entidades.add_child(Efeito.criar(nome, pos))
 
 
+## Efeito em laço preso a alguém (o escudo do Bloqueio), em todos os jogadores.
+static func efeito_preso_todos(quem: Node2D, nome: StringName, segundos: float, pos_local := Vector2.ZERO) -> void:
+	var w: World = quem.get_tree().get_first_node_in_group(&"mundo")
+	if w:
+		w._efeito_preso.rpc(w.get_path_to(quem), nome, segundos, pos_local)
+
+
+@rpc("any_peer", "call_local", "reliable")
+func _efeito_preso(caminho: NodePath, nome: StringName, segundos: float, pos_local: Vector2) -> void:
+	var dono := get_node_or_null(caminho)
+	if not Net.veio_do_anfitriao() or dono == null:
+		return
+	var e := Efeito.criar(nome, pos_local, true)
+	dono.add_child(e)
+	get_tree().create_timer(segundos, false).timeout.connect(func() -> void:
+		if is_instance_valid(e):
+			e.queue_free())
+
+
+## Chuva de flechas: as flechas do pacote caem do céu em volta do ponto e chegam ao chão
+## em `queda` segundos (quando o dano acontece). Só visual, em todos os jogadores.
+const FLECHA_CAINDO := preload("res://assets/tiny_swords/fx/flecha.png")
+
+
+static func chuva_de_flechas_todos(quem: Node, ponto: Vector2, raio: float, flechas: int, queda: float) -> void:
+	var w: World = quem.get_tree().get_first_node_in_group(&"mundo")
+	if w:
+		w._chuva_de_flechas.rpc(ponto, raio, flechas, queda)
+
+
+@rpc("any_peer", "call_local", "reliable")
+func _chuva_de_flechas(ponto: Vector2, raio: float, flechas: int, queda: float) -> void:
+	if not Net.veio_do_anfitriao():
+		return
+	for i in flechas:
+		var chao := ponto + Vector2.from_angle(TAU * i / flechas + randf() * 0.6) * raio * randf_range(0.2, 0.8)
+		var f := Sprite2D.new()
+		f.texture = FLECHA_CAINDO
+		f.scale = Vector2(0.25, 0.25)
+		f.rotation = PI / 2.0  # a flecha do pacote aponta para a direita: aqui, para baixo
+		f.position = chao + Vector2(0, -70)
+		f.z_index = 2
+		entidades.add_child(f)
+		var atraso := randf() * queda * 0.3
+		var t := f.create_tween()
+		t.tween_interval(atraso)
+		t.tween_property(f, "position", chao, queda - atraso).set_ease(Tween.EASE_IN).set_trans(Tween.TRANS_QUAD)
+		t.tween_callback(func() -> void:
+			entidades.add_child(Efeito.criar(&"poeira", chao))
+			f.queue_free())
+
+
 ## Aviso para todos os jogadores (chamado pelo anfitrião).
 static func avisar_todos(quem: Node, texto: String) -> void:
 	var w: World = quem.get_tree().get_first_node_in_group(&"mundo")

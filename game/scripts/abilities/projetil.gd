@@ -26,6 +26,8 @@ extends Area2D
 ## Escala da arte (o Tiny Swords é feito para tile de 64 px: 0,25 no nosso mundo).
 @export var escala_arte := 1.0
 @export var escala_impacto := 1.0
+## Gira a arte enquanto voa (radianos por segundo; a bomba gira, as flechas não).
+@export var girar := 0.0
 
 ## O projétil acabou: onde parou e se acertou algo (a bomba explode aqui). Só no anfitrião.
 signal terminou(pos: Vector2, acertou: bool)
@@ -56,6 +58,8 @@ func _ready() -> void:
 
 
 func _physics_process(delta: float) -> void:
+	if girar != 0.0 and not _acertou:
+		visual.rotation += girar * delta
 	if _acertou or not multiplayer.is_server():
 		return
 	position += direcao * velocidade * delta
@@ -70,8 +74,11 @@ func _physics_process(delta: float) -> void:
 func _on_area_entered(area: Area2D) -> void:
 	if _acertou or not area is Hurtbox:
 		return
-	if area.get_parent() == lancador or area.get_parent() is Player or area.get_parent() is Construcao:
+	var dono := area.get_parent()
+	if dono == lancador or dono is Player or dono is Construcao:
 		return  # sem fogo amigo; flechas e magias passam por cima das construções
+	if dono is ResourceNode and not (dono as ResourceNode).para_projetil(elemento):
+		return  # passam por cima de árvores, tocos e pedras (só o fogo para numa árvore e a acende)
 	_acertou = true
 	(area as Hurtbox).receber(dano, elemento, lancador)
 	set_deferred(&"monitoring", false)

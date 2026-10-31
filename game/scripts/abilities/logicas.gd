@@ -7,6 +7,7 @@ const BOLA_DE_FOGO := preload("res://scenes/abilities/fireball.tscn")
 const LANCA_GELO := preload("res://scenes/abilities/lanca_gelo.tscn")
 const FLECHA := preload("res://scenes/abilities/flecha.tscn")
 const ARMADILHA := preload("res://scenes/abilities/armadilha.tscn")
+const BOMBA := preload("res://scenes/abilities/bomba.tscn")
 
 
 static func lancar(cena: PackedScene, quem: Player, dir: Vector2, dano: float, velocidade_mult := 1.0) -> Projetil:
@@ -99,7 +100,7 @@ class Bloqueio extends HabilidadeLogica:
 
 	func executar(quem: Player, _hab: HabilidadeData, _dir: Vector2, _alvo: Vector2, _carga: float) -> void:
 		quem.bloquear(REDUCAO, DURACAO)
-		World.efeito_todos(quem, &"poeira", quem.global_position)
+		World.efeito_preso_todos(quem, &"escudo", DURACAO, Vector2(0, -9))
 
 
 ## Guerreiro: por 5 s, +50% de dano físico e +25% de velocidade.
@@ -108,7 +109,7 @@ class Furia extends HabilidadeLogica:
 
 	func executar(quem: Player, _hab: HabilidadeData, _dir: Vector2, _alvo: Vector2, _carga: float) -> void:
 		quem.enfurecer(DURACAO)
-		World.efeito_todos(quem, &"subir_nivel", quem.global_position + Vector2(0, -14))
+		World.efeito_todos(quem, &"furia", quem.global_position)
 
 
 ## Mago: raio no inimigo mais perto do ponto do mouse (até o alcance do mago); atordoa.
@@ -120,7 +121,7 @@ class Raio extends HabilidadeLogica:
 	func executar(quem: Player, hab: HabilidadeData, _dir: Vector2, alvo: Vector2, _carga: float) -> void:
 		var melhor: Node2D = null
 		var menor := RAIO_MIRA
-		for n in quem.get_tree().get_nodes_in_group(&"inimigos"):
+		for n in quem.get_tree().get_nodes_in_group(&"inimigos") + quem.get_tree().get_nodes_in_group(&"animais"):
 			var e := n as Node2D
 			if e == null or e.global_position.distance_to(quem.global_position) > ALCANCE_MAGO:
 				continue
@@ -130,12 +131,13 @@ class Raio extends HabilidadeLogica:
 				melhor = e
 		if melhor == null:
 			return
+		var onde := melhor.global_position
 		var area := melhor.get_node_or_null("Hurtbox") as Hurtbox
 		if area:
 			area.receber(dano_de(quem, hab), &"raio", quem)
 		if is_instance_valid(melhor) and melhor.has_method(&"prender"):
 			melhor.prender(ATORDOAR)
-		World.efeito_todos(quem, &"subir_nivel", melhor.global_position + Vector2(0, -6))
+		World.efeito_todos(quem, &"raio", onde)
 
 
 ## Mago: congela tudo em volta.
@@ -145,7 +147,7 @@ class NovaGelo extends HabilidadeLogica:
 	func executar(quem: Player, hab: HabilidadeData, _dir: Vector2, _alvo: Vector2, _carga: float) -> void:
 		var centro := quem.global_position + Vector2(0, -8)
 		acertar_em_volta(quem, centro, RAIO, dano_de(quem, hab), &"gelo")
-		World.efeito_todos(quem, &"congelar", centro)
+		World.efeito_todos(quem, &"nova_gelo", quem.global_position)
 
 
 ## Arqueiro: no ponto da mira, depois de um instante, flechas caem e machucam todos ali.
@@ -158,13 +160,11 @@ class ChuvaFlechas extends HabilidadeLogica:
 		var de := quem.global_position
 		var ponto := de + (alvo - de).limit_length(hab.alcance)
 		var dano := dano_de(quem, hab)
+		World.chuva_de_flechas_todos(quem, ponto, RAIO, FLECHAS, ATRASO)
 		quem.get_tree().create_timer(ATRASO).timeout.connect(func() -> void:
 			if not is_instance_valid(quem):
 				return
-			acertar_em_volta(quem, ponto, RAIO, dano, &"fisico")
-			for i in FLECHAS:
-				var ang := TAU * i / FLECHAS
-				World.efeito_todos(quem, &"poeira", ponto + Vector2.from_angle(ang) * RAIO * 0.6))
+			acertar_em_volta(quem, ponto, RAIO, dano, &"fisico"))
 
 
 ## Arqueiro: bomba que explode ao bater em algo ou depois de 0,8 s.
@@ -175,7 +175,7 @@ class Bomba extends HabilidadeLogica:
 	func executar(quem: Player, hab: HabilidadeData, dir: Vector2, _alvo: Vector2, _carga: float) -> void:
 		var dano := dano_de(quem, hab)
 		# O projétil só leva a bomba (e acende o que encostar); quem machuca é a explosão.
-		var p := Logicas.lancar(Logicas.BOLA_DE_FOGO, quem, dir, 0.0, 0.85)
+		var p := Logicas.lancar(Logicas.BOMBA, quem, dir, 0.0, 0.85)
 		p.duracao = TEMPO
 		p.terminou.connect(func(pos: Vector2, acertou: bool) -> void:
 			if not is_instance_valid(quem):

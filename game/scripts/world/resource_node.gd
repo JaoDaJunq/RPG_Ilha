@@ -107,6 +107,11 @@ func interagir(quem: Player) -> void:
 		_definir_estado.rpc(estado, restantes, true)
 
 
+## Um projétil desse elemento para aqui? Só o fogo, numa árvore inteira (que pega fogo).
+func para_projetil(elemento: StringName) -> bool:
+	return elemento == &"fogo" and estado == Estado.INTEIRO and inflamavel != null
+
+
 func golpes_restantes() -> int:
 	return _golpes_restantes
 
@@ -142,6 +147,8 @@ func _definir_estado(novo: Estado, restantes: int, com_golpe: bool) -> void:
 			_mostrar(regiao_queimado)
 		Estado.ESGOTADO:
 			destacar(false)
+			# O toco não recebe mais acertos (a caixa da árvore inteira ficava invisível no ar).
+			hurtbox.set_deferred(&"monitorable", false)
 			if some_ao_esgotar:
 				if multiplayer.is_server():
 					get_tree().call_group(&"mundo", &"registrar_removido", name)
