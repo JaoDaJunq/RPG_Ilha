@@ -5,3 +5,4 @@ extends Node
 signal aviso(texto: String)
 ## Um item entrou num inventário.
 signal item_coletado(item_id: StringName, quantidade: int, quem: Node)
+signal item_fabricado(item_id: StringName, quantidade: int, quem: Node)

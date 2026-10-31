@@ -136,6 +136,15 @@ func _physics_process(delta: float) -> void:
 func _unhandled_input(event: InputEvent) -> void:
 	if not eh_local():
 		return
+	# Barra de itens: teclas 1-9 e a rodinha do mouse escolhem o item da mão.
+	for k in Inventory.BARRA:
+		if event.is_action_pressed(StringName("barra_%d" % (k + 1))):
+			barra_escolhida = k
+	if event is InputEventMouseButton and event.pressed and not Input.is_key_pressed(KEY_CTRL):
+		if event.button_index == MOUSE_BUTTON_WHEEL_DOWN:
+			barra_escolhida = (barra_escolhida + 1) % Inventory.BARRA
+		elif event.button_index == MOUSE_BUTTON_WHEEL_UP:
+			barra_escolhida = (barra_escolhida + Inventory.BARRA - 1) % Inventory.BARRA
 	if event.is_action_pressed(&"atacar"):
 		golpear()
 	elif event.is_action_pressed(&"esquivar"):
@@ -302,7 +311,7 @@ func _pedir_golpe(dir: Vector2) -> void:
 	for r in get_world_2d().direct_space_state.intersect_shape(consulta, 16):
 		var area := r.collider as Hurtbox
 		if area and area != hurtbox and not area.get_parent() is Player:
-			area.receber(dano_golpe * ficha.multiplicador_fisico(), &"fisico", self)
+			area.receber(dano_golpe * ficha.multiplicador_fisico() * poder_da_mao(&"espada"), &"fisico", self)
 
 
 @rpc("any_peer", "call_local", "reliable")
@@ -426,7 +435,7 @@ func registro() -> Dictionary:
 		"nivel": nivel, "xp": xp,
 		"pontos_atributo": pontos_atributo, "pontos_habilidade": pontos_habilidade,
 		"distribuidos": distribuidos.duplicate(),
-		"itens": inventario.itens(),
+		"itens": inventario.para_salvar(),
 		"pos": [global_position.x, global_position.y],
 		"salvo_em": Time.get_unix_time_from_system(),
 	}
@@ -525,7 +534,11 @@ func _on_morreu() -> void:
 # --- Local: alvo, coleta e animação -------------------------------------------
 
 func _tempo_coleta() -> float:
-	return maxf(alvo.tempo_segurar * ficha.tempo_coleta(), 0.01) if alvo else 1.0
+	if not alvo:
+		return 1.0
+	var recurso := alvo.dono() as ResourceNode
+	var ferramenta := &"picareta" if recurso and recurso.acao == "Minerar" else &"machado"
+	return maxf(alvo.tempo_segurar * ficha.tempo_coleta() / poder_da_mao(ferramenta), 0.01)
 
 
 func _atualizar_alvo() -> void:
@@ -602,3 +615,20 @@ func _montar_frames() -> SpriteFrames:
 				quadros.append(SpriteSheets.quadro(folha, i, QUADRO_NOSSO, lado == &"esquerda"))
 			SpriteSheets.adicionar_quadros(f, StringName("%s_%s" % [tipo, lado]), quadros, ANIM_NOSSA[tipo][1])
 	return f
+
+
+# --- Barra de itens e item na mão --------------------------------------------------
+## Espaço da barra (0-8) escolhido pelo dono; sincronizado, para todos saberem o que ele
+## tem na mão (o anfitrião usa para a força da ferramenta).
+var barra_escolhida := 0
+
+
+func item_na_mao() -> ItemData:
+	var id := inventario.item_em(barra_escolhida)
+	return ItemData.carregar(id) if ItemData.existe(id) else null
+
+
+## Quanto a ferramenta da mão ajuda (1 = mão vazia ou ferramenta de outro tipo).
+func poder_da_mao(tipo: StringName) -> float:
+	var item := item_na_mao()
+	return item.poder if item and item.ferramenta == tipo else 1.0

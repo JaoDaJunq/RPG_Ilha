@@ -1,0 +1,10 @@
+[gd_resource type="Resource" script_class="ReceitaData" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/data/receita_data.gd" id="1_script"]
+
+[resource]
+script = ExtResource("1_script")
+resultado = &"porta_madeira"
+quantidade = 1
+padrao = PackedStringArray("TT", "TT", "TT")
+chave = Dictionary[String, StringName]({"T": &"tabua"})
