@@ -27,9 +27,17 @@ const SONS := {
 ## Personagem (sincronizado ao nascer).
 @export var raca: StringName = &"humano"
 @export var classe: StringName = &"guerreiro"
+## Rosto e pele ({raca, rosto 0 a 2, pele 0 a 2}) e roupas vestidas ({cabeca, corpo}: id do
+## item ou &"" = roupa branca). Quem manda é o anfitrião; todos recebem por _aspecto_sync.
+var aparencia: Dictionary = {}
+var equipado: Dictionary = {&"cabeca": &"", &"corpo": &""}
+## Personagem ainda sendo criado (tela de criação aberta): parado, escondido e sem tomar dano.
+var criando := false
 
 ## Nível, experiência ou pontos mudaram (o HUD escuta).
 signal progresso_mudou
+## Raça, classe, rosto, pele ou roupas mudaram (o HUD e a mochila escutam).
+signal aspecto_mudou
 
 var ficha: Ficha
 var mana := 0.0
@@ -85,7 +93,9 @@ func _ready() -> void:
 	_recargas.resize(habilidades().size())
 	_recargas.fill(0.0)
 	ponto_de_retorno = position
-	visual.configurar(raca, classe)
+	if aparencia.is_empty():
+		aparencia = aparencia_padrao(raca)
+	_atualizar_visual()
 	visual.play(animacao)
 	camera.enabled = eh_local()
 	# A luz do jogador segue o dia e a noite de quem já está na ilha.
@@ -94,6 +104,7 @@ func _ready() -> void:
 	if multiplayer.is_server():
 		vida.mudou.connect(func(atual: float, _m: float) -> void: _vida_sync.rpc(atual))
 		vida.morreu.connect(_on_morreu)
+		inventario.mudou.connect(_roupas_mudaram)
 		hurtbox.atingido.connect(func(qtd: float, tipo: StringName, _o: Node) -> void: vida.tomar_dano(qtd, tipo))
 	if eh_local():
 		get_tree().call_group(&"mundo", &"registrar_jogador_local", self)
@@ -115,9 +126,14 @@ func habilidades() -> Array[HabilidadeData]:
 func _physics_process(delta: float) -> void:
 	if multiplayer.is_server():
 		_regenerar_mana(delta)
+		if criando:
+			vida.proteger(1.0)  # criando o personagem, ninguém o machuca
 	if not eh_local():
 		if visual.animation != animacao:
 			visual.play(animacao)
+		return
+	if criando:
+		velocity = Vector2.ZERO
 		return
 	_recarga_golpe = maxf(0.0, _recarga_golpe - delta)
 	_recarga_esquiva = maxf(0.0, _recarga_esquiva - delta)
@@ -142,7 +158,7 @@ func _physics_process(delta: float) -> void:
 
 
 func _unhandled_input(event: InputEvent) -> void:
-	if not eh_local():
+	if not eh_local() or criando:
 		return
 	# Barra de itens: teclas 1-9 e a rodinha do mouse escolhem o item da mão.
 	for k in Inventory.BARRA:
@@ -432,6 +448,7 @@ func _enviar_progresso() -> void:
 ## O anfitrião manda o progresso para todos (o nível aparece no nome em cima da cabeça).
 func enviar_progresso_para(peer: int) -> void:
 	_progresso_sync.rpc_id(peer, nivel, xp, pontos_atributo, pontos_habilidade, distribuidos)
+	_enviar_aspecto(peer)
 
 
 @rpc("any_peer", "call_local", "reliable")
@@ -459,6 +476,7 @@ func registro() -> Dictionary:
 		"pontos_atributo": pontos_atributo, "pontos_habilidade": pontos_habilidade,
 		"distribuidos": distribuidos.duplicate(),
 		"itens": inventario.para_salvar(),
+		"aparencia": aparencia.duplicate(),
 		"kit": true,
 		"pos": [global_position.x, global_position.y],
 		"salvo_em": Time.get_unix_time_from_system(),
@@ -466,11 +484,18 @@ func registro() -> Dictionary:
 
 
 ## Só o anfitrião chama, logo depois de criar o jogador: devolve o progresso salvo.
-func restaurar(reg: Dictionary) -> void:
+## `pular_criacao`: quem entrou já traz o personagem pronto (testes e linha de comando), então
+## o novo personagem é criado direto, sem a tela de criação.
+func restaurar(reg: Dictionary, pular_criacao := true) -> void:
 	if reg.is_empty():
-		# Personagem novo: só ganha a arma da classe (sem zerar o que já ganhou ao entrar).
-		dar_kit()
+		if pular_criacao:
+			criar_personagem(raca, classe, aparencia_padrao(raca))
+		else:
+			_iniciar_criacao()
 		return
+	var salva: Variant = reg.get("aparencia")
+	var veio_aparencia := salva is Dictionary
+	aparencia = normalizar_aparencia(salva if veio_aparencia else {}, raca)
 	nivel = clampi(int(reg.get("nivel", 1)), 1, Ficha.NIVEL_MAXIMO)
 	xp = int(reg.get("xp", 0))
 	pontos_atributo = int(reg.get("pontos_atributo", 0))
@@ -485,6 +510,10 @@ func restaurar(reg: Dictionary) -> void:
 	inventario.definir(reg.get("itens", {}))
 	if not reg.get("kit", false):
 		dar_kit()
+	if not veio_aparencia:
+		_vestir_base()  # salvo antes das roupas existirem: ganha as da classe
+	_roupas_mudaram()
+	_enviar_aspecto()
 	_enviar_progresso()
 
 
@@ -734,6 +763,155 @@ const KIT := {&"guerreiro": &"espada_ferro", &"mago": &"cajado", &"arqueiro": &"
 func dar_kit() -> void:
 	if KIT.has(classe) and inventario.quantidade_de(KIT[classe]) == 0:
 		inventario.adicionar(KIT[classe], 1)
+
+
+# --- Criação do personagem e roupas (L24) -----------------------------------------------
+## Roupas base de cada classe (cabeça e corpo): quem escolhe a classe já nasce vestido assim.
+const ROUPAS_BASE := {
+	&"guerreiro": [&"elmo_guerreiro", &"roupa_guerreiro"],
+	&"mago": [&"chapeu_mago", &"roupa_mago"],
+	&"arqueiro": [&"capuz_arqueiro", &"roupa_arqueiro"],
+}
+const OPCOES_ROSTO := 3
+const OPCOES_PELE := 3
+
+var _tela_criacao: Criacao
+var _vestido: Array = []  # [raça, aparência, roupas] que o boneco veste agora
+
+
+static func aparencia_padrao(raca_id: StringName) -> Dictionary:
+	return {"raca": raca_id, "rosto": 0, "pele": 0}
+
+
+## Aparência válida (o anfitrião não confia no que o cliente manda).
+static func normalizar_aparencia(ap: Dictionary, raca_id: StringName) -> Dictionary:
+	return {
+		"raca": raca_id,
+		"rosto": clampi(int(ap.get("rosto", 0)), 0, OPCOES_ROSTO - 1),
+		"pele": clampi(int(ap.get("pele", 0)), 0, OPCOES_PELE - 1),
+	}
+
+
+## Só o anfitrião: personagem novo em mundo com a tela de criação. Fica parado, escondido e
+## protegido até o dono confirmar raça, aparência e classe (o mundo segue rodando).
+func _iniciar_criacao() -> void:
+	criando = true
+	_enviar_aspecto()
+	if eh_local():
+		_abrir_criacao()
+	else:
+		_abrir_criacao.rpc_id(id_rede())
+
+
+@rpc("any_peer", "reliable")
+func _abrir_criacao() -> void:
+	if not Net.veio_do_anfitriao() or not eh_local() or _tela_criacao != null:
+		return
+	_tela_criacao = Criacao.new()
+	_tela_criacao.confirmado.connect(_confirmou_criacao)
+	add_child(_tela_criacao)
+
+
+func tela_de_criacao() -> Criacao:
+	return _tela_criacao
+
+
+func _confirmou_criacao(raca_id: StringName, classe_id: StringName, ap: Dictionary) -> void:
+	_pedir_criar_personagem.rpc_id(1, raca_id, classe_id, ap)
+
+
+@rpc("any_peer", "call_local", "reliable")
+func _pedir_criar_personagem(raca_id: StringName, classe_id: StringName, ap: Dictionary) -> void:
+	if not multiplayer.is_server() or not _pedido_do_dono() or not criando:
+		return
+	if not raca_id in RacaData.TODAS or not classe_id in ClasseData.TODAS:
+		return
+	criar_personagem(raca_id, classe_id, ap)
+
+
+## Só o anfitrião: define raça, classe e aparência, refaz a ficha, veste as roupas base da
+## classe, põe a arma dela na barra e solta o jogador no mundo.
+func criar_personagem(raca_id: StringName, classe_id: StringName, ap: Dictionary) -> void:
+	if not multiplayer.is_server():
+		return
+	raca = raca_id
+	classe = classe_id
+	aparencia = normalizar_aparencia(ap, raca_id)
+	criando = false
+	distribuidos.clear()
+	ficha = Ficha.criar(raca, classe, distribuidos)
+	vida.maximo = ficha.vida_maxima()
+	vida.curar_tudo()
+	mana = ficha.mana_maxima()
+	_enviar_mana()
+	_recargas.resize(habilidades().size())
+	_recargas.fill(0.0)
+	_prontas_no_anfitriao.clear()
+	dar_kit()
+	_vestir_base()
+	_roupas_mudaram()
+	_enviar_aspecto()
+	_enviar_progresso()
+	get_tree().call_group(&"mundo", &"personagem_criado", self)
+
+
+## Só o anfitrião: veste as roupas base da classe.
+func _vestir_base() -> void:
+	for id in ROUPAS_BASE.get(classe, []):
+		inventario.vestir(id)
+
+
+## Só o anfitrião: o inventário mudou, então as roupas vestidas podem ter mudado.
+func _roupas_mudaram() -> void:
+	var novas := inventario.roupas()
+	if novas == equipado:
+		return
+	equipado = novas
+	_enviar_aspecto()
+
+
+## Só o anfitrião: manda a todos (ou só a `para`) raça, classe, rosto, pele e roupas.
+func _enviar_aspecto(para := 0) -> void:
+	if para == 0:
+		_aspecto_sync.rpc(raca, classe, aparencia, equipado, criando)
+	else:
+		_aspecto_sync.rpc_id(para, raca, classe, aparencia, equipado, criando)
+
+
+## Veste o boneco se a raça, a aparência ou as roupas mudaram desde a última vez.
+func _atualizar_visual() -> void:
+	var chave := [raca, aparencia.duplicate(), equipado.duplicate()]
+	if chave != _vestido:
+		_vestido = chave
+		visual.vestir(aparencia, equipado)
+
+
+@rpc("any_peer", "call_local", "reliable")
+func _aspecto_sync(raca_id: StringName, classe_id: StringName, ap: Dictionary, roupas: Dictionary, em_criacao: bool) -> void:
+	if not Net.veio_do_anfitriao():
+		return
+	var trocou_classe := raca_id != raca or classe_id != classe
+	var novo_equipado := {&"cabeca": StringName(roupas.get("cabeca", &"")), &"corpo": StringName(roupas.get("corpo", &""))}
+	raca = raca_id
+	classe = classe_id
+	aparencia = normalizar_aparencia(ap, raca_id)
+	equipado = novo_equipado
+	criando = em_criacao
+	if trocou_classe:
+		_recalcular_ficha()
+		_recargas.resize(habilidades().size())
+		_recargas.fill(0.0)
+		if not multiplayer.is_server():
+			vida.atual = vida.maximo
+			vida.mudou.emit(vida.atual, vida.maximo)
+			mana = ficha.mana_maxima()
+	_atualizar_visual()
+	visual.visible = not criando
+	if not criando and _tela_criacao != null:
+		_tela_criacao.queue_free()
+		_tela_criacao = null
+	aspecto_mudou.emit()
+	progresso_mudou.emit()
 
 
 ## Botão direito: usa o item da mão (por enquanto, só os que curam).

@@ -15,6 +15,8 @@ extends Resource
 @export var poder := 1.0
 ## Peça que dá para pôr no mundo (construção): id da cena em res://scenes/construcao/.
 @export var construcao: StringName
+## Roupa: onde se veste (&"cabeca" ou &"corpo"). Vazio = não é roupa. Só visual por enquanto.
+@export var equipa: StringName = &""
 ## Consumível: quanto de vida recupera ao usar (botão direito com ele na mão).
 @export var cura := 0.0
 

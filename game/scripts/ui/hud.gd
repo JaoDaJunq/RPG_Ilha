@@ -62,7 +62,15 @@ func configurar(p: Player) -> void:
 	_mochila.configurar(p)
 	jogador.vida.mudou.connect(func(atual: float, maximo: float) -> void: _barra_vida.value = atual / maximo * 100.0)
 	jogador.progresso_mudou.connect(_atualizar_progresso)
-	_retrato.texture = _retrato_de(p)
+	jogador.aspecto_mudou.connect(_atualizar_aspecto)
+	_atualizar_aspecto()
+	_atualizar_itens()
+
+
+## Raça, classe, rosto, pele ou roupas mudaram (criação do personagem, trocar de roupa):
+## retrato, título e botões de habilidade acompanham. Sem HUD enquanto cria o personagem.
+func _atualizar_aspecto() -> void:
+	_retrato.texture = _retrato_de(jogador)
 	var hab := jogador.habilidades()
 	for i in _slots.size():
 		var tem := i < hab.size()
@@ -70,7 +78,7 @@ func configurar(p: Player) -> void:
 		_slots[i].fundo.tooltip_text = "Botão direito: detalhes" if tem else ""
 		_slots[i].fundo.visible = tem  # classe com 2 habilidades: F e G somem
 	_atualizar_progresso()
-	_atualizar_itens()
+	_raiz.visible = not jogador.criando
 
 
 func mostrar_aviso(texto: String) -> void:
@@ -102,7 +110,7 @@ func _unhandled_input(event: InputEvent) -> void:
 	if event.is_action_pressed(&"ui_cancel") and _dica.visible:
 		fechar_descricao()
 		get_viewport().set_input_as_handled()
-	elif event.is_action_pressed(&"mochila") and jogador:
+	elif event.is_action_pressed(&"mochila") and jogador and not jogador.criando:
 		_mochila.alternar()
 		get_viewport().set_input_as_handled()
 	elif event.is_action_pressed(&"ui_cancel") and _mochila.aberta():
@@ -228,7 +236,7 @@ func _atualizar_tecla_e() -> void:
 func _atualizar_nomes() -> void:
 	var vistos: Array[Node] = []
 	for p in get_tree().get_nodes_in_group(&"jogadores"):
-		if p == jogador or (p as Player).ficha == null:
+		if p == jogador or (p as Player).ficha == null or (p as Player).criando:
 			continue
 		vistos.append(p)
 		if not _nomes.has(p):
@@ -560,9 +568,9 @@ func _barra(cor: Color, altura: int, moldura := false) -> ProgressBar:
 	return b
 
 
-## Retrato: a cabeça do boneco (L19).
+## Retrato: a cabeça do boneco, com a raça, o rosto e as roupas que ele veste agora.
 func _retrato_de(p: Player) -> Texture2D:
-	return load(Boneco.PASTA + "%s_%s/cabeca.png" % [p.raca, p.classe])
+	return Boneco.retrato(p.aparencia, p.equipado)
 
 
 func _painel() -> PanelContainer:

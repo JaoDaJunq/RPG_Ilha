@@ -7,6 +7,7 @@ extends Node
 ##            a 3x3 inteira só na bancada)
 ##   45       mão: o item que o mouse está segurando na tela da mochila
 ##   46 a 72  o baú aberto (cópia do conteúdo do baú; o anfitrião grava de volta no baú)
+##   73, 74   roupas vestidas: cabeça e corpo (só aceitam item com `equipa` igual)
 ## Quem manda é o anfitrião: o dono PEDE cada clique, o anfitrião aplica e manda a lista
 ## inteira de volta (pedido_clique, pedido_resultado, pedido_fechar).
 
@@ -19,7 +20,11 @@ const GRADE := GUARDAR  # primeiro espaço da grade 3x3
 const MAO := GUARDAR + 9
 const BAU := MAO + 1
 const BAU_N := 27
-const ESPACOS := BAU + BAU_N
+const EQUIP_CABECA := BAU + BAU_N
+const EQUIP_CORPO := EQUIP_CABECA + 1
+const ESPACOS := EQUIP_CORPO + 1
+## Espaço de roupa → o `equipa` que ele aceita.
+const EQUIPAMENTO := {EQUIP_CABECA: &"cabeca", EQUIP_CORPO: &"corpo"}
 ## Na mochila, a grade 2x2 são estes espaços da 3x3.
 const GRADE_2X2: Array[int] = [GRADE, GRADE + 1, GRADE + 3, GRADE + 4]
 
@@ -115,18 +120,30 @@ func definir(salvo: Variant) -> void:
 		for k in salvo:
 			_guardar(StringName(k), int(salvo[k]), 0, GUARDAR)
 	elif salvo is Array:
-		for i in mini(salvo.size(), ESPACOS):
-			var e: Array = salvo[i]
-			if e.size() == 2 and ItemData.existe(StringName(e[0])) and int(e[1]) > 0:
-				_ids[i] = StringName(e[0])
-				_qtds[i] = int(e[1])
+		for i in mini(salvo.size(), MAO + 1):
+			_carregar_espaco(i, salvo[i])
+		# Depois da mão vêm as duas roupas vestidas (o baú aberto fica no baú, não aqui).
+		if salvo.size() >= MAO + 3:
+			_carregar_espaco(EQUIP_CABECA, salvo[MAO + 1])
+			_carregar_espaco(EQUIP_CORPO, salvo[MAO + 2])
 	_enviar()
+
+
+func _carregar_espaco(i: int, e: Array) -> void:
+	if e.size() != 2 or not ItemData.existe(StringName(e[0])) or int(e[1]) <= 0:
+		return
+	if EQUIPAMENTO.has(i) and ItemData.carregar(StringName(e[0])).equipa != EQUIPAMENTO[i]:
+		return
+	_ids[i] = StringName(e[0])
+	_qtds[i] = int(e[1])
 
 
 func para_salvar() -> Array:
 	var lista := []
 	for i in MAO + 1:  # o baú aberto fica no baú, não no jogador
 		lista.append([String(_ids[i]), _qtds[i]])
+	lista.append([String(_ids[EQUIP_CABECA]), _qtds[EQUIP_CABECA]])
+	lista.append([String(_ids[EQUIP_CORPO]), _qtds[EQUIP_CORPO]])
 	return lista
 
 
@@ -158,11 +175,13 @@ func pedir_bancada(ligada: bool) -> void:
 func _pedido_clique(espaco: int, direito: bool, rapido: bool) -> void:
 	if not _pedido_do_dono() or espaco < 0 or espaco >= ESPACOS or espaco == MAO:
 		return
-	if espaco >= BAU and not is_instance_valid(bau_aberto):
+	if espaco >= BAU and espaco < BAU + BAU_N and not is_instance_valid(bau_aberto):
 		return
 	if not na_bancada and espaco >= GRADE and espaco < MAO and not espaco in GRADE_2X2:
 		return
-	if rapido:
+	if EQUIPAMENTO.has(espaco):
+		_clique_roupa(espaco, rapido)
+	elif rapido:
 		_mover_rapido(espaco)
 	elif direito:
 		_clique_direito(espaco)
@@ -266,9 +285,48 @@ func _clique_direito(i: int) -> void:
 		_tirar(MAO, 1)
 
 
+## Clique num espaço de roupa: troca com o que está na mão do mouse, mas só aceita roupa
+## daquele lugar (cabeça ou corpo). Mão vazia pega a roupa (tirar). Shift + clique tira a
+## roupa direto para a mochila.
+func _clique_roupa(i: int, rapido: bool) -> void:
+	if rapido:
+		if _ids[i] == &"":
+			return
+		var sobra := _guardar(_ids[i], _qtds[i], 0, GUARDAR)
+		if sobra == 0:
+			_ids[i] = &""
+			_qtds[i] = 0
+		return
+	if _ids[MAO] != &"" and not _veste_em(_ids[MAO], i):
+		return
+	_trocar(i, MAO)
+
+
+## Esta roupa serve neste espaço de roupa?
+func _veste_em(item_id: StringName, espaco: int) -> bool:
+	return ItemData.existe(item_id) and ItemData.carregar(item_id).equipa == EQUIPAMENTO.get(espaco, &"?")
+
+
+## Shift + clique numa roupa da barra ou da mochila: veste (e a que estava vestida vai
+## para o lugar dela). Retorna se vestiu.
+func _vestir_rapido(i: int) -> bool:
+	if not ItemData.existe(_ids[i]):
+		return false
+	var onde := ItemData.carregar(_ids[i]).equipa
+	if onde == &"":
+		return false
+	for espaco in EQUIPAMENTO:
+		if EQUIPAMENTO[espaco] == onde:
+			_trocar(i, espaco)
+			return true
+	return false
+
+
 ## Shift + clique: da barra para a mochila, da mochila para a barra, da grade para guardar.
 func _mover_rapido(i: int) -> void:
 	if _ids[i] == &"":
+		return
+	if i < GUARDAR and not is_instance_valid(bau_aberto) and _vestir_rapido(i):
 		return
 	var de := 0
 	var ate := GUARDAR
@@ -379,6 +437,28 @@ func _receber(ids: Array, qtds: PackedInt32Array, bancada: bool, bau: bool) -> v
 	na_bancada = bancada
 	com_bau = bau
 	mudou.emit()
+
+
+## O que o boneco veste: {cabeca: id, corpo: id} (&"" = roupa branca). Só leitura.
+func roupas() -> Dictionary:
+	return {&"cabeca": _ids[EQUIP_CABECA], &"corpo": _ids[EQUIP_CORPO]}
+
+
+## Só o anfitrião: veste a roupa direto no espaço dela (a que estava vestida vai para a
+## mochila). Retorna se vestiu.
+func vestir(item_id: StringName) -> bool:
+	if not ItemData.existe(item_id):
+		return false
+	for espaco in EQUIPAMENTO:
+		if EQUIPAMENTO[espaco] != ItemData.carregar(item_id).equipa:
+			continue
+		if _ids[espaco] != &"" and _guardar(_ids[espaco], 1, 0, GUARDAR) > 0:
+			return false  # mochila cheia: não há onde pôr a roupa velha
+		_ids[espaco] = item_id
+		_qtds[espaco] = 1
+		_enviar()
+		return true
+	return false
 
 
 ## Gasta do espaço `i` (o anfitrião, ao pôr uma construção da mão).

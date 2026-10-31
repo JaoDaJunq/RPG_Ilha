@@ -86,6 +86,7 @@ func _mundo(classe: StringName) -> World:
 	Net.classe = classe
 	Net.raca = &"humano"
 	Net.id_jogador = "teste"
+	Net.pular_criacao = true
 	var w: World = MUNDO.instantiate()
 	w.arquivo_salvo = ARQUIVO
 	w.slimes = 0

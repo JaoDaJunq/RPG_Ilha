@@ -29,7 +29,7 @@ func _ready() -> void:
 	var args := ["--headless"] if not prints else ["--resolution", "960x540", "--position", "980,60"]
 	args.append_array(["--log-file", ProjectSettings.globalize_path("user://rede_cliente.log"),
 		"--path", ProjectSettings.globalize_path("res://"), "res://tests/rede_cliente.tscn",
-		"--", "--porta=%d" % PORTA, "--raca=ogro", "--classe=arqueiro", "--com-prints" if prints else "--sem-prints"])
+		"--", "--porta=%d" % PORTA, "--criar", "--com-prints" if prints else "--sem-prints"])
 	var pid := OS.create_process(OS.get_executable_path(), args)
 	checar(pid > 0, "segundo jogo (cliente) aberto")
 
@@ -84,6 +84,13 @@ func _ready() -> void:
 	checar(relatorio.get("titulo", "") == "Ogro Arqueiro", "cliente escolheu Ogro Arqueiro (%s)" % relatorio.get("titulo"))
 	if cliente:
 		checar(cliente.raca == &"ogro" and cliente.classe == &"arqueiro", "anfitrião vê o cliente como Ogro Arqueiro")
+		# O cliente passou pela tela de criação (Ogro, rosto 2, pele 3, Arqueiro) e entrou no mundo.
+		checar(not cliente.criando and cliente.aparencia.get("rosto") == 1 and cliente.aparencia.get("pele") == 2, "anfitrião vê a aparência escolhida pelo cliente (%s)" % str(cliente.aparencia))
+		checar(cliente.equipado.get("corpo") == &"roupa_arqueiro" and cliente.equipado.get("cabeca") == &"capuz_arqueiro", "anfitrião vê as roupas base do arqueiro no cliente")
+		checar(cliente.inventario.quantidade_de(&"arco") == 1, "o arco do arqueiro está na barra do cliente")
+	checar(relatorio.get("viu_criar", false), "o cliente viu a tela de criação ao entrar")
+	checar(relatorio.get("aparencia_anfitriao", "") == "humano" and relatorio.get("roupa_anfitriao", "") == "roupa_mago", "cliente vê o anfitrião Humano de manto de mago (%s, %s)" % [relatorio.get("aparencia_anfitriao"), relatorio.get("roupa_anfitriao")])
+	checar(relatorio.get("roupa_propria", "") == "roupa_arqueiro" and relatorio.get("pele_propria", -1) == 2, "cliente se vê com o gibão do arqueiro e a pele escolhida (%s, %s)" % [relatorio.get("roupa_propria"), relatorio.get("pele_propria")])
 	var armadilhas := get_tree().get_nodes_in_group(&"armadilhas").filter(func(a: Node) -> bool: return a.dono_id == peer)
 	checar(armadilhas.size() == 1, "habilidade do cliente (armadilha) aconteceu no anfitrião")
 	checar(relatorio.get("mana_gasta", false), "cliente recebeu do anfitrião a mana gasta na armadilha")
