@@ -49,6 +49,17 @@ var _dica_espera := 0  # quadros até o tamanho do painel assentar (autowrap) an
 
 const TECLAS_HABILIDADE: Array[String] = ["Q", "R", "T", "E"]
 
+# --- Vinheta vermelha (vida baixa e golpes) ---------------------------------------------
+const VINHETA := preload("res://shaders/vinheta_dano.gdshader")
+## Abaixo desta fração da vida as bordas da tela ficam vermelhas, e mais quanto menor a vida.
+const VIDA_BAIXA := 0.4
+const DURACAO_FLASH := 0.35
+var _vinheta: ColorRect
+var _vinheta_nivel := 0.0  # vida baixa, suavizado (0 a 1)
+var _flash := 0.0  # sobra do clarão do último golpe (1 a 0)
+var _pulso := 0.0
+var _vida_vista := -1.0
+
 
 func _ready() -> void:
 	layer = 10
@@ -62,6 +73,8 @@ func configurar(p: Player) -> void:
 	_mochila.configurar(p)
 	jogador.vida.mudou.connect(func(atual: float, maximo: float) -> void: _barra_vida.value = atual / maximo * 100.0)
 	jogador.progresso_mudou.connect(_atualizar_progresso)
+	_vida_vista = jogador.vida.atual
+	jogador.vida.mudou.connect(_ao_mudar_vida)
 	_retrato.texture = _retrato_de(p)
 	var hab := jogador.habilidades()
 	for i in _slots.size():
@@ -125,6 +138,7 @@ func _process(delta: float) -> void:
 				_dica.modulate.a = 1.0
 	if jogador == null or not is_instance_valid(jogador):
 		return
+	_atualizar_vinheta(delta)
 	_barra_mana.value = jogador.mana / jogador.ficha.mana_maxima() * 100.0
 	var carga := jogador.carga_atual()
 	for i in _slots.size():
@@ -297,6 +311,57 @@ func _atualizar_progresso() -> void:
 		_ficha_botoes[a].visible = jogador.pontos_atributo > 0
 
 
+# --- Vinheta vermelha ---------------------------------------------------------------
+
+## Tela cheia por trás da interface, só com efeito de shader (não pega o mouse).
+func _montar_vinheta() -> void:
+	_vinheta = ColorRect.new()
+	_vinheta.name = "Vinheta"
+	_vinheta.set_anchors_preset(Control.PRESET_FULL_RECT)
+	_vinheta.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_vinheta.visible = false
+	var m := ShaderMaterial.new()
+	m.shader = VINHETA
+	_vinheta.material = m
+	_raiz.add_child(_vinheta)
+
+
+## Cada perda de vida dá um clarão vermelho nas bordas.
+func _ao_mudar_vida(atual: float, _maximo: float) -> void:
+	if _vida_vista >= 0.0 and atual < _vida_vista:
+		_flash = 1.0
+	_vida_vista = atual
+
+
+## 0 a 1: o quanto as bordas estão vermelhas agora (vida baixa com pulso, mais o clarão do golpe).
+func vinheta_intensidade() -> float:
+	if _vinheta == null:
+		return 0.0
+	return (_vinheta.material as ShaderMaterial).get_shader_parameter("intensidade")
+
+
+func vinheta_visivel() -> bool:
+	return _vinheta != null and _vinheta.visible
+
+
+func _atualizar_vinheta(delta: float) -> void:
+	var fracao := jogador.vida.atual / maxf(jogador.vida.maximo, 1.0)
+	# Sem vermelho com a vida acima de 40%; abaixo, entra aos poucos e cresce até o máximo.
+	var falta := clampf((VIDA_BAIXA - fracao) / VIDA_BAIXA, 0.0, 1.0)
+	var entrada := clampf((VIDA_BAIXA - fracao) / 0.05, 0.0, 1.0)
+	var meta := entrada * (0.45 + 0.5 * falta)
+	_vinheta_nivel = lerpf(_vinheta_nivel, meta, 1.0 - exp(-6.0 * delta))
+	if _vinheta_nivel < 0.002 and meta == 0.0:
+		_vinheta_nivel = 0.0
+	# O pulso (batimento) fica mais rápido e mais fundo quanto menor a vida.
+	_pulso += delta * (3.0 + 4.0 * falta)
+	var pulsado := _vinheta_nivel * (1.0 - 0.18 * falta * (0.5 + 0.5 * sin(_pulso)) - 0.05)
+	_flash = maxf(0.0, _flash - delta / DURACAO_FLASH)
+	var total := clampf(pulsado + _flash * _flash * 0.65, 0.0, 1.0)
+	_vinheta.visible = total > 0.01
+	(_vinheta.material as ShaderMaterial).set_shader_parameter("intensidade", total)
+
+
 # --- Montagem -----------------------------------------------------------------
 
 func _montar() -> void:
@@ -305,6 +370,7 @@ func _montar() -> void:
 	_raiz.set_anchors_preset(Control.PRESET_FULL_RECT)
 	_raiz.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	add_child(_raiz)
+	_montar_vinheta()
 
 	# Personagem: retrato, nível, vida, mana e experiência (cima-esquerda).
 	var pers := _painel()

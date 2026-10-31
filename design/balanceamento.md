@@ -18,6 +18,8 @@ Machado não ajuda a minerar e picareta não ajuda a cortar.
 - Golpe: 1 × força × espada → mão e espada de madeira (1,3): 4 golpes; espada de pedra (1,6): 3; espada de ferro (2,0, só o Guerreiro começa com ela): 2.
 - Jogador: 40 + 10 × Vitalidade de vida (90 a 120 no começo).
 - Animais: galinha e coelho 2 de vida, ovelha 4, javali 7 (o javali revida com 10 de dano).
+- Cabeçada (31/10/2026): slime e javali acertam uma vez e quicam ~12 px para trás; o slime espera 0,8 s e o javali ~1 s antes de atacar de novo. Quem apanha dá um passo para trás (9 px), fica vermelho e encolhido, a tela treme de leve e fica 0,5 s protegido. Abaixo de 40% de vida as bordas da tela ficam vermelhas (e pulsam mais quanto menor a vida).
+- Dificuldade do mundo (`World.dificuldade`: 0 fácil, 1 normal, 2 difícil): dano de slime e javali x0,6 / x1 / x1,5; vida máxima de slimes e animais x0,8 / x1 / x1,3.
 
 ## Comida e cura
 

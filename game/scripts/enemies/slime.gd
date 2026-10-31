@@ -61,6 +61,9 @@ func _ready() -> void:
 	barra.definir_nivel(NIVEL_NOTURNO if noturno else NIVEL)
 	barra.ajustar_ao_sprite(visual)
 	if multiplayer.is_server():
+		# Dificuldade do mundo: a vida vai para os outros pelos avisos de golpe (_piscar).
+		vida.maximo *= World.mult_dificuldade(self, &"vida_inimigo")
+		vida.atual = vida.maximo
 		hurtbox.atingido.connect(_on_atingido)
 		vida.morreu.connect(_on_morreu)
 
@@ -107,6 +110,8 @@ func _physics_process(delta: float) -> void:
 	if _estado == Estado.PREPARANDO:
 		animacao = &"dano"  # achatado: está tomando impulso (aviso para esquivar)
 	var rapidez := velocidade * (_VEL_PULO if _estado == Estado.PULANDO else 1.0)
+	if _estado == Estado.RECUANDO:
+		rapidez = _DIST_RECUO / _TEMPO_RECUO  # saltinho para trás depois da cabeçada
 	velocity = dir * rapidez + _empurrao
 	_empurrao = _empurrao.move_toward(Vector2.ZERO, 400.0 * delta)
 	move_and_slide()
@@ -182,11 +187,16 @@ func derreter() -> void:
 ## PERSEGUINDO: alguém entrou no raio de visão.
 ## PREPARANDO: chegou perto; achata por um instante (o aviso para o jogador esquivar).
 ## PULANDO: salta na direção em que o jogador estava; acerta quem estiver no caminho.
-enum Estado { PASSEANDO, PERSEGUINDO, PREPARANDO, PULANDO }
+## RECUANDO: acertou (cabeçada): dá o dano uma vez e quica para trás; depois espera a recarga.
+enum Estado { PASSEANDO, PERSEGUINDO, PREPARANDO, PULANDO, RECUANDO }
 const _DIST_ATAQUE := 30.0
 const _TEMPO_PREPARO := 0.45
 const _TEMPO_PULO := 0.3
 const _VEL_PULO := 4.2
+const _DIST_RECUO := 12.0  # px que ele quica para trás depois de acertar
+const _TEMPO_RECUO := 0.2
+## Recarga depois da cabeçada (errando o pulo, vale `recarga_contato`).
+const _RECARGA_CABECADA := 0.8
 
 var _estado := Estado.PASSEANDO
 var _tempo_estado := 0.0
@@ -194,6 +204,7 @@ var _casa := Vector2.INF
 var _destino := Vector2.INF
 var _dir_pulo := Vector2.ZERO
 var _acertou_pulo := false
+var _dir_recuo := Vector2.ZERO
 
 
 func _decidir(alvo: Player, delta: float) -> Vector2:
@@ -212,12 +223,23 @@ func _decidir(alvo: Player, delta: float) -> Vector2:
 		Estado.PULANDO:
 			if not _acertou_pulo and alvo and para_alvo.length() < 12.0:
 				_acertou_pulo = true
-				if alvo.vida.tomar_dano(dano_contato, &"fisico"):
+				# Cabeçada: o dano vem uma vez; se pegou, o slime quica para trás.
+				if alvo.vida.tomar_dano(dano_contato * World.mult_dificuldade(self, &"dano_inimigo"), &"fisico"):
 					alvo.avisar("O slime pulou em você! Esquive (Shift) quando ele achatar.")
+					alvo.reagir_ao_golpe(global_position)
+					_dir_recuo = -para_alvo.normalized() if para_alvo.length() > 0.1 else -_dir_pulo
+					_mudar(Estado.RECUANDO)
+					return _dir_recuo
 			if _tempo_estado >= _TEMPO_PULO:
 				_recarga = recarga_contato
 				_mudar(Estado.PERSEGUINDO if ve_alvo else Estado.PASSEANDO)
 			return _dir_pulo
+		Estado.RECUANDO:
+			if _tempo_estado >= _TEMPO_RECUO:
+				_recarga = _RECARGA_CABECADA
+				_mudar(Estado.PERSEGUINDO if ve_alvo else Estado.PASSEANDO)
+				return Vector2.ZERO
+			return _dir_recuo
 	if ve_alvo:
 		_estado = Estado.PERSEGUINDO
 		visual.flip_h = para_alvo.x < 0.0
@@ -225,6 +247,8 @@ func _decidir(alvo: Player, delta: float) -> Vector2:
 			_dir_pulo = para_alvo.normalized()
 			_mudar(Estado.PREPARANDO)
 			return Vector2.ZERO
+		if _recarga > 0.0 and para_alvo.length() < _DIST_ATAQUE:
+			return Vector2.ZERO  # esperando a recarga: não encosta de novo
 		return para_alvo.normalized()
 	_estado = Estado.PASSEANDO
 	# Pulinhos a esmo: anda até um ponto perto de casa, para um pouco e escolhe outro.

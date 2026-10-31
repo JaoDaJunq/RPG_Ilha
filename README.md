@@ -16,6 +16,7 @@ Co-op online de sobrevivência e exploração numa ilha de fantasia que reage ao
 - Saque no chão (como no Minecraft): animais, slimes e baú quebrado soltam os itens no chão; é só chegar perto para pegar (o que não couber na mochila fica lá, e some depois de 5 minutos).
 - Nível em cima da cabeça de slimes e animais; a barra de vida aparece quando apanham e some 4 s depois. Personagem de frente, de perfil e de costas; 4 habilidades por classe. Balanceamento em [design/balanceamento.md](design/balanceamento.md).
 - Noite perigosa: slimes mais fortes no escuro, que fogem da luz e derretem ao amanhecer; derrotados deixam gel de slime.
+- Dano que dá para sentir: slime e javali dão uma cabeçada (acertam uma vez e recuam); quem apanha dá um passo para trás, fica vermelho, a tela treme de leve e, com pouca vida, as bordas ficam vermelhas.
 - Arte no estilo Tiny Swords:
   - ilha com mar e espuma animada, areia, grama, árvores balançando, arbustos e tocos;
   - os 6 personagens nossos (Humano e Ogro x Guerreiro, Mago e Arqueiro), de perfil, parados, andando e golpeando;
