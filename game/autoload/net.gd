@@ -19,6 +19,9 @@ var classe: StringName = &"guerreiro"
 var mundo_arquivo := ""
 var mundo_nome := ""
 var mundo_dificuldade := 1
+## O personagem já vem escolhido (testes e linha de comando): o mundo cria direto, sem a tela
+## de criação do personagem.
+var pular_criacao := false
 ## Motivo da última desconexão, para o menu mostrar.
 var ultimo_erro := ""
 ## Identidade deste jogador entre sessões (o id de rede muda a cada partida).
@@ -29,6 +32,7 @@ const PERFIL := "user://perfil.cfg"
 
 
 func _ready() -> void:
+	var criar_forcado := false
 	id_jogador = _carregar_ou_criar_id()
 	# Atalhos de linha de comando para testar sem passar pelo menu:
 	#   -- --solo | --hospedar | --entrar=192.168.0.10   (opcional: --porta=7777)
@@ -49,6 +53,12 @@ func _ready() -> void:
 			raca = StringName(arg.get_slice("=", 1))
 		elif arg.begins_with("--classe="):
 			classe = StringName(arg.get_slice("=", 1))
+		if arg == "--solo" or arg == "--hospedar" or arg.begins_with("--entrar=") or arg.begins_with("--raca=") or arg.begins_with("--classe="):
+			pular_criacao = true
+		if arg == "--criar":  # força a tela de criação mesmo com --solo, --hospedar ou --entrar
+			criar_forcado = true
+	if criar_forcado:
+		pular_criacao = false
 
 
 func modo_pela_linha_de_comando() -> bool:

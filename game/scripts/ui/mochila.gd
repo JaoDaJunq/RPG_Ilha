@@ -8,6 +8,8 @@ extends Control
 
 const TAM := 52  # lado de um espaço na tela (os ícones têm até ~49 px, no tamanho real)
 const SETA := "res://assets/sprites/tiny/icones/seta.png"
+## Quanto o boneco (escala 0,25 no jogo) cresce na miniatura. Inteiro: pixel nítido.
+const ESCALA_BONECO := 2.0
 
 var jogador: Player
 var _espacos: Array = []  # [índice no inventário, {fundo, icone, qtd}]
@@ -16,6 +18,8 @@ var _grade_2x2: GridContainer
 var _grade_3x3: GridContainer
 var _titulo: Label
 var _fabricacao: HBoxContainer
+var _caixa_personagem: Control
+var _boneco: Boneco
 var _grade_bau: GridContainer
 var _cursor: Control
 var _cursor_icone: TextureRect
@@ -33,6 +37,8 @@ func _ready() -> void:
 func configurar(p: Player) -> void:
 	jogador = p
 	p.inventario.mudou.connect(_atualizar)
+	p.aspecto_mudou.connect(_vestir_miniatura)
+	_vestir_miniatura()
 	# Aberta, o jogador não esquiva nem lança habilidades (o Shift é do Shift + clique).
 	visibility_changed.connect(func() -> void: p.menu_aberto = visible)
 
@@ -55,6 +61,8 @@ func abrir(modo: StringName) -> void:
 	visible = true
 	_titulo.text = {&"mochila": "Mochila", &"bancada": "Bancada de trabalho", &"bau": "Baú"}.get(modo, "Mochila")
 	_fabricacao.visible = modo != &"bau"
+	_caixa_personagem.visible = modo == &"mochila"
+	_vestir_miniatura()
 	_grade_bau.visible = modo == &"bau"
 	_grade_2x2.visible = modo == &"mochila"
 	_grade_3x3.visible = modo == &"bancada"
@@ -96,12 +104,17 @@ func _montar() -> void:
 	_titulo.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	v.add_child(_titulo)
 
-	# Fabricação: grade, seta e resultado.
+	# Em cima: o bonequinho com as roupas (só na mochila) e a fabricação (grade, seta, resultado).
+	var topo := HBoxContainer.new()
+	topo.alignment = BoxContainer.ALIGNMENT_CENTER
+	topo.add_theme_constant_override(&"separation", 40)
+	v.add_child(topo)
+	topo.add_child(_montar_personagem())
 	var fab := HBoxContainer.new()
 	_fabricacao = fab
 	fab.alignment = BoxContainer.ALIGNMENT_CENTER
 	fab.add_theme_constant_override(&"separation", 12)
-	v.add_child(fab)
+	topo.add_child(fab)
 	_grade_2x2 = _grade(2, Inventory.GRADE_2X2)
 	fab.add_child(_grade_2x2)
 	var nove: Array[int] = []
@@ -154,6 +167,50 @@ func _montar() -> void:
 	_cursor.add_child(_cursor_icone)
 	_cursor_qtd = _qtd()
 	_cursor.add_child(_cursor_qtd)
+
+
+## O personagem em miniatura (como no Minecraft) com os dois espaços de roupa: cabeça e corpo.
+## Tirar a roupa deixa o boneco com a roupinha branca. O boneco cresce por um fator inteiro
+## (escala 0,25 no jogo), então o pixel continua nítido.
+func _montar_personagem() -> Control:
+	var h := HBoxContainer.new()
+	_caixa_personagem = h
+	h.add_theme_constant_override(&"separation", 10)
+	var roupas := VBoxContainer.new()
+	roupas.add_theme_constant_override(&"separation", 4)
+	roupas.alignment = BoxContainer.ALIGNMENT_CENTER
+	h.add_child(roupas)
+	for par in [[Inventory.EQUIP_CABECA, "Cabeça"], [Inventory.EQUIP_CORPO, "Corpo"]]:
+		var e := _espaco(par[0])
+		_espacos.append([par[0], e])
+		e.fundo.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
+		roupas.add_child(e.fundo)
+		var nome := _rotulo(par[1], 14)
+		nome.add_theme_color_override(&"font_color", Tema.COR_TEXTO_2)
+		nome.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+		roupas.add_child(nome)
+	var quadro := Panel.new()
+	quadro.custom_minimum_size = Vector2(150, 184)
+	var caixa := StyleBoxFlat.new()
+	caixa.bg_color = Tema.COR_FUNDO.darkened(0.35)
+	caixa.border_color = Tema.COR_BORDA
+	caixa.set_border_width_all(2)
+	caixa.set_corner_radius_all(3)
+	quadro.add_theme_stylebox_override(&"panel", caixa)
+	quadro.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	h.add_child(quadro)
+	_boneco = Boneco.new()
+	_boneco.scale = Vector2.ONE * ESCALA_BONECO
+	_boneco.position = Vector2(75, 174)  # os pés
+	_boneco.play(&"parado_baixo")
+	quadro.add_child(_boneco)
+	return h
+
+
+## Veste o boneco da mochila com a aparência e as roupas atuais do jogador.
+func _vestir_miniatura() -> void:
+	if jogador != null and _boneco != null:
+		_boneco.vestir(jogador.aparencia, jogador.equipado)
 
 
 func _grade(colunas: int, indices: Array[int]) -> GridContainer:

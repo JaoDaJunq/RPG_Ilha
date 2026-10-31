@@ -27,10 +27,12 @@ func esperar(segundos: float) -> void:
 
 ## Cria a ilha. Por padrão sem slimes e sem árvores/pedras geradas,
 ## para nada no caminho atrapalhar o teste.
-func criar_mundo(slimes := 0, limpar := true, classe: StringName = &"mago", raca: StringName = &"humano") -> World:
+## `pular_criacao`: o personagem já vem pronto (raça e classe acima), sem a tela de criação.
+func criar_mundo(slimes := 0, limpar := true, classe: StringName = &"mago", raca: StringName = &"humano", pular_criacao := true) -> World:
 	Sfx.ligado = false
 	Net.classe = classe
 	Net.raca = raca
+	Net.pular_criacao = pular_criacao
 	var w: World = MUNDO.instantiate()
 	w.arquivo_salvo = ""  # testes não mexem no mundo salvo do João
 	w.slimes = slimes

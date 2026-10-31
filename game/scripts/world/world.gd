@@ -82,6 +82,8 @@ var _retornos: Dictionary[int, Vector2] = {}
 var _registros: Dictionary = {}
 var _id_por_peer: Dictionary[int, String] = {}
 var _restaurar_depois: Dictionary[int, Dictionary] = {}
+var _ident_por_peer: Dictionary[int, String] = {}  # identidade do jogador entre sessões
+var _pular_por_peer: Dictionary[int, bool] = {}  # entrou com personagem pronto (sem criação)
 var _tempo_salvar := 0.0
 var _contador_itens := 0
 var _gelo: Dictionary[Vector2i, float] = {}  # célula congelada → segundos restantes
@@ -123,7 +125,7 @@ func _ready() -> void:
 	add_child(pausa)
 	move_child(pausa, 0)
 	multiplayer.peer_disconnected.connect(_on_peer_saiu)
-	multiplayer.connected_to_server.connect(func() -> void: _cliente_pronto.rpc_id(1, Net.raca, Net.classe, Net.id_jogador))
+	multiplayer.connected_to_server.connect(func() -> void: _cliente_pronto.rpc_id(1, Net.raca, Net.classe, Net.id_jogador, Net.pular_criacao))
 	multiplayer.connection_failed.connect(_on_conexao_perdida.bind("Não foi possível conectar ao anfitrião."))
 	multiplayer.server_disconnected.connect(_on_conexao_perdida.bind("O anfitrião saiu do jogo."))
 	if multiplayer.is_server():
@@ -131,7 +133,7 @@ func _ready() -> void:
 		_criar_slimes()
 		_criar_animais()
 		if Net.modo != Net.Modo.ENTRAR:
-			_criar_jogador(1, Net.raca, Net.classe, Net.id_jogador)
+			_criar_jogador(1, Net.raca, Net.classe, Net.id_jogador, Net.pular_criacao)
 	else:
 		Events.aviso.emit("Conectando em %s..." % Net.endereco)
 	Sfx.tocar_musica()
@@ -363,16 +365,28 @@ static func avisar_todos(quem: Node, texto: String) -> void:
 
 # --- Rede ------------------------------------------------------------------------
 
-func _criar_jogador(peer: int, raca: StringName, classe: StringName, id_jogador: String) -> void:
+## `pular_criacao`: quem entra já traz raça e classe (testes e linha de comando): o personagem
+## é o salvo dessa raça e classe, ou um novo criado direto. Sem isso, o personagem é o salvo
+## mais recente do jogador neste mundo; se não houver, ele passa pela tela de criação.
+func _criar_jogador(peer: int, raca: StringName, classe: StringName, id_jogador: String, pular_criacao := true) -> void:
 	var p: Player = JOGADOR.instantiate()
 	p.name = str(peer)
 	p.raca = raca if raca in RacaData.TODAS else RacaData.TODAS[0]
 	p.classe = classe if classe in ClasseData.TODAS else ClasseData.TODAS[0]
-	# Um personagem salvo por jogador + raça + classe. Duas janelas no mesmo PC com o
-	# mesmo personagem: a segunda ganha um sufixo.
-	var id := chave_personagem(id_jogador if id_jogador != "" else "anonimo", p.raca, p.classe)
-	while id in _id_por_peer.values():
-		id += "+"
+	var ident := id_jogador if id_jogador != "" else "anonimo"
+	_ident_por_peer[peer] = ident
+	_pular_por_peer[peer] = pular_criacao
+	var id := "" if pular_criacao else _chave_salva_livre(ident)
+	if id != "":
+		var salvo: Dictionary = _registros[id]
+		p.raca = StringName(salvo.get("raca", p.raca)) if StringName(salvo.get("raca", "")) in RacaData.TODAS else p.raca
+		p.classe = StringName(salvo.get("classe", p.classe)) if StringName(salvo.get("classe", "")) in ClasseData.TODAS else p.classe
+	else:
+		# Um personagem salvo por jogador + raça + classe. Duas janelas no mesmo PC com o
+		# mesmo personagem: a segunda ganha um sufixo.
+		id = chave_personagem(ident, p.raca, p.classe)
+		while id in _id_por_peer.values():
+			id += "+"
 	_id_por_peer[peer] = id
 	var retorno := ponto_de_nascer(get_tree().get_nodes_in_group(&"jogadores").size())
 	p.position = retorno
@@ -386,12 +400,37 @@ func _criar_jogador(peer: int, raca: StringName, classe: StringName, id_jogador:
 	entidades.add_child(p, true)
 	# Personagem novo também passa por restaurar (com registro vazio): ganha a arma da classe.
 	if peer == multiplayer.get_unique_id():
-		p.restaurar(reg)
+		p.restaurar(reg, pular_criacao)
 		if mesmo:
 			Events.aviso.emit("Bem-vindo de volta! Seu %s está no nível %d." % [p.ficha.titulo(), p.nivel])
 	else:
 		# Para os outros, só depois que o jogador já existe lá (ver _pedir_nascimento).
 		_restaurar_depois[peer] = reg
+
+
+## A chave do personagem salvo mais recente deste jogador que ninguém está usando agora.
+func _chave_salva_livre(ident: String) -> String:
+	var melhor := ""
+	var quando := -1.0
+	for chave in _registros:
+		var salvo_em := float(_registros[chave].get("salvo_em", 0))
+		if String(chave).begins_with(ident + ":") and not chave in _id_por_peer.values() and salvo_em >= quando:
+			melhor = chave
+			quando = salvo_em
+	return melhor
+
+
+## O personagem acabou de ser criado (raça e classe escolhidas): a chave dele no arquivo passa
+## a ser a da raça e classe escolhidas.
+func personagem_criado(p: Player) -> void:
+	var peer := p.id_rede()
+	if not _id_por_peer.has(peer):
+		return
+	_id_por_peer.erase(peer)
+	var id := chave_personagem(_ident_por_peer.get(peer, "anonimo"), p.raca, p.classe)
+	while id in _id_por_peer.values():
+		id += "+"
+	_id_por_peer[peer] = id
 
 
 @rpc("any_peer", "reliable")
@@ -403,9 +442,11 @@ func _pedir_nascimento() -> void:
 	if _restaurar_depois.has(peer) and entidades.has_node(str(peer)):
 		var p: Player = entidades.get_node(str(peer))
 		p.inventario.fechar_bau_servidor()  # o que estava no baú aberto fica no baú
-		p.restaurar(_restaurar_depois[peer])
+		var reg: Dictionary = _restaurar_depois[peer]
+		p.restaurar(reg, _pular_por_peer.get(peer, true))
 		_restaurar_depois.erase(peer)
-		p.avisar("Bem-vindo de volta! Seu %s está no nível %d." % [p.ficha.titulo(), p.nivel])
+		if not reg.is_empty():
+			p.avisar("Bem-vindo de volta! Seu %s está no nível %d." % [p.ficha.titulo(), p.nivel])
 
 
 @rpc("any_peer", "reliable")
@@ -418,13 +459,13 @@ func _definir_nascimento(pos: Vector2, retorno: Vector2) -> void:
 
 
 @rpc("any_peer", "reliable")
-func _cliente_pronto(raca: StringName, classe: StringName, id_jogador: String) -> void:
+func _cliente_pronto(raca: StringName, classe: StringName, id_jogador: String, pular_criacao: bool) -> void:
 	if not multiplayer.is_server():
 		return
 	var peer := multiplayer.get_remote_sender_id()
 	if entidades.has_node(str(peer)):
 		return
-	_criar_jogador(peer, raca, classe, id_jogador)
+	_criar_jogador(peer, raca, classe, id_jogador, pular_criacao)
 	# Quem entra depois recebe o que já mudou no mundo.
 	_aplicar_ciclo_rede.rpc_id(peer, noite, true)
 	for cel in _gelo:
@@ -445,7 +486,8 @@ func _on_peer_saiu(peer: int) -> void:
 	if multiplayer.is_server() and entidades.has_node(str(peer)):
 		var p: Player = entidades.get_node(str(peer))
 		if _id_por_peer.has(peer) and not _restaurar_depois.has(peer):
-			_registros[_id_por_peer[peer]] = p.registro()
+			if not p.criando:  # quem ainda cria o personagem não tem o que salvar
+				_registros[_id_por_peer[peer]] = p.registro()
 		_id_por_peer.erase(peer)
 		p.queue_free()
 		salvar()
@@ -475,7 +517,9 @@ func salvar() -> bool:
 		return false
 	for peer in _id_por_peer:
 		if entidades.has_node(str(peer)) and not _restaurar_depois.has(peer):
-			_registros[_id_por_peer[peer]] = (entidades.get_node(str(peer)) as Player).registro()
+			var jogador_salvo := entidades.get_node(str(peer)) as Player
+			if not jogador_salvo.criando:  # quem ainda cria o personagem não tem o que salvar
+				_registros[_id_por_peer[peer]] = jogador_salvo.registro()
 	var recursos := {}
 	for r in get_tree().get_nodes_in_group(&"recursos"):
 		var rn := r as ResourceNode
