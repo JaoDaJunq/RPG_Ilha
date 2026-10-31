@@ -324,13 +324,17 @@ static func _caixa(tex: Texture2D, q: int) -> Rect2i:
 const PELE := {
 	&"humano": [Color("f4d296"), Color("f8d4a6"), Color("ffbc88"), Color("f8cb93"), Color("f4a47b"), Color("f2e7a0"), Color("ea9461"), Color("db9c68")],
 	&"ogro": [Color("a1b74c"), Color("9acc50"), Color("7da147"), Color("6e7e53"), Color("91bc4c"), Color("699157"), Color("c7cc67"), Color("49655c")],
+	&"elfo": [Color("f4d296"), Color("f8d4a6"), Color("ffbc88"), Color("f8cb93"), Color("f4a47b"), Color("f2e7a0"), Color("ea9461"), Color("db9c68")],
+	&"anao": [Color("f4d296"), Color("f8d4a6"), Color("ffbc88"), Color("f8cb93"), Color("f4a47b"), Color("f2e7a0"), Color("ea9461"), Color("db9c68")],
 }
 ## Luz acima da qual é "claro" e abaixo da qual é "sombra".
-const LIMITES_PELE := {&"humano": [0.87, 0.80], &"ogro": [0.74, 0.62]}
+const LIMITES_PELE := {&"humano": [0.87, 0.80], &"ogro": [0.74, 0.62], &"elfo": [0.87, 0.80], &"anao": [0.84, 0.70]}
 ## [claro, base, sombra] de cada tom.
 const TONS_PELE := {
 	&"humano": [[Color("fadcb2"), Color("f2c391"), Color("d99a68")], [Color("dcaa7c"), Color("c18758"), Color("9b6340")], [Color("9e6c4c"), Color("7c4e35"), Color("5b3525")]],
 	&"ogro": [[Color("b8cc5c"), Color("9db64b"), Color("76943e")], [Color("c8b45c"), Color("a99044"), Color("7f6b31")], [Color("a3b79d"), Color("829a84"), Color("617765")]],
+	&"elfo": [[Color("fde6c8"), Color("f5d3b0"), Color("dcae8a")], [Color("e3c09d"), Color("c99f7c"), Color("a37a5c")], [Color("a9846c"), Color("86634f"), Color("634636")]],
+	&"anao": [[Color("f8cfa0"), Color("eaa877"), Color("c27c50")], [Color("d6a072"), Color("b57f52"), Color("8c5a38")], [Color("9e6c4c"), Color("7c4e35"), Color("5b3525")]],
 }
 static var _tingidas := {}
 
@@ -367,9 +371,9 @@ static func _eh_pele(c: Color, pele: Array) -> bool:
 
 
 ## Cabelo debaixo do chapéu (L24b): como em muitos jogos, o cabelo que ficaria para fora do
-## chapéu, do capuz ou do elmo some. Em cada coluna que o chapéu cobre, some o que está ACIMA
-## da borda de baixo do chapéu e fora do contorno dele (o contorno inclui a abertura do rosto
-## do capuz, por onde o rosto continua aparecendo). Abaixo da aba, o cabelo continua.
+## chapéu, do capuz ou do elmo some. Nas colunas que o chapéu cobre, some o que está ACIMA do
+## topo do chapéu; dos lados do chapéu, some o que está acima da borda de baixo da ponta dele
+## (a aba ou a gola). O rosto, que fica debaixo ou dentro do chapéu, continua.
 static var _recortadas := {}
 
 
@@ -384,57 +388,40 @@ static func _recortar_cabelo(cab: Texture2D, pos_cab: Vector2, chapeu: Texture2D
 	var ch := chapeu.get_image()
 	if ch.is_compressed():
 		ch.decompress()
-	var dentro := _contorno_cheio(ch)
 	var d := Vector2i(pos_chapeu - pos_cab)  # canto do chapéu na cabeça
+	# Topo e base do chapéu em cada coluna dele (-1 = coluna vazia).
+	var topos: Array[int] = []
+	var bases: Array[int] = []
 	for cx in ch.get_width():
-		var base := -1  # linha mais baixa do chapéu nesta coluna
-		for cy in range(ch.get_height() - 1, -1, -1):
+		var t := -1
+		var b := -1
+		for cy in ch.get_height():
 			if ch.get_pixel(cx, cy).a > 0.5:
-				base = cy
-				break
-		if base < 0:
-			continue
-		var x := cx + d.x
-		if x < 0 or x >= img.get_width():
-			continue
-		for y in mini(base + d.y, img.get_height()):
-			if y < 0:
+				if t < 0:
+					t = cy
+				b = cy
+		topos.append(t)
+		bases.append(b)
+	var primeira := 0
+	while primeira < bases.size() and bases[primeira] < 0:
+		primeira += 1
+	if primeira == bases.size():
+		return cab
+	var ultima := bases.size() - 1
+	while bases[ultima] < 0:
+		ultima -= 1
+	for x in img.get_width():
+		var cx := x - d.x
+		var limite: int  # linha da cabeça acima da qual o cabelo some
+		if cx >= primeira and cx <= ultima:
+			if topos[cx] < 0:
 				continue
-			var cy := y - d.y
-			var no_contorno := cy >= 0 and cy < ch.get_height() and dentro.get_bit(cx, cy)
-			if not no_contorno:
-				img.set_pixel(x, y, Color(0, 0, 0, 0))
+			limite = topos[cx] + d.y
+		else:
+			limite = bases[primeira if cx < primeira else ultima] + d.y
+		for y in clampi(limite, 0, img.get_height()):
+			img.set_pixel(x, y, Color(0, 0, 0, 0))
 	var tex := ImageTexture.create_from_image(img)
 	_recortadas[chave] = tex
 	return tex
 
-
-## O desenho do chapéu com os buracos preenchidos (o que não se alcança de fora pelo
-## transparente conta como dentro): a abertura do rosto do capuz fica "dentro".
-static func _contorno_cheio(img: Image) -> BitMap:
-	var w := img.get_width()
-	var h := img.get_height()
-	var fora := BitMap.new()
-	fora.create(Vector2i(w, h))
-	var pilha: Array[Vector2i] = []
-	for x in w:
-		pilha.append(Vector2i(x, 0))
-		pilha.append(Vector2i(x, h - 1))
-	for y in h:
-		pilha.append(Vector2i(0, y))
-		pilha.append(Vector2i(w - 1, y))
-	while not pilha.is_empty():
-		var p: Vector2i = pilha.pop_back()
-		if p.x < 0 or p.y < 0 or p.x >= w or p.y >= h or fora.get_bitv(p) or img.get_pixelv(p).a > 0.5:
-			continue
-		fora.set_bitv(p, true)
-		pilha.append(p + Vector2i.LEFT)
-		pilha.append(p + Vector2i.RIGHT)
-		pilha.append(p + Vector2i.UP)
-		pilha.append(p + Vector2i.DOWN)
-	var dentro := BitMap.new()
-	dentro.create(Vector2i(w, h))
-	for y in h:
-		for x in w:
-			dentro.set_bit(x, y, not fora.get_bit(x, y))
-	return dentro

@@ -34,8 +34,12 @@ func _ready() -> void:
 
 	# Outro slime da noite derrete quando amanhece.
 	w._tempo_noite = World.INTERVALO_NOITE
-	await esperar(0.1)
-	var restantes := get_tree().get_nodes_in_group(&"inimigos").filter(func(n: Node) -> bool: return n is Slime and n.noturno).size()
+	var restantes := 0
+	for i in 20:  # o novo slime nasce no próximo passo da noite (às vezes demora uns quadros)
+		await esperar(0.05)
+		restantes = get_tree().get_nodes_in_group(&"inimigos").filter(func(n: Node) -> bool: return n is Slime and n.noturno).size()
+		if restantes >= 1:
+			break
 	checar(restantes == 1, "nasceu outro")
 	w.alternar_noite()
 	await esperar(0.2)
