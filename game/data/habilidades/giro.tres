@@ -7,7 +7,7 @@
 script = ExtResource("1_script")
 id = &"giro"
 nome = "Giro"
-descricao = "Golpe em volta, acerta todos por perto."
+descricao = "Gira a arma e machuca todos os inimigos em volta de você (até 1,6 bloco)."
 icone = ExtResource("2_icone")
 modo = 1
 custo_mana = 5.0

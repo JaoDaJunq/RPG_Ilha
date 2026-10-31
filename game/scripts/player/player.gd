@@ -43,6 +43,9 @@ var distribuidos: Dictionary[StringName, int] = {}
 var mira_forcada: Variant = null
 var alvo: Interactable = null
 var ponto_de_retorno := Vector2.ZERO
+## A tela da mochila (ou da bancada, ou do baú) está aberta: sem dash nem habilidades.
+## Quem liga e desliga é a própria tela (Mochila); andar continua valendo.
+var menu_aberto := false
 
 var _direcao: StringName = &"baixo"
 var _progresso := 0.0
@@ -164,12 +167,15 @@ func _unhandled_input(event: InputEvent) -> void:
 			_ignorar_clique = true
 		elif not alvo_ao_alcance():
 			golpear()
-	elif event.is_action_pressed(&"esquivar"):
+	# Com a mochila, a bancada ou o baú abertos, o Shift é do Shift + clique (mandar o item
+	# para o outro lado) e Q R T E não lançam nada: sem dash e sem habilidade.
+	elif event.is_action_pressed(&"esquivar") and not menu_aberto:
 		esquivar()
 	for i in 4:
 		var acao := StringName("habilidade_%d" % (i + 1))
 		if event.is_action_pressed(acao):
-			comecar_habilidade(i)
+			if not menu_aberto:
+				comecar_habilidade(i)
 		elif event.is_action_released(acao) and _carregando == i:
 			soltar_carga()
 

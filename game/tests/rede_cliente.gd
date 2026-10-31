@@ -15,6 +15,17 @@ func _ready() -> void:
 		if n is Projetil:
 			viu_bola[0] = true)
 
+	# Nível e barra de vida em cima dos slimes: o que este cliente vê (nome -> nível; vida da
+	# barra quando ela aparece depois de um golpe do anfitrião).
+	var niveis := {}
+	var barra_vista := [-1.0]
+	get_tree().process_frame.connect(func() -> void:
+		for n in w.entidades.get_children():
+			if n is Slime:
+				niveis[String(n.name)] = n.barra.texto_nivel()
+				if n.barra.barra_visivel():
+					barra_vista[0] = n.barra._barra.value)
+
 	var t := 0.0
 	while w.jogador == null and t < 15.0:
 		await esperar(0.1)
@@ -66,6 +77,8 @@ func _ready() -> void:
 		"nivel_anfitriao": anfitriao.nivel if anfitriao else -1,
 		"antes_estado": arvore_antes.estado,
 		"noite": w.noite,
+		"niveis_slime": niveis,
+		"barra_slime": barra_vista[0],
 	})
 	if "--com-prints" in OS.get_cmdline_user_args():
 		p.mira_forcada = null

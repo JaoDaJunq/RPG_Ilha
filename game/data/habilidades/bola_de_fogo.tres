@@ -7,7 +7,7 @@
 script = ExtResource("1_script")
 id = &"bola_de_fogo"
 nome = "Bola de fogo"
-descricao = "Acerta inimigos e incendeia árvores (que viram carvão)."
+descricao = "Dispara uma bola de fogo na direção do mouse. Slimes levam o dobro de dano e as árvores pegam fogo (viram carvão)."
 icone = ExtResource("2_icone")
 modo = 0
 custo_mana = 6.0

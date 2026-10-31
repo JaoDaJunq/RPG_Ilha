@@ -17,6 +17,8 @@ const ESPECIES := {
 	&"ovelha": {vida = 4.0, vel = 20.0, saque = [[&"carne_crua", 2, 2], [&"couro", 1, 1]]},
 }
 const DANO_JAVALI := 10.0
+## Nível mostrado em cima da cabeça de cada espécie.
+const NIVEIS := {&"galinha": 1, &"coelho": 1, &"ovelha": 1, &"javali": 2}
 
 @export var especie: StringName = &"galinha"
 @export var animacao: StringName = &"parado"
@@ -32,6 +34,7 @@ var _recarga := 0.0
 @onready var visual: AnimatedSprite2D = $Visual
 @onready var vida: HealthComponent = $HealthComponent
 @onready var hurtbox: Hurtbox = $Hurtbox
+@onready var barra: BarraCabeca = $BarraCabeca
 
 
 func _ready() -> void:
@@ -53,6 +56,8 @@ func _ready() -> void:
 	visual.play(animacao)
 	vida.maximo = dados.vida
 	vida.atual = vida.maximo
+	barra.definir_nivel(NIVEIS.get(especie, 1))
+	barra.ajustar_ao_sprite(visual)
 	if multiplayer.is_server():
 		hurtbox.atingido.connect(_on_atingido)
 		vida.morreu.connect(_on_morreu)
@@ -105,11 +110,15 @@ func _on_atingido(quantidade: float, tipo: StringName, origem: Node) -> void:
 		_de_quem = origem
 		_assustado = 4.0
 	if vida.tomar_dano(quantidade, tipo):
-		_piscar.rpc()
+		_piscar.rpc(vida.atual)
 
 
+## Todos veem o golpe; a vida vai junto para a barra em cima da cabeça aparecer nos clientes.
 @rpc("authority", "call_local", "reliable")
-func _piscar() -> void:
+func _piscar(atual: float) -> void:
+	if not multiplayer.is_server():
+		vida.atual = atual
+	barra.mostrar_dano()
 	Sfx.tocar(&"acerto", -10.0)
 	var t := create_tween()
 	t.tween_property(visual, "self_modulate", Color(1.0, 0.5, 0.5), 0.05)

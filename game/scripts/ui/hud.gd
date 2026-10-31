@@ -39,6 +39,15 @@ var _ficha_rodape: Label
 var _ficha_atributos: Dictionary[StringName, Label] = {}
 var _ficha_botoes: Dictionary[StringName, Button] = {}
 var _nomes: Dictionary[Node, Label] = {}
+var _dica: PanelContainer  # janelinha da habilidade (botão direito)
+var _dica_slot: Control  # o botão em que ela está aberta
+var _dica_titulo: Label
+var _dica_descricao: Label
+var _dica_numeros: Label
+var _dica_efeitos: Label
+var _dica_espera := 0  # quadros até o tamanho do painel assentar (autowrap) antes de mostrar
+
+const TECLAS_HABILIDADE: Array[String] = ["Q", "R", "T", "E"]
 
 
 func _ready() -> void:
@@ -58,7 +67,7 @@ func configurar(p: Player) -> void:
 	for i in _slots.size():
 		var tem := i < hab.size()
 		_slots[i].icone.texture = hab[i].icone if tem else null
-		_slots[i].fundo.tooltip_text = ("%s · %d de mana\n%s" % [hab[i].nome, hab[i].custo_mana, hab[i].descricao]) if tem else ""
+		_slots[i].fundo.tooltip_text = "Botão direito: detalhes" if tem else ""
 		_slots[i].fundo.visible = tem  # classe com 2 habilidades: F e G somem
 	_atualizar_progresso()
 	_atualizar_itens()
@@ -78,8 +87,22 @@ func ficha_visivel() -> bool:
 	return _ficha.visible
 
 
+## Clicou em qualquer lugar: a janelinha da habilidade fecha. (Clicar com o botão direito no
+## mesmo botão é com ele: abre ou fecha.)
+func _input(event: InputEvent) -> void:
+	if not _dica.visible or not event is InputEventMouseButton or not event.pressed:
+		return
+	if event.button_index == MOUSE_BUTTON_RIGHT and _dica_slot != null and _dica_slot.get_global_rect().has_point(event.position):
+		return
+	if event.button_index in [MOUSE_BUTTON_LEFT, MOUSE_BUTTON_RIGHT, MOUSE_BUTTON_MIDDLE]:
+		fechar_descricao()
+
+
 func _unhandled_input(event: InputEvent) -> void:
-	if event.is_action_pressed(&"mochila") and jogador:
+	if event.is_action_pressed(&"ui_cancel") and _dica.visible:
+		fechar_descricao()
+		get_viewport().set_input_as_handled()
+	elif event.is_action_pressed(&"mochila") and jogador:
 		_mochila.alternar()
 		get_viewport().set_input_as_handled()
 	elif event.is_action_pressed(&"ui_cancel") and _mochila.aberta():
@@ -94,6 +117,12 @@ func _process(delta: float) -> void:
 	_aviso_tempo -= delta
 	if _aviso_tempo < 1.0:
 		_aviso.modulate.a = clampf(_aviso_tempo, 0.0, 1.0)
+	if _dica.visible:
+		_posicionar_dica()
+		if _dica_espera > 0:
+			_dica_espera -= 1
+			if _dica_espera == 0:
+				_dica.modulate.a = 1.0
 	if jogador == null or not is_instance_valid(jogador):
 		return
 	_barra_mana.value = jogador.mana / jogador.ficha.mana_maxima() * 100.0
@@ -108,6 +137,75 @@ func _process(delta: float) -> void:
 	_carga.value = carga * 100.0
 	_atualizar_tecla_e()
 	_atualizar_nomes()
+
+
+# --- Descrição das habilidades (botão direito) --------------------------------------
+
+## Liga o botão direito (e o mouse saindo) de um botão de habilidade: `indice` 0-3 é Q R T E, -1 é o dash.
+func _ligar_descricao(fundo: Control, indice: int) -> void:
+	fundo.gui_input.connect(func(evento: InputEvent) -> void:
+		var b := evento as InputEventMouseButton
+		if b == null or not b.pressed or b.button_index != MOUSE_BUTTON_RIGHT:
+			return
+		fundo.accept_event()
+		if _dica.visible and _dica_slot == fundo:
+			fechar_descricao()
+		else:
+			mostrar_descricao(indice))
+	fundo.mouse_exited.connect(func() -> void:
+		if _dica_slot == fundo:
+			fechar_descricao())
+
+
+## Abre a janelinha ao lado do botão: `indice` 0-3 é a habilidade Q R T E; -1, o dash (Shift).
+func mostrar_descricao(indice: int) -> void:
+	if jogador == null:
+		return
+	var hab := jogador.habilidades()
+	var texto: Dictionary
+	if indice < 0:
+		texto = TextoHabilidade.de_esquiva(jogador.ficha)
+		_dica_slot = _slot_esquiva.fundo
+	elif indice < hab.size():
+		texto = TextoHabilidade.de_habilidade(hab[indice], TECLAS_HABILIDADE[indice], jogador.ficha)
+		_dica_slot = _slots[indice].fundo
+	else:
+		return
+	_dica_titulo.text = texto.titulo
+	_dica_descricao.text = texto.descricao
+	var numeros: Array[String] = [texto.mana, texto.recarga]
+	_dica_numeros.text = "  ·  ".join(numeros) + ("\n" + texto.dano if texto.dano != "" else "")
+	var linhas: Array[String] = []
+	for e in texto.efeitos:
+		linhas.append("• " + e)
+	_dica_efeitos.text = "\n".join(linhas)
+	_dica_efeitos.visible = not linhas.is_empty()
+	# O texto quebra em linhas e o painel só acha o tamanho certo depois de alguns quadros:
+	# fica invisível até lá, para não piscar no lugar errado.
+	_dica.modulate.a = 0.0
+	_dica.visible = true
+	_dica.reset_size()
+	_dica_espera = 3
+
+
+func fechar_descricao() -> void:
+	_dica.visible = false
+	_dica_slot = null
+
+
+## Título da janelinha aberta (vazio se está fechada).
+func descricao_aberta() -> String:
+	return _dica_titulo.text if _dica.visible else ""
+
+
+func _posicionar_dica() -> void:
+	if _dica_slot == null or not is_instance_valid(_dica_slot):
+		return
+	_dica.reset_size()
+	var alvo := _dica_slot.get_global_rect()
+	var x := alvo.position.x + alvo.size.x / 2.0 - _dica.size.x / 2.0
+	x = clampf(x, 8.0, maxf(8.0, _raiz.size.x - _dica.size.x - 8.0))
+	_dica.position = Vector2(x, alvo.position.y - _dica.size.y - 8.0).round()
 
 
 ## A teclinha E aparece em cima da árvore/pedra só quando dá para coletar.
@@ -259,11 +357,16 @@ func _montar() -> void:
 	var folga := Control.new()
 	folga.custom_minimum_size = Vector2(14, 0)
 	barra.add_child(folga)
-	_slot_esquiva = _slot("Shift")
+	# Dash e habilidades recebem o mouse (STOP): o botão direito abre a descrição e não vira
+	# "usar item" no mundo.
+	_slot_esquiva = _slot("Shift", true)
 	_slot_esquiva.icone.texture = ICONE_ESQUIVA
+	_slot_esquiva.fundo.tooltip_text = "Botão direito: detalhes"
+	_ligar_descricao(_slot_esquiva.fundo, -1)
 	barra.add_child(_slot_esquiva.fundo)
-	for tecla in ["Q", "R", "T", "E"]:
-		var s := _slot(tecla)
+	for i in TECLAS_HABILIDADE.size():
+		var s := _slot(TECLAS_HABILIDADE[i], true)
+		_ligar_descricao(s.fundo, i)
 		barra.add_child(s.fundo)
 		_slots.append(s)
 
@@ -335,14 +438,30 @@ func _montar() -> void:
 	_tecla_progresso.custom_minimum_size = Vector2(60, 4)
 	_tecla_e.add_child(_tecla_progresso)
 
+	# Janelinha da habilidade (botão direito no botão dela). Por último: fica por cima de tudo.
+	_dica = _painel()
+	_dica.visible = false
+	var dv := VBoxContainer.new()
+	dv.add_theme_constant_override(&"separation", 6)
+	_dica.add_child(dv)
+	_dica_titulo = _rotulo("", 18, Tema.COR_DESTAQUE)
+	dv.add_child(_dica_titulo)
+	_dica_descricao = _rotulo("", 16)
+	_dica_numeros = _rotulo("", 16, COR_TEXTO_2)
+	_dica_efeitos = _rotulo("", 16, COR_TEXTO_2)
+	for l in [_dica_descricao, _dica_numeros, _dica_efeitos]:
+		l.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+		l.custom_minimum_size = Vector2(330, 0)
+		dv.add_child(l)
+
 
 ## Um espaço da barra (quadradinho azul do pacote): fundo, ícone, sombra de recarga e
 ## tecla. O selecionado (carregando) ganha uma borda dourada.
-func _slot(tecla: String) -> Dictionary:
+func _slot(tecla: String, parar_mouse := false) -> Dictionary:
 	var fundo := Panel.new()
 	fundo.add_theme_stylebox_override(&"panel", Tema.espaco())
 	fundo.custom_minimum_size = Vector2(64, 64)
-	fundo.mouse_filter = Control.MOUSE_FILTER_PASS
+	fundo.mouse_filter = Control.MOUSE_FILTER_STOP if parar_mouse else Control.MOUSE_FILTER_PASS
 	var selecionado := Panel.new()
 	var borda := StyleBoxFlat.new()
 	borda.draw_center = false

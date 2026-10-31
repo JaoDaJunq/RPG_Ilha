@@ -14,7 +14,7 @@ Co-op online de sobrevivência e exploração numa ilha de fantasia que reage ao
 - Gosma curativa (2 gel de slime): botão direito com ela na mão recupera vida.
 - Animais (galinha, coelho, ovelha e javali): passeiam, fogem, o javali revida; deixam carne, pena, couro e ovo. Carne crua vira assada na fogueira.
 - Saque no chão (como no Minecraft): animais, slimes e baú quebrado soltam os itens no chão; é só chegar perto para pegar (o que não couber na mochila fica lá, e some depois de 5 minutos).
-- Personagem de frente, de perfil e de costas; 4 habilidades por classe. Balanceamento em [design/balanceamento.md](design/balanceamento.md).
+- Nível em cima da cabeça de slimes e animais; a barra de vida aparece quando apanham e some 4 s depois. Personagem de frente, de perfil e de costas; 4 habilidades por classe. Balanceamento em [design/balanceamento.md](design/balanceamento.md).
 - Noite perigosa: slimes mais fortes no escuro, que fogem da luz e derretem ao amanhecer; derrotados deixam gel de slime.
 - Arte no estilo Tiny Swords:
   - ilha com mar e espuma animada, areia, grama, árvores balançando, arbustos e tocos;
@@ -57,9 +57,9 @@ Atalhos para testar sem o menu: `-- --solo`, `-- --hospedar` ou `-- --entrar=IP`
 | Usar o item da mão (gosma curativa) | Botão direito |
 | Abrir baú, bancada, assar na fogueira | Um clique |
 | Girar parede e porta | Rodinha do mouse (com a peça na mão) |
-| Mochila e fabricação | I ou Tab (na bancada: segurar E) |
+| Mochila e fabricação | I ou Tab (na bancada: segurar E). Shift + clique manda a pilha para o outro lado; com ela aberta não há dash nem habilidades |
 | Dash (esquiva) | Shift |
-| Habilidades da classe | Q, R, T e E (Tiro carregado: segure e solte) |
+| Habilidades da classe | Q, R, T e E (Tiro carregado: segure e solte). Botão direito no botão delas (ou no Shift) mostra o que fazem |
 | Ficha do personagem | C |
 | Dia / noite | N |
 | Som | M |

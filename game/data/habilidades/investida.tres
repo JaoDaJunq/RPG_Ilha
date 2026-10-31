@@ -7,7 +7,7 @@
 script = ExtResource("1_script")
 id = &"investida"
 nome = "Investida"
-descricao = "Avança e empurra tudo no caminho."
+descricao = "Avança 3,5 blocos na direção do mouse e machuca e empurra tudo o que estiver no caminho."
 icone = ExtResource("2_icone")
 modo = 0
 custo_mana = 6.0
