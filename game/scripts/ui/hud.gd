@@ -436,12 +436,9 @@ func _barra(cor: Color, altura: int, moldura := false) -> ProgressBar:
 	return b
 
 
-## Retrato: a cabeça e o tronco do quadro parado do nosso personagem (L15).
+## Retrato: a cabeça do boneco (L19).
 func _retrato_de(p: Player) -> Texture2D:
-	var a := AtlasTexture.new()
-	a.atlas = load(Player.PASTA_NOSSOS + "%s_%s.png" % [p.raca, p.classe])
-	a.region = Rect2(24, 18, 80, 80)
-	return a
+	return load(Boneco.PASTA + "%s_%s/cabeca.png" % [p.raca, p.classe])
 
 
 func _painel() -> PanelContainer:

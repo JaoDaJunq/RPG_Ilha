@@ -2,16 +2,16 @@
 
 importer="texture"
 type="CompressedTexture2D"
-uid="uid://ch2hmhyy231bw"
-path="res://.godot/imported/humano_arqueiro.png-16663941988da831986401bb017c4747.ctex"
+uid="uid://cwiuvaxyoqnu0"
+path="res://.godot/imported/sombra.png-f456ce63adfc59277dfcb7b0acc7c1ad.ctex"
 metadata={
 "vram_texture": false
 }
 
 [deps]
 
-source_file="res://assets/sprites/tiny/personagens/humano_arqueiro.png"
-dest_files=["res://.godot/imported/humano_arqueiro.png-16663941988da831986401bb017c4747.ctex"]
+source_file="res://assets/sprites/tiny/bonecos/humano_guerreiro/sombra.png"
+dest_files=["res://.godot/imported/sombra.png-f456ce63adfc59277dfcb7b0acc7c1ad.ctex"]
 
 [params]
 

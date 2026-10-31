@@ -2,16 +2,16 @@
 
 importer="texture"
 type="CompressedTexture2D"
-uid="uid://cq84erff1lwo5"
-path="res://.godot/imported/humano_mago.png-44aa0773b64e17e70cfa1798fad9c49d.ctex"
+uid="uid://4dk1k7b8wlgx"
+path="res://.godot/imported/sombra.png-2857e1205be1f868a0b6053e94fe82d4.ctex"
 metadata={
 "vram_texture": false
 }
 
 [deps]
 
-source_file="res://assets/sprites/tiny/personagens/humano_mago.png"
-dest_files=["res://.godot/imported/humano_mago.png-44aa0773b64e17e70cfa1798fad9c49d.ctex"]
+source_file="res://assets/sprites/tiny/bonecos/humano_mago/sombra.png"
+dest_files=["res://.godot/imported/sombra.png-2857e1205be1f868a0b6053e94fe82d4.ctex"]
 
 [params]
 

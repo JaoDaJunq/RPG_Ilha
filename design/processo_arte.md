@@ -144,3 +144,20 @@ O Pixelbolt (`C:\Projetos\ferramentas\pixelbolt`, licença MIT, sem dependência
   - estouro de gelo, quando a lança acerta: 12 quadros.
 
   A explosão continua a do pacote. Comparação: `evidence/comparacao/pixelbolt_fx.png` e os GIFs `pixelbolt_*.gif`.
+
+## Personagens por peças (L19, 31/10)
+
+- **Estilo Forager:** cabeça, tronco, dois pezinhos e duas mãozinhas soltas; o item da barra vai na mão da frente. O jogo monta e anima as peças (`game/scripts/player/boneco.gd`), sempre em pixels inteiros da arte.
+- **Pedido:** uma folha por personagem, em ilustração.
+  - Célula 0: o personagem MONTADO, sem arma.
+  - Células 1 a 4: cabeça, tronco, pé e mão.
+- **A IA erra o tamanho das peças** (o pé do ogro veio quase 2x maior). Por isso `game/tools/montar_pecas.gd` não confia no tamanho:
+  1. acha cada peça dentro do personagem montado, testando escalas e posições;
+  2. assim descobre a escala e o lugar certos de cada uma;
+  3. pega a mancha inteira mesmo quando a IA passa da linha da célula.
+- **Saída:** em `game/assets/sprites/tiny/bonecos/<raca>_<classe>/` ficam:
+  - as peças (`cabeca`, `tronco`, `pe`, `mao`);
+  - `sombra.png`;
+  - `inteiro.png`;
+  - `pecas.json`, com o lugar de cada peça.
+- **Conferência:** `game/tools/previa_bonecos.gd` põe o boneco montado pelas peças ao lado do personagem inteiro (`evidence/comparacao/bonecos.png`). Tem de ficar igual.

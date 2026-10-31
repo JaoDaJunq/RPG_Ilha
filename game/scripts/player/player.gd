@@ -55,7 +55,7 @@ var _carregando := -1
 var _inicio_carga := 0.0
 var _mana_enviada := -1.0
 
-@onready var visual: AnimatedSprite2D = $Visual
+@onready var visual: Boneco = $Visual
 @onready var vida: HealthComponent = $HealthComponent
 @onready var inventario: Inventory = $Inventory
 @onready var hurtbox: Hurtbox = $Hurtbox
@@ -80,8 +80,7 @@ func _ready() -> void:
 	_recargas.resize(habilidades().size())
 	_recargas.fill(0.0)
 	ponto_de_retorno = position
-	_montar_item_na_mao()
-	visual.sprite_frames = _montar_frames()
+	visual.configurar(raca, classe)
 	visual.play(animacao)
 	camera.enabled = eh_local()
 	# A luz do jogador segue o dia e a noite de quem já está na ilha.
@@ -606,26 +605,6 @@ func _animar(entrada: Vector2) -> void:
 
 var _lado: StringName = &"direita"
 
-## Nossos personagens (L15) no estilo Tiny Swords: <raca>_<classe>.png com 6 quadros de
-## 128x128 (0 parado, 1 respirando, 2 e 3 passos, 4 preparando o golpe, 5 golpe), no pixel
-## do pacote (escala 0,25), de perfil para a direita; a esquerda é o espelho.
-const PASTA_NOSSOS := "res://assets/sprites/tiny/personagens/"
-const QUADRO_NOSSO := Vector2i(128, 128)
-const ANIM_NOSSA := {&"parado": [[0, 1], 2.5], &"andar": [[2, 0, 3, 0], 9.0], &"golpe": [[4, 5], 9.0]}
-
-
-func _montar_frames() -> SpriteFrames:
-	var f := SpriteFrames.new()
-	f.remove_animation(&"default")
-	var folha: Texture2D = load(PASTA_NOSSOS + "%s_%s.png" % [raca, classe])
-	for tipo in ANIM_NOSSA:
-		for lado in [&"direita", &"esquerda"]:
-			var quadros: Array[Texture2D] = []
-			for i in ANIM_NOSSA[tipo][0]:
-				quadros.append(SpriteSheets.quadro(folha, i, QUADRO_NOSSO, lado == &"esquerda"))
-			SpriteSheets.adicionar_quadros(f, StringName("%s_%s" % [tipo, lado]), quadros, ANIM_NOSSA[tipo][1])
-	return f
-
 
 # --- Barra de itens e item na mão --------------------------------------------------
 ## Espaço da barra (0-8) escolhido pelo dono; sincronizado, para todos saberem o que ele
@@ -652,54 +631,14 @@ func abrir_mochila(modo: StringName) -> void:
 
 
 # --- Item na mão (F05) ------------------------------------------------------------
-## O item da barra aparece na mão (o ícone dele, no pixel do pacote) e gira a cada golpe,
-## como no Minecraft. `item_mao` é sincronizado: os outros jogadores veem o mesmo.
+## O item da barra vai na mão da frente do boneco (Boneco). `item_mao` é sincronizado: os
+## outros jogadores veem o mesmo item.
 var item_mao: StringName = &""
-var _na_mao: Sprite2D
-var _golpe_visto := false
-var _balanco: Tween
-const MAO := Vector2(6, -11)  # onde fica a mão da frente, olhando para a direita
-
-
-func _montar_item_na_mao() -> void:
-	_na_mao = Sprite2D.new()
-	_na_mao.centered = false
-	_na_mao.scale = Vector2(0.25, 0.25)
-	_na_mao.visible = false
-	add_child(_na_mao)
 
 
 func _process(_delta: float) -> void:
 	_atualizar_previa()
-	if _na_mao == null:
-		return
-	var dados := ItemData.carregar(item_mao) if ItemData.existe(item_mao) else null
-	_na_mao.visible = dados != null
-	if dados == null:
-		return
-	if _na_mao.texture != dados.icone:
-		_na_mao.texture = dados.icone
-	var w := float(dados.icone.get_width())
-	var h := float(dados.icone.get_height())
-	var esquerda := String(animacao).ends_with("esquerda")
-	_na_mao.flip_h = esquerda
-	# O ícone é desenhado na diagonal, com o cabo embaixo: o cabo fica na mão.
-	_na_mao.offset = Vector2(-w * (0.8 if esquerda else 0.2), -h * 0.8)
-	_na_mao.position = Vector2(-MAO.x if esquerda else MAO.x, MAO.y)
-	var golpeando := String(animacao).begins_with("golpe")
-	if golpeando and not _golpe_visto:
-		_balancar(esquerda)
-	_golpe_visto = golpeando
-
-
-func _balancar(esquerda: bool) -> void:
-	if _balanco:
-		_balanco.kill()
-	var lado := -1.0 if esquerda else 1.0
-	_na_mao.rotation = -0.7 * lado
-	_balanco = create_tween()
-	_balanco.tween_property(_na_mao, "rotation", 1.3 * lado, 0.12).set_ease(Tween.EASE_OUT)
-	_balanco.tween_property(_na_mao, "rotation", 0.0, 0.14)
+	visual.item = item_mao
 
 
 # --- Construção (item da mão com construcao) ---------------------------------------

@@ -1,10 +1,11 @@
-[gd_scene load_steps=9 format=3]
+[gd_scene load_steps=10 format=3]
 
 [ext_resource type="Script" path="res://scripts/player/player.gd" id="1_player"]
 [ext_resource type="Script" path="res://scripts/components/health_component.gd" id="2_vida"]
 [ext_resource type="Script" path="res://scripts/components/inventory.gd" id="3_inv"]
 [ext_resource type="Script" path="res://scripts/components/hurtbox.gd" id="4_hurt"]
 [ext_resource type="Texture2D" path="res://assets/luz/luz_radial.tres" id="5_luz"]
+[ext_resource type="Script" path="res://scripts/player/boneco.gd" id="9_boneco"]
 
 [sub_resource type="CircleShape2D" id="Shape_corpo"]
 radius = 4.5
@@ -38,9 +39,9 @@ collision_mask = 1
 motion_mode = 1
 script = ExtResource("1_player")
 
-[node name="Visual" type="AnimatedSprite2D" parent="."]
-position = Vector2(0, -14)
+[node name="Visual" type="Node2D" parent="."]
 scale = Vector2(0.25, 0.25)
+script = ExtResource("9_boneco")
 
 [node name="Colisao" type="CollisionShape2D" parent="."]
 position = Vector2(0, -3)

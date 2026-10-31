@@ -9,6 +9,9 @@ Co-op online de sobrevivência e exploração numa ilha de fantasia que reage ao
 **O que já funciona (sozinho ou com amigos):**
 - Inventário estilo Minecraft: mochila (I ou Tab) com 27 espaços e barra 1-9, pilhas de 64, fabricação 2x2 na mochila e 3x3 na bancada, ferramentas de madeira e pedra, item na mão.
 - Construção: parede, porta, chão de madeira, tocha, fogueira, baú e bancada, com prévia; golpes quebram e devolvem.
+- Baú que guarda itens (27 espaços, como no Minecraft), salvo no mundo.
+- Personagens por peças (estilo Forager): cabeça, tronco, pezinhos e mãozinhas; o item da barra vai na mão. Cada classe começa com a sua arma.
+- Gosma curativa (2 gel de slime): botão direito com ela na mão recupera vida.
 - Noite perigosa: slimes mais fortes no escuro, que fogem da luz e derretem ao amanhecer; derrotados deixam gel de slime.
 - Arte no estilo Tiny Swords:
   - ilha com mar e espuma animada, areia, grama, árvores balançando, arbustos e tocos;
@@ -48,6 +51,8 @@ Atalhos para testar sem o menu: `-- --solo`, `-- --hospedar` ou `-- --entrar=IP`
 | Coletar (segurar) | E, com o mouse em cima do objeto |
 | Golpear (ou pôr a peça da mão) | Clique esquerdo (na direção do mouse) |
 | Barra de itens | 1 a 9 ou a rodinha do mouse |
+| Usar o item da mão (gosma curativa) | Botão direito |
+| Abrir baú, usar bancada | Segurar E |
 | Mochila e fabricação | I ou Tab (na bancada: segurar E) |
 | Esquivar | Espaço |
 | Habilidades da classe | Q e R (Tiro carregado: segure e solte) |

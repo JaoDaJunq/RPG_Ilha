@@ -102,6 +102,15 @@ func _init() -> void:
 	quadro.blit_rect(inteiro, Rect2i(Vector2i.ZERO, inteiro.get_size()), Vector2i(8, 2))
 	SombraTiny.por(quadro, Rect2i(Vector2i(8, 2), inteiro.get_size()))
 	quadro.save_png(pasta.path_join("inteiro.png"))
+	# Só a sombra (o boneco do jogo é montado por peças em cima dela).
+	var sombra := Image.create(quadro.get_width(), quadro.get_height(), false, Image.FORMAT_RGBA8)
+	for y in quadro.get_height():
+		for x in quadro.get_width():
+			var k := quadro.get_pixel(x, y)
+			if k.a > 0.0 and k.a < 0.5:
+				sombra.set_pixel(x, y, k)
+	sombra = sombra.get_region(sombra.get_used_rect())
+	sombra.save_png(pasta.path_join("sombra.png"))
 	print("Salvo: ", pasta)
 	quit()
 

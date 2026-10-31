@@ -24,7 +24,7 @@ Lista oficial de tarefas. Marcar `[x]` só com prova (teste OK ou print revisado
 - [x] T20 Inventário estilo Minecraft (31/10): mochila (I ou Tab) com 27 espaços, barra 1-9, pilhas de 64, cliques do Minecraft (esquerdo, direito, Shift), item na mão. Habilidades foram para Q, R, F, G.
 - [x] T21 Fabricação (31/10): grade 2x2 na mochila e 3x3 na bancada (segurar E), receitas com forma como no Minecraft em `data/receitas/`; ferramentas de madeira e pedra (machado e picareta coletam mais rápido, espada bate mais forte).
 - [x] T22 Construção (31/10): parede, porta (o jogador passa, o slime não), chão de madeira, tocha, fogueira, baú e bancada; prévia verde ou vermelha; golpes quebram e devolvem o item; salvo no mundo e sincronizado.
-- [ ] T23 Inimigos com estados (patrulhar, perseguir, atacar). *Saque feito (gel de slime, 31/10).*
+- [x] T23 Slimes com estados (31/10): passeiam, perseguem, achatam antes de pular (aviso) e pulam; deixam gel de slime.
 - [x] T24 Noite perigosa (31/10): slimes mais fortes nascem no escuro (mais jogadores, mais slimes), fogem da luz da fogueira e das tochas, derretem ao amanhecer.
 - [x] T25 Salvar e carregar (anfitrião): árvores, pedras, noite e cada personagem (nível, pontos, itens, posição), um por jogador + raça + classe. Salva ao fechar a janela, ao voltar ao menu, quando alguém sai e a cada 60 s. Menu mostra o mundo salvo e tem "Começar mundo novo".
 
@@ -47,7 +47,7 @@ Tudo o que foi pedido para testar funcionou. Observações:
 - [x] F02 **Painéis feios** (menu, ficha, HUD): arte própria pedida em L04 (painel, botões, espaços, ícones de atributos) + fonte pixel → refazer menu, ficha e HUD.
 - [x] F03 **Personagem pixelado e feio** comparado ao conceito: refazer desenhado no tamanho do jogo, com menos detalhes e mais fofo; personagens são ponto forte do jogo. Pedido L03 (com teste de caracterização raça × classe).
 - [x] F04 Inventário de verdade (ver T20).
-- [x] F05 Item da barra na mão, girando a cada golpe (31/10). Falta: arma desenhada própria para a mão (hoje usa o ícone) e a pose de cada classe.
+- [x] F05 Personagens por peças, estilo Forager (31/10, L19): cabeça, tronco, pezinhos e mãozinhas soltas; o item da barra vai na mão da frente e bate junto. Cada classe começa com a sua arma (espada de ferro, cajado, arco).
 - [x] F06 *(feito junto com a interface)* **Tirar "CHEGUE MAIS PERTO"** e trocar a caixa por só uma teclinha "E" em cima da árvore/pedra quando estiver perto (arte da tecla pedida em L04).
 
 ## Etapa 4: a ilha cresce
@@ -72,6 +72,6 @@ L07: laboratório Godot isolado em `art/piloto_c02/abrir.cmd`, captura real revi
 - [x] A01l **Jogo migrado para o estilo Tiny Swords (30/10)**: terreno, espuma, árvores, tocos, arbustos e interface do pacote; câmera em zoom 4. Provisório: árvore queimada só escurece, sem marca de machado; beira da ilha em degraus (terreno em blocos).
 - [x] A01m Personagens próprios no estilo Tiny Swords (L15, 30/10): os 6 (Humano e Ogro x Guerreiro, Mago, Arqueiro) com parado, respirando, 2 passos, preparando e golpe, de perfil. Ilustração do Codex pixelizada aqui na densidade do pacote. No jogo; aguardando o João testar.
 - [x] A01n Acampamento, pedras, cogumelo e slime refeitos (L14) e efeitos, gelo, armadilha e ícones (L16) no estilo Tiny Swords, comparados lado a lado com o pacote. No jogo; aguardando o João testar.
-- [ ] A01o Próximos: animação de dano e de coletar dos personagens, mais quadros de caminhada (hoje 2 passos), árvore queimada própria, marca de machado.
+- [ ] A01o Próximos: personagem de costas e de frente (hoje só de perfil), árvore queimada própria, marca de machado, arco puxando a flecha e cajado brilhando ao lançar.
 - [ ] A01p *(guardado, 31/10)* Mais efeitos com o Pixelbolt (receitas em `art/fx_receitas/`): fogo na fogueira e nas árvores, fumaça, respingo na água, golpe do guerreiro, cura, raio. O João pediu para esperar.
 - [ ] A01g Fonte pixel própria (a do pacote placeholder tinha o "i" quebrado; hoje usa a fonte padrão do Godot). Ex.: Pixelify Sans (OFL), precisa de autorização para baixar.

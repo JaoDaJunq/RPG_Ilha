@@ -2,16 +2,16 @@
 
 importer="texture"
 type="CompressedTexture2D"
-uid="uid://j36mf7rptf8g"
-path="res://.godot/imported/humano_guerreiro.png-86a283600356f5b0a9fee0fa02d2c94d.ctex"
+uid="uid://ddjjtdpm77d83"
+path="res://.godot/imported/sombra.png-f33fed33f7b259e9b1047b5240ed4493.ctex"
 metadata={
 "vram_texture": false
 }
 
 [deps]
 
-source_file="res://assets/sprites/tiny/personagens/humano_guerreiro.png"
-dest_files=["res://.godot/imported/humano_guerreiro.png-86a283600356f5b0a9fee0fa02d2c94d.ctex"]
+source_file="res://assets/sprites/tiny/bonecos/ogro_mago/sombra.png"
+dest_files=["res://.godot/imported/sombra.png-f33fed33f7b259e9b1047b5240ed4493.ctex"]
 
 [params]
 
