@@ -7,6 +7,9 @@ Co-op online de sobrevivência e exploração numa ilha de fantasia que reage ao
 **Etapas 0 e 1 concluídas; Etapa 3 (personagem e classes) em andamento.** A base do jogo está em cenas e componentes. Desde 30/10/2026 a arte segue o estilo do pacote **Tiny Swords** (Pixel Frog): terreno, árvores e interface vêm do pacote; personagens, acampamento, pedras, slime, efeitos e ícones são nossos, feitos pelo Codex no mesmo pixel do pacote (processo em [design/processo_arte.md](design/processo_arte.md)). Tarefas em [design/backlog.md](design/backlog.md).
 
 **O que já funciona (sozinho ou com amigos):**
+- Inventário estilo Minecraft: mochila (I ou Tab) com 27 espaços e barra 1-9, pilhas de 64, fabricação 2x2 na mochila e 3x3 na bancada, ferramentas de madeira e pedra, item na mão.
+- Construção: parede, porta, chão de madeira, tocha, fogueira, baú e bancada, com prévia; golpes quebram e devolvem.
+- Noite perigosa: slimes mais fortes no escuro, que fogem da luz e derretem ao amanhecer; derrotados deixam gel de slime.
 - Arte no estilo Tiny Swords:
   - ilha com mar e espuma animada, areia, grama, árvores balançando, arbustos e tocos;
   - os 6 personagens nossos (Humano e Ogro x Guerreiro, Mago e Arqueiro), de perfil, parados, andando e golpeando;
@@ -28,7 +31,7 @@ Co-op online de sobrevivência e exploração numa ilha de fantasia que reage ao
 - Golpe com clique esquerdo; slimes perseguem e machucam; ao desmaiar, o jogador volta ao acampamento.
 - N alterna dia e noite; M liga/desliga o som.
 
-**Ainda não tem:** inventário com slots, fabricação, construção, as outras classes, árvore de habilidades e fonte pixel própria.
+**Ainda não tem:** as outras classes, árvore de habilidades e fonte pixel própria.
 
 ## Como rodar
 
@@ -43,9 +46,11 @@ Atalhos para testar sem o menu: `-- --solo`, `-- --hospedar` ou `-- --entrar=IP`
 |---|---|
 | Andar | WASD ou setas |
 | Coletar (segurar) | E, com o mouse em cima do objeto |
-| Golpear | Clique esquerdo (na direção do mouse) |
+| Golpear (ou pôr a peça da mão) | Clique esquerdo (na direção do mouse) |
+| Barra de itens | 1 a 9 ou a rodinha do mouse |
+| Mochila e fabricação | I ou Tab (na bancada: segurar E) |
 | Esquivar | Espaço |
-| Habilidades da classe | 1 e 2 (Tiro carregado: segure e solte) |
+| Habilidades da classe | Q e R (Tiro carregado: segure e solte) |
 | Ficha do personagem | C |
 | Dia / noite | N |
 | Som | M |

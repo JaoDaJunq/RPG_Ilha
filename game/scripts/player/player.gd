@@ -150,7 +150,8 @@ func _unhandled_input(event: InputEvent) -> void:
 		elif event.button_index == MOUSE_BUTTON_WHEEL_UP:
 			barra_escolhida = (barra_escolhida + Inventory.BARRA - 1) % Inventory.BARRA
 	if event.is_action_pressed(&"atacar"):
-		golpear()
+		if not _construir_aqui():
+			golpear()
 	elif event.is_action_pressed(&"esquivar"):
 		esquivar()
 	for i in 4:
@@ -664,6 +665,7 @@ func _montar_item_na_mao() -> void:
 
 
 func _process(_delta: float) -> void:
+	_atualizar_previa()
 	if _na_mao == null:
 		return
 	var dados := ItemData.carregar(item_mao) if ItemData.existe(item_mao) else null
@@ -693,3 +695,43 @@ func _balancar(esquerda: bool) -> void:
 	_balanco = create_tween()
 	_balanco.tween_property(_na_mao, "rotation", 1.3 * lado, 0.12).set_ease(Tween.EASE_OUT)
 	_balanco.tween_property(_na_mao, "rotation", 0.0, 0.14)
+
+
+# --- Construção (item da mão com construcao) ---------------------------------------
+## Com uma peça na mão (parede, porta, tocha...), o tile embaixo do mouse mostra o ícone
+## dela, verde se dá para pôr e vermelho se não; o clique põe (o anfitrião confere).
+var _previa: Sprite2D
+
+
+func _tile_da_mira() -> Vector2i:
+	return Vector2i((posicao_mira() / World.T).floor())
+
+
+func _construir_aqui() -> bool:
+	var item := item_na_mao()
+	if item == null or item.construcao == &"":
+		return false
+	var w := get_tree().get_first_node_in_group(&"mundo") as World
+	w.pedir_construir.rpc_id(1, _tile_da_mira())
+	return true
+
+
+func _atualizar_previa() -> void:
+	var item := item_na_mao()
+	var mostrar := eh_local() and item != null and item.construcao != &""
+	if _previa == null:
+		if not mostrar:
+			return
+		_previa = Sprite2D.new()
+		_previa.top_level = true
+		_previa.scale = Vector2(0.25, 0.25)
+		_previa.z_index = 5
+		add_child(_previa)
+	_previa.visible = mostrar
+	if not mostrar:
+		return
+	var w := get_tree().get_first_node_in_group(&"mundo") as World
+	var cel := _tile_da_mira()
+	_previa.texture = item.icone
+	_previa.global_position = Vector2(cel * World.T) + Vector2(World.T, World.T) / 2.0
+	_previa.modulate = Color(0.6, 1.0, 0.6, 0.75) if w.pode_construir(item.id, cel, self) else Color(1.0, 0.45, 0.45, 0.6)

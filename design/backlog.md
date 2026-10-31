@@ -21,11 +21,11 @@ Lista oficial de tarefas. Marcar `[x]` só com prova (teste OK ou print revisado
 
 ## Etapa 2: fatia jogável em rede
 
-- [ ] T20 Inventário de verdade (slots, empilhar) e hotbar.
-- [ ] T21 Fabricação básica (bancada, receitas como dados `.tres`).
-- [ ] T22 Construção (paredes, chão, porta) com prévia e custo.
-- [ ] T23 Inimigos com estados (patrulhar, perseguir, atacar) e saque.
-- [ ] T24 Dia e noite com perigo maior à noite; luz de fogueira e tocha.
+- [x] T20 Inventário estilo Minecraft (31/10): mochila (I ou Tab) com 27 espaços, barra 1-9, pilhas de 64, cliques do Minecraft (esquerdo, direito, Shift), item na mão. Habilidades foram para Q, R, F, G.
+- [x] T21 Fabricação (31/10): grade 2x2 na mochila e 3x3 na bancada (segurar E), receitas com forma como no Minecraft em `data/receitas/`; ferramentas de madeira e pedra (machado e picareta coletam mais rápido, espada bate mais forte).
+- [x] T22 Construção (31/10): parede, porta (o jogador passa, o slime não), chão de madeira, tocha, fogueira, baú e bancada; prévia verde ou vermelha; golpes quebram e devolvem o item; salvo no mundo e sincronizado.
+- [ ] T23 Inimigos com estados (patrulhar, perseguir, atacar). *Saque feito (gel de slime, 31/10).*
+- [x] T24 Noite perigosa (31/10): slimes mais fortes nascem no escuro (mais jogadores, mais slimes), fogem da luz da fogueira e das tochas, derretem ao amanhecer.
 - [x] T25 Salvar e carregar (anfitrião): árvores, pedras, noite e cada personagem (nível, pontos, itens, posição), um por jogador + raça + classe. Salva ao fechar a janela, ao voltar ao menu, quando alguém sai e a cada 60 s. Menu mostra o mundo salvo e tem "Começar mundo novo".
 
 ## Etapa 3: personagem, classes e habilidades (em andamento; proposta em `design/classes.md`)
@@ -46,8 +46,8 @@ Tudo o que foi pedido para testar funcionou. Observações:
 - [x] F01 **Armadilha do Arqueiro ruim:** o ícone no chão não faz sentido e o efeito de prender também não. Arte própria pedida em L04 (armada, fechando, fechada) → integrar.
 - [x] F02 **Painéis feios** (menu, ficha, HUD): arte própria pedida em L04 (painel, botões, espaços, ícones de atributos) + fonte pixel → refazer menu, ficha e HUD.
 - [x] F03 **Personagem pixelado e feio** comparado ao conceito: refazer desenhado no tamanho do jogo, com menos detalhes e mais fofo; personagens são ponto forte do jogo. Pedido L03 (com teste de caracterização raça × classe).
-- [ ] F04 *(depois)* **Inventário** de verdade (o canto de cima não serve; o jogo vai ter muitos itens).
-- [ ] F05 *(depois)* **Personagem segurando a arma/ferramenta** (espada, arco, machado) ao bater. Pesquisa e recomendação em `design/armas_na_mao.md` (arma em sprite separado, presa na mão e girada no golpe).
+- [x] F04 Inventário de verdade (ver T20).
+- [x] F05 Item da barra na mão, girando a cada golpe (31/10). Falta: arma desenhada própria para a mão (hoje usa o ícone) e a pose de cada classe.
 - [x] F06 *(feito junto com a interface)* **Tirar "CHEGUE MAIS PERTO"** e trocar a caixa por só uma teclinha "E" em cima da árvore/pedra quando estiver perto (arte da tecla pedida em L04).
 
 ## Etapa 4: a ilha cresce

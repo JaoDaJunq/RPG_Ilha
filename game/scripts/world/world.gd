@@ -306,6 +306,8 @@ func _cliente_pronto(raca: StringName, classe: StringName, id_jogador: String) -
 		_remover_recursos.rpc_id(peer, _removidos)
 	for r in get_tree().get_nodes_in_group(&"recursos"):
 		(r as ResourceNode).enviar_estado_para(peer)
+	for c in _lista_construcoes():
+		_construir.rpc_id(peer, c[0], Vector2i(c[1], c[2]))
 	for j in get_tree().get_nodes_in_group(&"jogadores"):
 		if j.name != str(peer):
 			(j as Player).enviar_progresso_para(peer)
@@ -357,6 +359,7 @@ func salvar() -> bool:
 	return Salvamento.gravar({
 		"semente": semente, "noite": noite,
 		"recursos": recursos, "removidos": _removidos.duplicate(),
+		"construcoes": _lista_construcoes(),
 		"jogadores": _registros,
 	}, arquivo_salvo)
 
@@ -379,6 +382,8 @@ func _carregar_mundo() -> void:
 		var r := entidades.get_node_or_null(NodePath(nome)) as ResourceNode
 		if r:
 			r.carregar_estado(int(recursos[nome][0]), int(recursos[nome][1]))
+	for c in dados.get("construcoes", []):
+		_criar_peca(StringName(c[0]), Vector2i(int(c[1]), int(c[2])))
 
 
 func _process_salvar(delta: float) -> void:
@@ -826,3 +831,110 @@ static func luz_que_protege(quem: Node, pos: Vector2) -> Vector2:
 		if n.global_position.distance_to(pos) <= float(n.get_meta(&"raio_luz", 48.0)):
 			return n.global_position
 	return Vector2.INF
+
+
+# --- Construção ----------------------------------------------------------------------
+## Peças postas pelos jogadores (Construcao), uma por tile e por camada ("piso" para o chão
+## de madeira, "obj" para o resto). O anfitrião confere e manda todos criarem igual.
+var _pecas: Dictionary[String, Construcao] = {}
+var _pisos: Node2D  # chão de madeira: embaixo das pessoas e das coisas
+
+
+static func camada_de(tipo: StringName) -> String:
+	return "piso" if tipo == &"chao" else "obj"
+
+
+func _chave(cel: Vector2i, camada: String) -> String:
+	return "%d_%d_%s" % [cel.x, cel.y, camada]
+
+
+## Pode pôr o item `item_id` no tile `cel`? (o anfitrião confere de verdade; o jogador usa
+## para pintar a prévia de verde ou vermelho)
+func pode_construir(item_id: StringName, cel: Vector2i, quem: Node2D) -> bool:
+	if not ItemData.existe(item_id):
+		return false
+	var tipo := ItemData.carregar(item_id).construcao
+	if tipo == &"" or tipo_do_chao(cel) == Chao.AGUA or not Rect2i(0, 0, largura, altura).has_point(cel):
+		return false
+	if _pecas.has(_chave(cel, camada_de(tipo))):
+		return false
+	var centro := Vector2(cel * T) + Vector2(T, T) / 2.0
+	if quem.global_position.distance_to(centro) > 44.0:
+		return false
+	if camada_de(tipo) == "obj":
+		# Nada com corpo no tile (árvore, pedra, acampamento, gente, slime).
+		var consulta := PhysicsShapeQueryParameters2D.new()
+		var forma := RectangleShape2D.new()
+		forma.size = Vector2(T - 4, T - 4)
+		consulta.shape = forma
+		consulta.transform = Transform2D(0.0, centro)
+		consulta.collision_mask = 1 | 2 | 4 | Construcao.CAMADA_PORTA
+		for r in get_world_2d().direct_space_state.intersect_shape(consulta, 4):
+			if r.collider != chao:
+				return false
+	return true
+
+
+## O jogador pede para pôr o item da mão no tile.
+@rpc("any_peer", "call_local", "reliable")
+func pedir_construir(cel: Vector2i) -> void:
+	if not multiplayer.is_server():
+		return
+	var peer := multiplayer.get_remote_sender_id()
+	var quem := entidades.get_node_or_null(str(1 if peer == 0 else peer)) as Player
+	if quem == null:
+		return
+	var item_id := quem.inventario.item_em(quem.barra_escolhida)
+	if not pode_construir(item_id, cel, quem):
+		return
+	quem.inventario.gastar(quem.barra_escolhida, 1)
+	_construir.rpc(String(item_id), cel)
+
+
+@rpc("any_peer", "call_local", "reliable")
+func _construir(item_id: String, cel: Vector2i) -> void:
+	if Net.veio_do_anfitriao():
+		_criar_peca(StringName(item_id), cel)
+
+
+func _criar_peca(item_id: StringName, cel: Vector2i) -> void:
+	var tipo := ItemData.carregar(item_id).construcao
+	var chave := _chave(cel, camada_de(tipo))
+	if _pecas.has(chave):
+		return
+	var c := Construcao.new()
+	c.tipo = tipo
+	c.item = item_id
+	c.celula = cel
+	c.name = "Peca_" + chave
+	c.position = Vector2(cel * T) + Vector2(T / 2.0, T)
+	if _pisos == null:
+		_pisos = Node2D.new()
+		_pisos.name = "Pisos"
+		add_child(_pisos)
+		move_child(_pisos, entidades.get_index())
+	(_pisos if tipo == &"chao" else entidades).add_child(c)
+	_pecas[chave] = c
+	Sfx.tocar(&"golpe_coleta", -6.0)
+
+
+## Só o anfitrião (a peça quebrou).
+static func quebrar_construcao(c: Construcao) -> void:
+	var w := c.get_tree().get_first_node_in_group(&"mundo") as World
+	w._remover_peca.rpc(w._chave(c.celula, camada_de(c.tipo)))
+
+
+@rpc("any_peer", "call_local", "reliable")
+func _remover_peca(chave: String) -> void:
+	if not Net.veio_do_anfitriao() or not _pecas.has(chave):
+		return
+	_pecas[chave].queue_free()
+	_pecas.erase(chave)
+
+
+func _lista_construcoes() -> Array:
+	var lista := []
+	for chave in _pecas:
+		var c := _pecas[chave]
+		lista.append([String(c.item), c.celula.x, c.celula.y])
+	return lista

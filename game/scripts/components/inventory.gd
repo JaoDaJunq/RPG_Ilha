@@ -358,3 +358,9 @@ func _receber(ids: Array, qtds: PackedInt32Array, bancada: bool) -> void:
 	_qtds = qtds
 	na_bancada = bancada
 	mudou.emit()
+
+
+## Gasta do espaço `i` (o anfitrião, ao pôr uma construção da mão).
+func gastar(i: int, quantidade: int) -> void:
+	_tirar(i, quantidade)
+	_enviar()
