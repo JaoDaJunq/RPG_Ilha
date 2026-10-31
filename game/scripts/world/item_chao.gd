@@ -8,7 +8,7 @@ extends Node2D
 ## a quantidade e a posição seguem sincronizadas. O pulinho de saída e o balanço são só
 ## visuais, cada jogo faz o seu.
 
-const SOMBRA := preload("res://assets/sprites/tiny/bonecos/humano_guerreiro/sombra.png")
+const SOMBRA := preload("res://assets/sprites/tiny/bonecos/humano/base/sombra.png")
 ## Os ícones são feitos para a interface (8x): 0,3 deixa o ícone com uns 11 px no mundo.
 const ESCALA_ICONE := 0.3
 const ESCALA_SOMBRA := 0.3

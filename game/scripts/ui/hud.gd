@@ -137,6 +137,7 @@ func _unhandled_input(event: InputEvent) -> void:
 
 func _process(delta: float) -> void:
 	_aviso_tempo -= delta
+	_aviso.visible = not _mochila.aberta()  # o rodapé da mochila fica no mesmo lugar
 	if _aviso_tempo < 1.0:
 		_aviso.modulate.a = clampf(_aviso_tempo, 0.0, 1.0)
 	if _dica.visible:

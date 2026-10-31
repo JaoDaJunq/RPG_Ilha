@@ -45,6 +45,7 @@ func _ready() -> void:
 	Net.mundo_arquivo = caminho
 	Net.mundo_nome = "Meu Mundo Ão"
 	Net.mundo_dificuldade = 2
+	Net.pular_criacao = true  # personagem já escolhido (a tela de criação tem o próprio teste)
 	var w: World = MUNDO.instantiate()  # sem arquivo_salvo: vale o mundo escolhido no menu
 	w.slimes = 0
 	add_child(w)
@@ -80,20 +81,21 @@ func _ready() -> void:
 	esc.action = &"ui_cancel"
 	esc.pressed = true
 	Input.parse_input_event(esc)
-	await get_tree().physics_frame
-	await get_tree().physics_frame
+	await get_tree().process_frame
+	await get_tree().process_frame
 	checar(pausa.aberta() and get_tree().paused, "Esc abre a pausa e congela o jogo sozinho")
 	var solta := InputEventAction.new()
 	solta.action = &"ui_cancel"
 	solta.pressed = false
 	Input.parse_input_event(solta)
-	await get_tree().physics_frame
+	await get_tree().process_frame
+	await get_tree().process_frame
 	var esc2 := InputEventAction.new()
 	esc2.action = &"ui_cancel"
 	esc2.pressed = true
 	Input.parse_input_event(esc2)
-	await get_tree().physics_frame
-	await get_tree().physics_frame
+	await get_tree().process_frame
+	await get_tree().process_frame
 	checar(not pausa.aberta() and not get_tree().paused, "Esc de novo fecha e o jogo anda")
 	pausa.abrir()
 	w.jogador.ganhar_xp(30)

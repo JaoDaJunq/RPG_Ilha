@@ -19,7 +19,7 @@ Co-op online de sobrevivência e exploração numa ilha de fantasia que reage ao
 - Dano que dá para sentir: slime e javali dão uma cabeçada (acertam uma vez e recuam); quem apanha dá um passo para trás, fica vermelho, a tela treme de leve e, com pouca vida, as bordas ficam vermelhas.
 - Arte no estilo Tiny Swords:
   - ilha com mar e espuma animada, areia, grama, árvores balançando, arbustos e tocos;
-  - os 6 personagens nossos (Humano e Ogro x Guerreiro, Mago e Arqueiro), de perfil, parados, andando e golpeando;
+  - o boneco por camadas (L24): Humano e Ogro de roupinha branca, 3 rostos e 3 tons de pele cada, e as roupas e chapéus do Guerreiro, do Mago e do Arqueiro, de perfil, de frente e de costas, parados, andando e golpeando;
   - acampamento, pedras que racham, cogumelo azul que brilha à noite e slime;
   - efeitos (bola de fogo, lança de gelo, gelo na água, cristais, golpe giratório, explosão, poeira, brilho de nível) e a armadilha;
   - interface com painéis, botões, barras, retrato do personagem, ícones e teclinha E.

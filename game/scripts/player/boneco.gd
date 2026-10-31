@@ -45,14 +45,14 @@ var _vista := ""
 ## <PASTA>/<raca>/base/ (roupinha branca), <raca>/rosto_2/ e rosto_3/ (outras cabeças) e
 ## <raca>/<classe>/ (tronco com a roupa e o chapéu ou elmo, que vai por cima da cabeça).
 ## A roupa de um item é a da classe do fim do id: roupa_guerreiro, elmo_guerreiro...
-## Raça sem a arte nova ainda: as peças antigas da classe da roupa (L19/L21).
+## Raça sem arte ainda: usa a do humano.
 func vestir(aparencia: Dictionary, equipado: Dictionary) -> void:
 	var raca := String(aparencia.get("raca", &"humano"))
 	var pasta := PASTA + raca + "/"
 	var corpo := String(equipado.get("corpo", &""))
 	if not FileAccess.file_exists(pasta + "base/pecas.json"):
-		configurar(StringName(raca), StringName(_classe_da_roupa(corpo, "guerreiro")))
-		return
+		raca = "humano"  # raça sem arte ainda
+		pasta = PASTA + "humano/"
 	var rosto := pasta + "rosto_%d/" % (int(aparencia.get("rosto", 0)) + 1)
 	var roupa := pasta + _classe_da_roupa(corpo, "") + "/"
 	var chapeu := pasta + _classe_da_roupa(String(equipado.get("cabeca", &"")), "") + "/"
@@ -114,17 +114,6 @@ static func _ler_pecas(caminho: String) -> Dictionary:
 	for k in j:
 		pos[k] = Vector2(j[k][0], j[k][1])
 	return pos
-
-
-## Peças antigas (L19/L21): uma pasta por raça e classe, sem roupa separada.
-func configurar(raca: StringName, classe: StringName) -> void:
-	var pasta := PASTA + "%s_%s/" % [raca, classe]
-	var vistas := {}
-	for v in ["", "_frente", "_costas"]:
-		var pos := _ler_pecas(pasta + "pecas" + v + ".json")
-		if not pos.is_empty():
-			vistas[v] = {base = pos, cabeca = load(pasta + "cabeca" + v + ".png"), tronco = load(pasta + "tronco" + v + ".png"), chapeu = null}
-	_montar(vistas, load(pasta + "pe.png"), load(pasta + "mao.png"), load(pasta + "sombra.png") if ResourceLoader.exists(pasta + "sombra.png") else null)
 
 
 ## Monta os sprites das peças. `vistas`: "" (perfil), "_frente", "_costas" -> {base (lugar de
