@@ -17,6 +17,11 @@ const ESPECIES := {
 	&"ovelha": {vida = 4.0, vel = 20.0, saque = [[&"carne_crua", 2, 2], [&"couro", 1, 1]]},
 }
 const DANO_JAVALI := 10.0
+## Depois da cabeçada o javali quica DIST_RECUO px para trás em TEMPO_RECUO s e para por
+## PAUSA_CABECADA s antes de investir de novo.
+const DIST_RECUO := 12.0
+const TEMPO_RECUO := 0.2
+const PAUSA_CABECADA := 1.0
 ## Nível mostrado em cima da cabeça de cada espécie.
 const NIVEIS := {&"galinha": 1, &"coelho": 1, &"ovelha": 1, &"javali": 2}
 
@@ -30,6 +35,8 @@ var _tempo := 0.0
 var _assustado := 0.0
 var _de_quem: Node2D
 var _recarga := 0.0
+var _recuo := 0.0
+var _dir_recuo := Vector2.ZERO
 
 @onready var visual: AnimatedSprite2D = $Visual
 @onready var vida: HealthComponent = $HealthComponent
@@ -59,6 +66,9 @@ func _ready() -> void:
 	barra.definir_nivel(NIVEIS.get(especie, 1))
 	barra.ajustar_ao_sprite(visual)
 	if multiplayer.is_server():
+		# Dificuldade do mundo (os outros veem a vida pelos avisos de golpe, _piscar).
+		vida.maximo *= World.mult_dificuldade(self, &"vida_inimigo")
+		vida.atual = vida.maximo
 		hurtbox.atingido.connect(_on_atingido)
 		vida.morreu.connect(_on_morreu)
 
@@ -77,14 +87,28 @@ func _physics_process(delta: float) -> void:
 	var dados: Dictionary = ESPECIES[especie]
 	var dir := Vector2.ZERO
 	var rapidez: float = dados.vel
+	var recuando := false
 	if _assustado > 0.0 and is_instance_valid(_de_quem):
 		var para := _de_quem.global_position - global_position
 		if dados.get("bravo", false):
-			dir = para.normalized()  # o javali investe
-			rapidez *= 1.6
-			if para.length() < 14.0 and _recarga <= 0.0 and _de_quem is Player:
-				_recarga = 1.2
-				(_de_quem as Player).vida.tomar_dano(DANO_JAVALI, &"fisico")
+			# Cabeçada: investe, acerta uma vez, recua um pouco, para ~1 s e investe de novo.
+			if _recuo > 0.0:
+				_recuo -= delta
+				recuando = true
+				dir = _dir_recuo
+				rapidez = DIST_RECUO / TEMPO_RECUO
+			elif _recarga > 0.0:
+				olhando_esquerda = para.x < 0.0  # parado, de olho em quem vai acertar
+			else:
+				dir = para.normalized()  # o javali investe
+				rapidez *= 1.6
+				if para.length() < 14.0 and _de_quem is Player:
+					_recarga = TEMPO_RECUO + PAUSA_CABECADA
+					var alvo := _de_quem as Player
+					if alvo.vida.tomar_dano(DANO_JAVALI * World.mult_dificuldade(self, &"dano_inimigo"), &"fisico"):
+						alvo.reagir_ao_golpe(global_position)
+						_dir_recuo = -para.normalized() if para.length() > 0.1 else -dir
+						_recuo = TEMPO_RECUO
 		else:
 			dir = -para.normalized()  # os outros fogem
 			rapidez *= 2.0
@@ -98,7 +122,7 @@ func _physics_process(delta: float) -> void:
 			_destino = Vector2.INF
 		else:
 			dir = (_destino - global_position).normalized() * 0.6
-	if dir.x != 0.0:
+	if dir.x != 0.0 and not recuando:  # recuando, continua de frente para quem acertou
 		olhando_esquerda = dir.x < 0.0
 	animacao = &"andar" if dir != Vector2.ZERO else &"parado"
 	velocity = dir * rapidez

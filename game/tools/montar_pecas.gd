@@ -54,18 +54,33 @@ func _init() -> void:
 	var pasta := _caminho(_args["saida"]).path_join(_args["nome"])
 	DirAccess.make_dir_recursive_absolute(pasta)
 
-	var posicoes := {}
-	for i in PECAS.size():
-		var nome: String = PECAS[i]
+	# 1ª passada: acha cada peça no montado (escala e lugar).
+	var achados := {}
+	for nome in PECAS:
 		var peca := _celula(celulas[nome][0], celulas[nome][1])
 		peca = peca.get_region(_caixa_principal(peca))
 		var achado := _achar(peca, pequeno, nome, 0.0, Vector2.INF)
-		var escala: float = achado.escala
 		var lugares: Array = [achado.pos]
 		if nome == "pe" or nome == "mao":
 			# A segunda (a de trás): mesma escala, longe da primeira.
-			var segundo := _achar(peca, pequeno, nome, escala, achado.pos)
+			var segundo := _achar(peca, pequeno, nome, achado.escala, achado.pos)
 			lugares.append(segundo.pos if segundo.custo < 0.3 else Vector2.INF)
+		achados[nome] = {peca = peca, achado = achado, lugares = lugares}
+	# Roupa (L24): o montado com elmo ou chapéu é mais alto que o boneco base, então o fator
+	# não sai da altura: sai do pé, que tem de ficar com a mesma largura do pé do boneco base.
+	if _args.has("fator_de"):
+		var pe_base := Image.load_from_file(_caminho(_args["fator_de"]).path_join("pe.png"))
+		var ap: Dictionary = achados["pe"]
+		fator = pe_base.get_width() / ((ap.peca as Image).get_width() * float(ap.achado.escala))
+		print("fator pelo pé do boneco base: %.4f" % fator)
+
+	# 2ª passada: cada peça em pixel art e o lugar dela (pixels da arte, origem nos pés).
+	var posicoes := {}
+	for nome in PECAS:
+		var peca: Image = achados[nome].peca
+		var achado: Dictionary = achados[nome].achado
+		var escala: float = achado.escala
+		var lugares: Array = achados[nome].lugares
 		# Peça em pixel art: escala achada x fator do personagem.
 		var w := maxi(1, roundi(peca.get_width() * escala * fator))
 		var h := maxi(1, roundi(peca.get_height() * escala * fator))
