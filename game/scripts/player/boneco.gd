@@ -78,8 +78,8 @@ func vestir(aparencia: Dictionary, equipado: Dictionary) -> void:
 		vistas[v] = d
 	var pele := int(aparencia.get("pele", 0))
 	for v in vistas:
-		vistas[v].cabeca = _tingir(vistas[v].cabeca, pele)
-	_montar(vistas, load(pasta + "base/pe.png"), _tingir(load(pasta + "base/mao.png"), pele), load(pasta + "base/sombra.png"))
+		vistas[v].cabeca = _tingir(vistas[v].cabeca, pele, StringName(raca))
+	_montar(vistas, load(pasta + "base/pe.png"), _tingir(load(pasta + "base/mao.png"), pele, StringName(raca)), load(pasta + "base/sombra.png"))
 
 
 ## Retrato para o HUD: a cabeça de perfil, com o chapéu se tiver.
@@ -316,32 +316,40 @@ static func _caixa(tex: Texture2D, q: int) -> Rect2i:
 ## Cores de pele (L24): o tom 0 é o da arte; nos outros, só os pixels com as cores de pele da
 ## arte (cabeça e mãos) escurecem. A roupa e o cabelo não mudam. A cópia tingida é feita uma
 ## vez por textura e tom (pixel a pixel, sem shader: o pixel continua exato).
-const PELE := [Color("f4d296"), Color("f8d4a6"), Color("ffbc88"), Color("f8cb93"), Color("f4a47b"), Color("f2e7a0"), Color("ea9461"), Color("db9c68")]
-const TONS_PELE := [Color(1, 1, 1), Color(0.82, 0.68, 0.55), Color(0.58, 0.43, 0.33)]
+const PELE := {
+	&"humano": [Color("f4d296"), Color("f8d4a6"), Color("ffbc88"), Color("f8cb93"), Color("f4a47b"), Color("f2e7a0"), Color("ea9461"), Color("db9c68")],
+	&"ogro": [Color("a1b74c"), Color("9acc50"), Color("7da147"), Color("6e7e53"), Color("91bc4c"), Color("699157"), Color("c7cc67"), Color("49655c")],
+}
+const TONS_PELE := {
+	&"humano": [Color(1, 1, 1), Color(0.82, 0.68, 0.55), Color(0.58, 0.43, 0.33)],
+	&"ogro": [Color(1, 1, 1), Color(1.1, 0.82, 0.62), Color(0.72, 0.85, 1.0)],  # oliva amarronzado, verde-acinzentado
+}
 static var _tingidas := {}
 
 
-static func _tingir(tex: Texture2D, tom: int) -> Texture2D:
+static func _tingir(tex: Texture2D, tom: int, raca: StringName) -> Texture2D:
 	if tex == null or tom <= 0:
 		return tex
-	var chave := "%s|%d" % [tex.resource_path, tom]
+	var chave := "%s|%d|%s" % [tex.resource_path, tom, raca]
 	if not _tingidas.has(chave):
 		var img := tex.get_image()
 		if img.is_compressed():
 			img.decompress()
 		img.convert(Image.FORMAT_RGBA8)
-		var t: Color = TONS_PELE[clampi(tom, 0, TONS_PELE.size() - 1)]
+		var tons: Array = TONS_PELE.get(raca, TONS_PELE[&"humano"])
+		var t: Color = tons[clampi(tom, 0, tons.size() - 1)]
+		var pele: Array = PELE.get(raca, PELE[&"humano"])
 		for y in img.get_height():
 			for x in img.get_width():
 				var c := img.get_pixel(x, y)
-				if c.a > 0.0 and _eh_pele(c):
-					img.set_pixel(x, y, Color(c.r * t.r, c.g * t.g, c.b * t.b, c.a))
+				if c.a > 0.0 and _eh_pele(c, pele):
+					img.set_pixel(x, y, Color(minf(c.r * t.r, 1.0), minf(c.g * t.g, 1.0), minf(c.b * t.b, 1.0), c.a))
 		_tingidas[chave] = ImageTexture.create_from_image(img)
 	return _tingidas[chave]
 
 
-static func _eh_pele(c: Color) -> bool:
-	for p: Color in PELE:
+static func _eh_pele(c: Color, pele: Array) -> bool:
+	for p: Color in pele:
 		if Vector3(c.r - p.r, c.g - p.g, c.b - p.b).length() < 0.03:
 			return true
 	return false

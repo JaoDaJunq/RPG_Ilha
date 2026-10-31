@@ -36,6 +36,9 @@ func _init() -> void:
 	for x in pal.get_width():
 		_paleta.append(pal.get_pixel(x, 0))
 	var alvo_altura := float(_args.get("altura", "80"))
+	if _args.has("rosto"):
+		_montar_rosto(folha)
+		return
 
 	# Vista de frente ou de costas (L21): a folha tem o montado e só a cabeça e o tronco;
 	# o pé e a mão vêm da folha de perfil (--extras), que é a mesma peça.
@@ -49,6 +52,9 @@ func _init() -> void:
 	var montado := _celula(folha, int(_args.get("montado", "0")))
 	var caixa := _caixa_principal(montado)
 	var fator := alvo_altura / caixa.size.y
+	if _args.has("fator"):
+		fator = float(_args["fator"])
+	print("fator: %.4f (montado %dx%d)" % [fator, caixa.size.x, caixa.size.y])
 	var ref := Vector2(caixa.position.x + caixa.size.x / 2.0, caixa.end.y)  # pés
 	var pequeno := _reduzir(montado.get_region(caixa))
 	var pasta := _caminho(_args["saida"]).path_join(_args["nome"])
@@ -69,10 +75,12 @@ func _init() -> void:
 	# Roupa (L24): o montado com elmo ou chapéu é mais alto que o boneco base, então o fator
 	# não sai da altura: sai do pé, que tem de ficar com a mesma largura do pé do boneco base.
 	if _args.has("fator_de"):
-		var pe_base := Image.load_from_file(_caminho(_args["fator_de"]).path_join("pe.png"))
-		var ap: Dictionary = achados["pe"]
+		# --fator_por=mao: quando a roupa comprida cobre os pés (manto do mago), mede pela mão.
+		var ref_peca: String = _args.get("fator_por", "pe")
+		var pe_base := Image.load_from_file(_caminho(_args["fator_de"]).path_join(ref_peca + ".png"))
+		var ap: Dictionary = achados[ref_peca]
 		fator = pe_base.get_width() / ((ap.peca as Image).get_width() * float(ap.achado.escala))
-		print("fator pelo pé do boneco base: %.4f" % fator)
+		print("fator pelo %s do boneco base: %.4f" % [ref_peca, fator])
 
 	# 2ª passada: cada peça em pixel art e o lugar dela (pixels da arte, origem nos pés).
 	var posicoes := {}
@@ -84,6 +92,17 @@ func _init() -> void:
 		# Peça em pixel art: escala achada x fator do personagem.
 		var w := maxi(1, roundi(peca.get_width() * escala * fator))
 		var h := maxi(1, roundi(peca.get_height() * escala * fator))
+		# Chapéu de frente e de costas (L24): o cabelo do boneco base é mais cheio que a cabeça
+		# do montado com chapéu; se o chapéu sair mais estreito que a cabeça base, aumenta até
+		# cobri-la, com a base do chapéu no mesmo lugar.
+		var cresce := Vector2.ZERO
+		if nome == "cabeca" and vista != "" and _args.has("fator_de"):
+			var cab := Image.load_from_file(_caminho(_args["fator_de"]).path_join("cabeca" + vista + ".png"))
+			if w < cab.get_width() + 2:
+				var k := (cab.get_width() + 2.0) / w
+				cresce = Vector2(roundi(w * k) - w, roundi(h * k) - h)
+				w += int(cresce.x)
+				h += int(cresce.y)
 		var px := peca.duplicate() as Image
 		px.resize(w, h, Image.INTERPOLATE_LANCZOS)
 		_quantizar(px)
@@ -97,6 +116,7 @@ func _init() -> void:
 			else:
 				var no_montado: Vector2 = Vector2(caixa.position) + p * REDUZ
 				var rel := (no_montado - ref) * fator
+				rel -= Vector2(cresce.x / 2.0, cresce.y)
 				rels.append([roundi(rel.x), roundi(rel.y)])
 		posicoes[nome] = rels
 		print("%s: escala %.2f, %dx%d, lugar %s (custo %.2f)" % [nome, escala, w, h, rels, achado.custo])
@@ -347,3 +367,78 @@ func _caixa_principal(img: Image) -> Rect2i:
 func _justo(img: Image, r: Rect2i) -> Rect2i:
 	var u := img.get_region(r).get_used_rect()
 	return Rect2i(r.position + u.position, u.size)
+
+
+## Outra cabeça (rosto) do boneco base (L24). A folha de rostos só tem cabeças, desenhadas
+## no mesmo tamanho da cabeça do boneco base: a cabeça nova sai com o mesmo pixel (a razão
+## entre a cabeça em pixel art e a ilustração dela, na folha base) e fica com o queixo na
+## mesma altura; de perfil, com a frente do rosto no mesmo lugar; de frente e de costas,
+## centralizada. Grava <saida>/<nome>/cabeca<vista>.png e pecas<vista>.json ({cabeca}).
+##   --rosto=<célula da cabeça nova> --base=<pasta do boneco base> --base_folha=<folha base>
+##   --base_celula=<célula da cabeça na folha base> [--vista=_frente]
+func _montar_rosto(folha: Image) -> void:
+	var vista: String = _args.get("vista", "")
+	var base := _caminho(_args["base"])
+	var folha_base := Image.load_from_file(_caminho(_args["base_folha"]))
+	folha_base.convert(Image.FORMAT_RGBA8)
+	var cab_base := _celula(folha_base, int(_args["base_celula"]))
+	cab_base = cab_base.get_region(_caixa_principal(cab_base))
+	var px_base := Image.load_from_file(base.path_join("cabeca" + vista + ".png"))
+	var razao := px_base.get_width() / float(cab_base.get_width())
+	var nova := _celula(folha, int(_args["rosto"]))
+	nova = nova.get_region(_caixa_principal(nova))
+	var j: Dictionary = JSON.parse_string(FileAccess.get_file_as_string(base.path_join("pecas" + vista + ".json")))
+	var p0 := Vector2(j["cabeca"][0], j["cabeca"][1])
+	# A IA não desenha as cabeças da folha de rostos no tamanho da cabeça base: acha o ROSTO
+	# (metade de baixo da cabeça base, do lado do rosto) dentro da cabeça nova para saber a
+	# escala e o lugar. De costas não há rosto: usa a escala achada de frente (--escala).
+	var escala := float(_args.get("escala", "0"))
+	var x: float
+	var y: float
+	if escala > 0.0:
+		# Escala já conhecida: queixo na mesma altura; de perfil, a frente do rosto no mesmo lugar.
+		var r := razao / escala
+		x = p0.x + px_base.get_width() - nova.get_width() * r if vista == "" else p0.x + (px_base.get_width() - nova.get_width() * r) / 2.0
+		y = p0.y + px_base.get_height() - nova.get_height() * r
+	else:
+		var cw := cab_base.get_width()
+		var ch := cab_base.get_height()
+		var recorte := Rect2i(roundi(cw * 0.45), roundi(ch * 0.5), roundi(cw * 0.55), ch - roundi(ch * 0.5)) if vista == "" \
+				else Rect2i(roundi(cw * 0.2), roundi(ch * 0.5), roundi(cw * 0.6), ch - roundi(ch * 0.5))
+		var achado := _achar(cab_base.get_region(recorte), _reduzir(nova), "rosto")
+		escala = achado.escala
+		var r := razao / escala
+		var no_novo: Vector2 = achado.pos * REDUZ * r
+		x = p0.x + recorte.position.x * razao - no_novo.x
+		y = p0.y + recorte.position.y * razao - no_novo.y
+		print("rosto achado: escala %.2f (custo %.2f)" % [escala, achado.custo])
+	var rr := razao / escala
+	nova.resize(maxi(1, roundi(nova.get_width() * rr)), maxi(1, roundi(nova.get_height() * rr)), Image.INTERPOLATE_LANCZOS)
+	_quantizar(nova)
+	_contorno(nova)
+	if vista == "_costas" or _args.get("alinhar", "") == "topo":
+		# De costas: o alto do crânio (primeira linha larga, sem o moicano nem a barba) no
+		# mesmo lugar do da cabeça base.
+		y = p0.y + _topo_cranio(px_base) - _topo_cranio(nova)
+	var pasta := _caminho(_args["saida"]).path_join(_args["nome"])
+	DirAccess.make_dir_recursive_absolute(pasta)
+	nova.save_png(pasta.path_join("cabeca" + vista + ".png"))
+	var f := FileAccess.open(pasta.path_join("pecas" + vista + ".json"), FileAccess.WRITE)
+	f.store_string(JSON.stringify({"cabeca": [roundi(x), roundi(y)]}, "  "))
+	f.close()
+	print("rosto %s: %dx%d em (%d, %d), razão %.4f" % [vista, nova.get_width(), nova.get_height(), roundi(x), roundi(y), razao])
+	quit()
+
+
+## Primeira linha em que o desenho ocupa ao menos 60% da largura (o alto do crânio, sem o
+## topete ou o moicano por cima).
+func _topo_cranio(img: Image) -> int:
+	var w := img.get_width()
+	for y in img.get_height():
+		var n := 0
+		for x in w:
+			if img.get_pixel(x, y).a > 0.5:
+				n += 1
+		if n >= w * 0.6:
+			return y
+	return 0

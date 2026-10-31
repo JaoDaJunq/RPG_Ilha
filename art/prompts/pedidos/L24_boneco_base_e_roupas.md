@@ -112,3 +112,20 @@ O MESMO guerreiro da imagem 1 (mesmo elmo, túnica, cota e cinto), visto DE COST
 ## Depois de gerar
 
 Salvar só nos caminhos de saída indicados. Não mexer em `game/` nem em nenhum outro arquivo. Responder com os caminhos e o tamanho de cada imagem.
+
+## Depois do piloto: as outras raças e classes (mesmos textos, trocando o que está abaixo)
+
+O piloto do Humano deu certo (base, tons de pele e roupa do Guerreiro montados no jogo). As outras folhas usam EXATAMENTE os mesmos textos das Folhas 1 a 5, trocando:
+
+**Ogro (Folhas 1, 2 e 3 do ogro):** saídas `l24_ogro_base_perfil.png`, `l24_ogro_base_frente_costas.png`, `l24_ogro_rostos.png`. Anexar `art/sprites/tiny/bonecos/pecas_ogro_mago.png` (proporções e rosto aprovados do ogro) no lugar do humano.
+- Base: OGRO "pelado", maior e mais largo que o humano (cerca de 380 px de altura montado), pele verde-oliva (#8fb35a, sombra #6b8a43), careca com um tufinho de cabelo preto no topo, orelhas pontudas pequenas, duas presinhas brancas saindo do lábio de baixo para cima, olhos de pontinho, a MESMA túnica branca-creme simples (mais larga) e sapatilhas de pano claras. Mãos verdes.
+- ROSTO 2 do ogro: moicano preto alto, uma argolinha dourada na orelha.
+- ROSTO 3 do ogro: barba preta curta trançada no queixo, presas maiores, sobrancelhas grossas.
+
+**Mago (Folhas 4 e 5, uma vez com o humano e outra com o ogro):** saídas `l24_<raca>_mago_perfil_frente.png` e `l24_<raca>_mago_costas.png`.
+- Roupa: CHAPÉU de mago pontudo azul-escuro (#485884, sombra #33405f) com faixa dourada (#cea554) e a ponta caída para trás, aba redonda; MANTO azul-escuro comprido até perto dos pés, gola dourada e um cordão dourado na cintura. O chapéu sozinho: só o chapéu, sem cabeça embaixo (a parte de baixo da aba é aberta).
+
+**Arqueiro (Folhas 4 e 5, uma vez com o humano e outra com o ogro):** saídas `l24_<raca>_arqueiro_perfil_frente.png` e `l24_<raca>_arqueiro_costas.png`.
+- Roupa: CAPUZ verde-musgo (#5b7a4a, sombra #435c3a) que cobre o cabelo e deixa o rosto aparecer (abertura do rosto VAZADA no capuz sozinho); GIBÃO de couro marrom (#955c3c, sombra #6e4433) sobre uma túnica verde-musgo, cinto de couro e uma alça de couro cruzando o peito. De costas, uma aljava de couro com 3 penas aparecendo (só nas costas do tronco).
+
+**Guerreiro do ogro (Folhas 4 e 5 com o ogro):** saídas `l24_ogro_guerreiro_perfil_frente.png` e `l24_ogro_guerreiro_costas.png`. O mesmo elmo e a mesma túnica com cota do guerreiro humano (anexar `l24_humano_guerreiro_perfil_frente.png` também), no tamanho do ogro; o elmo com abertura grande para as presas aparecerem.
