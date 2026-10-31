@@ -11,6 +11,10 @@ extends Node2D
 ## boneco inteiro é espelhado. Mantém `animation` e `play()` como o AnimatedSprite2D de antes.
 
 const PASTA := "res://assets/sprites/tiny/bonecos/"
+## O arco vai em pé na mão (L23): 4 quadros da corda (repouso e 3 de puxada) e a flecha.
+const ARCO := preload("res://assets/sprites/tiny/itens/arco_puxando.png")
+const FLECHA := preload("res://assets/sprites/tiny/itens/flecha_deitada.png")
+const QUADRO_ARCO := 64
 
 var animation: StringName = &"parado_direita"
 ## Item da mão (id), definido pelo Player a cada quadro.
@@ -21,6 +25,7 @@ var carga := -1.0
 var _base := {}  # peça -> posição de descanso (pixels da arte)
 var _pecas := {}  # peça -> Sprite2D
 var _item: Sprite2D
+var _flecha: Sprite2D
 var _tempo := 0.0
 var _golpe := -1.0  # segundos desde o começo do golpe (-1 = sem golpe)
 ## As três vistas: "" (perfil), "_frente" (andando para baixo), "_costas" (para cima). Cada
@@ -51,6 +56,8 @@ func configurar(raca: StringName, classe: StringName) -> void:
 		_pecas[parte[0]] = _sprite(load(pasta + parte[1] + ".png"))
 		_base[parte[0]] = Vector2(j[parte[0]][0], j[parte[0]][1])
 	_item = _sprite(null)
+	_flecha = _sprite(FLECHA)
+	_flecha.visible = false
 	_pecas["mao_frente"] = _sprite(load(pasta + "mao.png"))
 	_base["mao_frente"] = Vector2(j["mao_frente"][0], j["mao_frente"][1])
 	_pecas["mao_tras"].self_modulate = Color(0.82, 0.82, 0.86)  # a de trás um pouco na sombra
@@ -72,7 +79,8 @@ func _usar_vista(v: String) -> void:
 	(_pecas["cabeca"] as Sprite2D).texture = d.cabeca
 	(_pecas["tronco"] as Sprite2D).texture = d.tronco
 	# De costas, o item fica atrás do corpo; nas outras vistas, na frente.
-	move_child(_item, 1 if v == "_costas" else get_child_count() - 2)
+	move_child(_item, 1 if v == "_costas" else get_child_count() - 3)
+	move_child(_flecha, get_child_count() - 2)
 
 
 func play(nome: StringName = &"") -> void:
@@ -127,6 +135,10 @@ func _posar(passo: float, respira: float, golpe: float) -> void:
 		var arco := sin(t * PI)
 		mao += Vector2(roundf(lerpf(-4.0, 10.0, t)), roundf(-arco * 8.0 + t * 6.0))
 		giro = lerpf(-1.1, 1.4, ease(t, 0.6))
+	if item == &"arco" and carga >= 0.0 and _vista == "":
+		# Puxando o arco: a mão da frente sobe até o ombro e estica para a frente.
+		mao = corpo + Vector2(6, -14)
+		giro = 0.0
 	_por("mao_frente", mao)
 	_por_item(mao, giro)
 
@@ -140,13 +152,55 @@ func _por(nome: String, desvio: Vector2) -> void:
 func _por_item(mao: Vector2, giro: float) -> void:
 	var dados := ItemData.carregar(item) if ItemData.existe(item) else null
 	_item.visible = dados != null
+	_flecha.visible = false
 	if dados == null:
 		return
+	var m := _pecas["mao_frente"] as Sprite2D
+	var centro_mao: Vector2 = _base["mao_frente"] + mao + m.texture.get_size() / 2.0
+	if item == &"arco":
+		_por_arco(centro_mao, giro)
+		return
+	_item.region_enabled = false
 	if _item.texture != dados.icone:
 		_item.texture = dados.icone
 	var tam := dados.icone.get_size()
-	var m := _pecas["mao_frente"] as Sprite2D
-	var centro_mao: Vector2 = _base["mao_frente"] + mao + m.texture.get_size() / 2.0
 	_item.offset = -Vector2(tam.x * 0.2, tam.y * 0.8).round()
 	_item.position = centro_mao
 	_item.rotation = giro
+
+
+## O arco fica em pé na mão da frente (barriga para a frente, corda para trás), com a
+## empunhadura (lado da barriga, meia altura) no meio da mão. Puxando (carga de 0 a 1), a
+## corda vai para trás em 3 quadros, a flecha aparece encaixada nela e a mão de trás segura
+## a corda. De frente e de costas, só o arco.
+func _por_arco(centro_mao: Vector2, giro: float) -> void:
+	var q := 0 if carga < 0.0 else (1 if carga < 0.34 else (2 if carga < 0.67 else 3))
+	var caixa := _caixa(ARCO, q)
+	_item.texture = ARCO
+	_item.region_enabled = true
+	_item.region_rect = Rect2(q * QUADRO_ARCO, 0, QUADRO_ARCO, QUADRO_ARCO)
+	var pega := Vector2(caixa.end.x - 3, caixa.position.y + caixa.size.y / 2.0).round()
+	_item.offset = -pega
+	_item.position = centro_mao
+	_item.rotation = giro * 0.4
+	if carga < 0.0 or _vista != "":
+		return
+	var corda := centro_mao + Vector2(caixa.position.x + 1, pega.y) - pega
+	var f := _caixa(FLECHA, 0)
+	_flecha.visible = true
+	_flecha.offset = -Vector2(f.position.x, f.position.y + f.size.y / 2.0).round()
+	_flecha.position = corda
+	var mt := _pecas["mao_tras"] as Sprite2D
+	mt.position = (corda - mt.texture.get_size() / 2.0).round()
+
+
+## Caixa do desenho (sem o transparente) do quadro `q` de uma tira de quadros de 64.
+static var _caixas := {}
+
+
+static func _caixa(tex: Texture2D, q: int) -> Rect2i:
+	var chave := "%s|%d" % [tex.resource_path, q]
+	if not _caixas.has(chave):
+		var img := tex.get_image()
+		_caixas[chave] = img.get_region(Rect2i(q * QUADRO_ARCO, 0, QUADRO_ARCO, img.get_height())).get_used_rect()
+	return _caixas[chave]
