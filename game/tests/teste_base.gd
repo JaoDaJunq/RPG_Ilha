@@ -72,6 +72,17 @@ func segurar_e(p: Player, mira: Vector2, segundos: float) -> void:
 	await get_tree().physics_frame
 
 
+## O saque cai no chão: espera passar o atraso de pegar e leva o jogador por cima de cada
+## pilha caída (o anfitrião é quem guarda no inventário).
+func pegar_do_chao(p: Player) -> void:
+	await esperar(ItemChao.ATRASO_PEGAR + 0.1)
+	for i in get_tree().get_nodes_in_group(&"itens_chao"):
+		if is_instance_valid(i):
+			p.global_position = (i as ItemChao).global_position
+			await get_tree().physics_frame
+			await get_tree().physics_frame
+
+
 ## Põe na mão o machado (árvore) ou a picareta (pedra) que o jogador tiver na barra.
 func _ferramenta_para(p: Player, mira: Vector2) -> void:
 	var perto: ResourceNode = null

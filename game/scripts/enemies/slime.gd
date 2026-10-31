@@ -30,7 +30,6 @@ var _empurrao := Vector2.ZERO
 var _congelado := 0.0
 var _preso := 0.0
 var _dano_visivel := 0.0  # mostra o quadro de dano por um instante
-var _ultimo_atacante: Player
 
 @onready var visual: AnimatedSprite2D = $Visual
 @onready var vida: HealthComponent = $HealthComponent
@@ -120,8 +119,6 @@ func _jogador_mais_proximo() -> Player:
 
 func _on_atingido(quantidade: float, tipo: StringName, origem: Node) -> void:
 	var dano := quantidade
-	if origem is Player:
-		_ultimo_atacante = origem
 	match tipo:
 		&"gelo":
 			_congelado = TEMPO_CONGELADO
@@ -157,11 +154,9 @@ func _on_morreu() -> void:
 	var xp := XP_DERROTA * (2 if noturno else 1)
 	World.dar_xp_em_volta(self, global_position, xp)
 	World.avisar_todos(self, "Slime derrotado! +%d de experiência para quem estava perto." % xp)
-	# Saque: gel de slime para quem derrotou (o da noite deixa mais).
-	if is_instance_valid(_ultimo_atacante):
-		var gel := (2 if noturno else 1) + randi() % 2
-		_ultimo_atacante.inventario.adicionar(&"gel_slime", gel)
-		_ultimo_atacante.avisar("+%d gel de slime" % gel, &"item")
+	# Saque: gel de slime no chão (o da noite deixa mais).
+	var gel := (2 if noturno else 1) + randi() % 2
+	World.soltar_itens(self, global_position, [[&"gel_slime", gel]])
 	queue_free()
 
 

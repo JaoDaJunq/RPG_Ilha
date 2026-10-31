@@ -200,12 +200,10 @@ func _on_atingido(_quantidade: float, dano: StringName, origem: Node) -> void:
 	t.tween_property(_sprite, "position:x", -1.5, 0.06)
 	t.tween_property(_sprite, "position:x", 0.0, 0.04)
 	if _golpes <= 0:
-		# Baú quebrado: quem estava com ele aberto fecha, e o que tinha dentro vai para quem quebrou.
+		# Baú quebrado: quem estava com ele aberto fecha, e o que tinha dentro cai no chão.
 		if is_instance_valid(em_uso_por):
 			(em_uso_por as Player).inventario.fechar_bau_servidor()
-		for e in conteudo:
-			if ItemData.existe(StringName(e[0])) and int(e[1]) > 0:
-				(origem as Player).inventario.adicionar(StringName(e[0]), int(e[1]))
+		World.soltar_itens(self, global_position + Vector2(0, -6), conteudo)
 		(origem as Player).inventario.adicionar(item, 1)
 		World.quebrar_construcao(self)
 

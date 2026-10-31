@@ -1,0 +1,27 @@
+[gd_scene load_steps=3 format=3]
+
+[ext_resource type="Script" path="res://scripts/world/item_chao.gd" id="1_item"]
+
+[sub_resource type="SceneReplicationConfig" id="Replicacao"]
+properties/0/path = NodePath(".:position")
+properties/0/spawn = true
+properties/0/replication_mode = 2
+properties/1/path = NodePath(".:item")
+properties/1/spawn = true
+properties/1/replication_mode = 0
+properties/2/path = NodePath(".:quantidade")
+properties/2/spawn = true
+properties/2/replication_mode = 2
+properties/3/path = NodePath(".:origem")
+properties/3/spawn = true
+properties/3/replication_mode = 0
+
+[node name="ItemChao" type="Node2D"]
+script = ExtResource("1_item")
+
+[node name="Sombra" type="Sprite2D" parent="."]
+
+[node name="Icone" type="Sprite2D" parent="."]
+
+[node name="Sync" type="MultiplayerSynchronizer" parent="."]
+replication_config = SubResource("Replicacao")
