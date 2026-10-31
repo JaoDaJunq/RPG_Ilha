@@ -96,18 +96,13 @@ func _physics_process(delta: float) -> void:
 	var luz := World.luz_que_protege(self, global_position) if noturno else Vector2.INF
 	if luz != Vector2.INF and not parado:
 		dir = (global_position - luz).normalized()
-	elif alvo and not parado:
-		var para_alvo := alvo.global_position - global_position
-		var alvo_na_luz := noturno and World.luz_que_protege(self, alvo.global_position) != Vector2.INF
-		if para_alvo.length() < raio_visao and not alvo_na_luz:
-			dir = para_alvo.normalized()
-			visual.flip_h = dir.x < 0.0
-		if para_alvo.length() < 12.0 and _recarga <= 0.0:
-			_recarga = recarga_contato
-			if alvo.vida.tomar_dano(dano_contato, &"fisico"):
-				alvo.avisar("O slime te acertou! Clique para golpear.")
-	animacao = &"pulo" if dir != Vector2.ZERO else &"parado"
-	velocity = dir * velocidade + _empurrao
+	elif not parado:
+		dir = _decidir(alvo, delta)
+	animacao = &"pulo" if dir != Vector2.ZERO or _estado == Estado.PULANDO else &"parado"
+	if _estado == Estado.PREPARANDO:
+		animacao = &"dano"  # achatado: está tomando impulso (aviso para esquivar)
+	var rapidez := velocidade * (_VEL_PULO if _estado == Estado.PULANDO else 1.0)
+	velocity = dir * rapidez + _empurrao
 	_empurrao = _empurrao.move_toward(Vector2.ZERO, 400.0 * delta)
 	move_and_slide()
 
@@ -174,3 +169,72 @@ func _on_morreu() -> void:
 func derreter() -> void:
 	World.efeito_todos(self, &"poeira", global_position)
 	queue_free()
+
+
+# --- Comportamento ------------------------------------------------------------------
+## PASSEANDO: sem ninguém por perto, dá pulinhos para lugares próximos de onde nasceu.
+## PERSEGUINDO: alguém entrou no raio de visão.
+## PREPARANDO: chegou perto; achata por um instante (o aviso para o jogador esquivar).
+## PULANDO: salta na direção em que o jogador estava; acerta quem estiver no caminho.
+enum Estado { PASSEANDO, PERSEGUINDO, PREPARANDO, PULANDO }
+const _DIST_ATAQUE := 30.0
+const _TEMPO_PREPARO := 0.45
+const _TEMPO_PULO := 0.3
+const _VEL_PULO := 4.2
+
+var _estado := Estado.PASSEANDO
+var _tempo_estado := 0.0
+var _casa := Vector2.INF
+var _destino := Vector2.INF
+var _dir_pulo := Vector2.ZERO
+var _acertou_pulo := false
+
+
+func _decidir(alvo: Player, delta: float) -> Vector2:
+	if _casa == Vector2.INF:
+		_casa = global_position
+	_tempo_estado += delta
+	var para_alvo := alvo.global_position - global_position if alvo else Vector2.INF
+	var ve_alvo := alvo != null and para_alvo.length() < raio_visao \
+			and not (noturno and World.luz_que_protege(self, alvo.global_position) != Vector2.INF)
+	match _estado:
+		Estado.PREPARANDO:
+			if _tempo_estado >= _TEMPO_PREPARO:
+				_mudar(Estado.PULANDO)
+				_acertou_pulo = false
+			return Vector2.ZERO
+		Estado.PULANDO:
+			if not _acertou_pulo and alvo and para_alvo.length() < 12.0:
+				_acertou_pulo = true
+				if alvo.vida.tomar_dano(dano_contato, &"fisico"):
+					alvo.avisar("O slime pulou em você! Esquive (Espaço) quando ele achatar.")
+			if _tempo_estado >= _TEMPO_PULO:
+				_recarga = recarga_contato
+				_mudar(Estado.PERSEGUINDO if ve_alvo else Estado.PASSEANDO)
+			return _dir_pulo
+	if ve_alvo:
+		_estado = Estado.PERSEGUINDO
+		visual.flip_h = para_alvo.x < 0.0
+		if para_alvo.length() < _DIST_ATAQUE and _recarga <= 0.0:
+			_dir_pulo = para_alvo.normalized()
+			_mudar(Estado.PREPARANDO)
+			return Vector2.ZERO
+		return para_alvo.normalized()
+	_estado = Estado.PASSEANDO
+	# Pulinhos a esmo: anda até um ponto perto de casa, para um pouco e escolhe outro.
+	if _destino == Vector2.INF or global_position.distance_to(_destino) < 4.0:
+		if _tempo_estado < 1.5:
+			return Vector2.ZERO
+		_tempo_estado = 0.0
+		_destino = _casa + Vector2(randf_range(-40, 40), randf_range(-40, 40))
+	var ir := _destino - global_position
+	if _tempo_estado > 4.0:  # preso em algo: desiste deste destino
+		_destino = Vector2.INF
+		_tempo_estado = 0.0
+	visual.flip_h = ir.x < 0.0
+	return ir.normalized() * 0.5
+
+
+func _mudar(novo: Estado) -> void:
+	_estado = novo
+	_tempo_estado = 0.0
