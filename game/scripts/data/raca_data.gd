@@ -12,7 +12,7 @@ extends Resource
 @export_multiline var habilidade_descricao := ""
 
 const PASTA := "res://data/racas/"
-const TODAS: Array[StringName] = [&"humano", &"ogro"]
+const TODAS: Array[StringName] = [&"humano", &"ogro", &"elfo", &"anao"]
 
 
 static func carregar(raca_id: StringName) -> RacaData:

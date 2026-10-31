@@ -14,7 +14,7 @@ extends Resource
 @export var ramo_b := ""
 
 const PASTA := "res://data/classes/"
-const TODAS: Array[StringName] = [&"guerreiro", &"mago", &"arqueiro"]
+const TODAS: Array[StringName] = [&"guerreiro", &"mago", &"arqueiro", &"ladino", &"clerigo"]
 
 
 static func carregar(classe_id: StringName) -> ClasseData:

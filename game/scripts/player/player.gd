@@ -16,6 +16,9 @@ const SONS := {
 	&"lanca_gelo": &"esquiva", &"tiro_carregado": &"flecha", &"armadilha": &"golpe_coleta",
 	&"bloqueio": &"esquiva", &"furia": &"giro", &"raio": &"bola_de_fogo", &"nova_gelo": &"esquiva",
 	&"chuva_flechas": &"flecha", &"bomba": &"bola_de_fogo",
+	&"golpe_furtivo": &"giro", &"lamina_envenenada": &"golpe_coleta", &"bomba_fumaca": &"esquiva",
+	&"leque_adagas": &"flecha", &"cura": &"subir_nivel", &"escudo_sagrado": &"esquiva",
+	&"luz_sagrada": &"bola_de_fogo", &"bencao": &"subir_nivel",
 }
 
 @export var dano_golpe := 1.0
@@ -126,6 +129,7 @@ func habilidades() -> Array[HabilidadeData]:
 func _physics_process(delta: float) -> void:
 	if multiplayer.is_server():
 		_regenerar_mana(delta)
+		_processar_bencao()
 		if criando:
 			vida.proteger(1.0)  # criando o personagem, ninguém o machuca
 	if not eh_local():
@@ -392,6 +396,7 @@ func _pedir_golpe(dir: Vector2) -> void:
 		var area := r.collider as Hurtbox
 		if area and area != hurtbox and not area.get_parent() is Player:
 			area.receber(dano_golpe * ficha.multiplicador_fisico() * bonus_dano_fisico() * poder_da_mao(&"espada"), &"fisico", self)
+			envenenar_atingido(area)
 
 
 @rpc("any_peer", "call_local", "reliable")
@@ -644,8 +649,9 @@ func _tempo_coleta() -> float:
 	if not alvo:
 		return 1.0
 	var recurso := alvo.dono() as ResourceNode
-	var ferramenta := &"picareta" if recurso and recurso.acao == "Minerar" else &"machado"
-	return maxf(alvo.tempo_segurar * ficha.tempo_coleta() / poder_da_mao(ferramenta), 0.01)
+	var minerando := recurso != null and recurso.acao == "Minerar"
+	var ferramenta := &"picareta" if minerando else &"machado"
+	return maxf(alvo.tempo_segurar * ficha.tempo_coleta(minerando) / poder_da_mao(ferramenta), 0.01)
 
 
 func _atualizar_alvo() -> void:
@@ -755,6 +761,9 @@ var carga_arco := -1.0
 
 func _process(delta: float) -> void:
 	_atualizar_previa()
+	var alfa := ALFA_ESCONDIDO if escondido() else 1.0  # Bomba de fumaça: meio transparente
+	if not is_equal_approx(modulate.a, alfa):
+		modulate.a = alfa
 	if eh_local():
 		carga_arco = carga_atual()
 		_tremer(delta)
@@ -805,7 +814,7 @@ func _atualizar_previa() -> void:
 
 ## Arma inicial de cada classe (vai para a barra, na mão): o personagem por peças não tem
 ## arma desenhada, então ela é um item como os outros.
-const KIT := {&"guerreiro": &"espada_ferro", &"mago": &"cajado", &"arqueiro": &"arco"}
+const KIT := {&"guerreiro": &"espada_ferro", &"mago": &"cajado", &"arqueiro": &"arco", &"ladino": &"adagas", &"clerigo": &"maca"}
 
 
 ## Só o anfitrião: personagem novo (ou salvo antes do kit existir) ganha a arma da classe.
@@ -820,6 +829,8 @@ const ROUPAS_BASE := {
 	&"guerreiro": [&"elmo_guerreiro", &"roupa_guerreiro"],
 	&"mago": [&"chapeu_mago", &"roupa_mago"],
 	&"arqueiro": [&"capuz_arqueiro", &"roupa_arqueiro"],
+	&"ladino": [&"bandana_ladino", &"roupa_ladino"],
+	&"clerigo": [&"touca_clerigo", &"roupa_clerigo"],
 }
 const OPCOES_ROSTO := 3
 const OPCOES_PELE := 3
@@ -1026,3 +1037,73 @@ func multiplicador_velocidade() -> float:
 func _furia_sync(segundos: float) -> void:
 	if Net.veio_do_anfitriao():
 		_furia_ate_ms = Time.get_ticks_msec() + int(segundos * 1000.0)
+
+
+# --- Buffs do Ladino e do Clérigo ------------------------------------------------------
+## Quem manda é o anfitrião (as habilidades rodam lá). A fumaça também vai a todos, para
+## verem o jogador meio transparente; os inimigos olham `escondido()` no anfitrião.
+const TEMPO_VENENO := 3.0  # quanto tempo o inimigo envenenado perde vida
+const ALFA_ESCONDIDO := 0.45
+var _veneno_golpes_ate_ms := 0
+var _veneno_dano := 0.0
+var _fumaca_ate_ms := 0
+var _bencao_ate_ms := 0
+var _bencao_proximo_ms := 0
+var _bencao_vida := 0.0
+
+
+## Só o anfitrião chama (Lâmina envenenada): por `segundos`, os golpes envenenam.
+func envenenar_golpes(segundos: float, dano_por_segundo: float) -> void:
+	_veneno_golpes_ate_ms = Time.get_ticks_msec() + int(segundos * 1000.0)
+	_veneno_dano = dano_por_segundo
+
+
+func golpes_envenenados() -> bool:
+	return Time.get_ticks_msec() < _veneno_golpes_ate_ms
+
+
+## Só o anfitrião chama, logo depois de um golpe: com a Lâmina ativa, envenena quem apanhou.
+func envenenar_atingido(area: Hurtbox) -> void:
+	if not golpes_envenenados() or not is_instance_valid(area):
+		return
+	var alvo := area.get_parent()
+	if alvo and alvo.has_method(&"envenenar"):
+		alvo.envenenar(TEMPO_VENENO, _veneno_dano)
+
+
+## Só o anfitrião chama (Bomba de fumaça): os inimigos perdem este jogador de vista.
+func esconder(segundos: float) -> void:
+	_fumaca_sync.rpc(segundos)
+
+
+func escondido() -> bool:
+	return Time.get_ticks_msec() < _fumaca_ate_ms
+
+
+@rpc("any_peer", "call_local", "reliable")
+func _fumaca_sync(segundos: float) -> void:
+	if Net.veio_do_anfitriao():
+		_fumaca_ate_ms = Time.get_ticks_msec() + int(segundos * 1000.0)
+
+
+## Só o anfitrião chama (Bênção): recupera `vida_por_segundo` a cada segundo, por `segundos`.
+func abencoar(segundos: float, vida_por_segundo: float) -> void:
+	var agora := Time.get_ticks_msec()
+	_bencao_ate_ms = agora + int(segundos * 1000.0)
+	_bencao_proximo_ms = agora + 1000
+	_bencao_vida = vida_por_segundo
+
+
+func abencoado() -> bool:
+	return _bencao_ate_ms > 0
+
+
+## Só o anfitrião: uma cura por segundo enquanto a Bênção dura.
+func _processar_bencao() -> void:
+	if _bencao_ate_ms == 0 or Time.get_ticks_msec() < _bencao_proximo_ms:
+		return
+	_bencao_proximo_ms += 1000
+	if vida.esta_vivo() and vida.atual < vida.maximo:
+		vida.curar(_bencao_vida)
+	if _bencao_proximo_ms > _bencao_ate_ms:
+		_bencao_ate_ms = 0

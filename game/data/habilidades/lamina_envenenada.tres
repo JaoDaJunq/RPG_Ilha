@@ -1,0 +1,18 @@
+[gd_resource type="Resource" script_class="HabilidadeData" load_steps=3 format=3]
+
+[ext_resource type="Script" path="res://scripts/data/habilidade_data.gd" id="1_script"]
+[ext_resource type="Texture2D" path="res://assets/sprites/tiny/icones/icone_giro.png" id="2_icone"]
+
+[resource]
+script = ExtResource("1_script")
+id = &"lamina_envenenada"
+nome = "Lâmina envenenada"
+descricao = "Por 6 s, seus golpes envenenam: o inimigo perde 0,6 de vida por segundo durante 3 s."
+icone = ExtResource("2_icone")
+modo = 1
+custo_mana = 6.0
+recarga = 14.0
+elemento = &"fisico"
+dano = 0.6
+alcance = 0.0
+logica = &"LaminaEnvenenada"

@@ -27,12 +27,19 @@ const NIVEL_NOTURNO := 3
 @export var parado := false
 ## Slime da noite: nasce no escuro, é mais forte e derrete quando amanhece.
 @export var noturno := false
+## Envenenado (sincronizado para todos verem a cor verde).
+@export var envenenado := false
 
 var _recarga := 0.0
 var _empurrao := Vector2.ZERO
 var _congelado := 0.0
 var _preso := 0.0
 var _dano_visivel := 0.0  # mostra o quadro de dano por um instante
+# Veneno (Lâmina envenenada do Ladino): uma pancada de `_veneno_dano` por segundo.
+var _veneno_golpes := 0
+var _veneno_espera := 0.0
+var _veneno_dano := 0.0
+var _alvo_atual: Player = null  # quem ele persegue (só o anfitrião sabe)
 
 @onready var visual: AnimatedSprite2D = $Visual
 @onready var vida: HealthComponent = $HealthComponent
@@ -81,8 +88,36 @@ func prender(segundos: float) -> void:
 	_preso = maxf(_preso, segundos)
 
 
+## Só o anfitrião chama (Lâmina envenenada): perde `dano` de vida por segundo durante
+## `segundos` (um golpe novo recomeça a contagem).
+func envenenar(segundos: float, dano: float) -> void:
+	_veneno_golpes = maxi(1, roundi(segundos))
+	_veneno_espera = 1.0
+	_veneno_dano = dano
+	envenenado = true
+
+
+## Está atrás deste jogador? (Golpe furtivo: quem não persegue leva o dobro.) Só no anfitrião.
+func persegue(jogador: Node) -> bool:
+	return _alvo_atual == jogador and _estado in [Estado.PERSEGUINDO, Estado.PREPARANDO, Estado.PULANDO, Estado.RECUANDO]
+
+
+func _processar_veneno(delta: float) -> void:
+	if _veneno_golpes <= 0:
+		return
+	_veneno_espera -= delta
+	if _veneno_espera > 0.0:
+		return
+	_veneno_espera += 1.0
+	_veneno_golpes -= 1
+	if _veneno_golpes <= 0:
+		envenenado = false
+	if vida.tomar_dano(_veneno_dano, &"veneno"):
+		_piscar.rpc(vida.atual, vida.maximo)
+
+
 func _physics_process(delta: float) -> void:
-	visual.modulate = Color(0.6, 0.85, 1.0) if parado else Color.WHITE
+	visual.modulate = Color(0.6, 0.85, 1.0) if parado else (Color(0.65, 1.0, 0.55) if envenenado else Color.WHITE)
 	if parado:
 		visual.pause()
 	elif not visual.is_playing():
@@ -97,7 +132,11 @@ func _physics_process(delta: float) -> void:
 	_congelado = maxf(0.0, _congelado - delta)
 	_preso = maxf(0.0, _preso - delta)
 	parado = congelado() or preso()
+	_processar_veneno(delta)
+	if is_queued_for_deletion():
+		return  # o veneno o derrotou
 	var alvo := _jogador_mais_proximo()
+	_alvo_atual = alvo
 	var dir := Vector2.ZERO
 	# A luz protege da noite: o slime noturno foge se estiver dentro dela e não persegue quem
 	# está nela (os do dia não ligam).
@@ -121,6 +160,8 @@ func _jogador_mais_proximo() -> Player:
 	var melhor: Player = null
 	var menor := INF
 	for j in get_tree().get_nodes_in_group(&"jogadores"):
+		if (j as Player).escondido():
+			continue  # Bomba de fumaça: perdeu o jogador de vista
 		var d := global_position.distance_to(j.global_position)
 		if d < menor:
 			menor = d
@@ -139,6 +180,9 @@ func _on_atingido(quantidade: float, tipo: StringName, origem: Node) -> void:
 				_congelado = 0.0
 			else:
 				dano *= 2.0
+		&"luz":
+			if noturno:
+				dano *= 3.0  # a luz sagrada queima o slime da noite
 		&"fisico":
 			if congelado():
 				dano *= 2.0

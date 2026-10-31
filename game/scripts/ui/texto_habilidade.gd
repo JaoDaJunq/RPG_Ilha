@@ -22,7 +22,7 @@ static func de_habilidade(hab: HabilidadeData, tecla: String, ficha: Ficha) -> D
 		mana = "Mana: %s" % numero(hab.custo_mana),
 		recarga = "Recarga: %s s" % numero(hab.recarga),
 		dano = _dano(hab, ficha),
-		efeitos = efeitos(hab),
+		efeitos = efeitos(hab, ficha),
 	}
 
 
@@ -42,19 +42,26 @@ static func de_esquiva(ficha: Ficha, tecla := "Shift") -> Dictionary:
 static func _dano(hab: HabilidadeData, ficha: Ficha) -> String:
 	if hab.dano <= 0.0:
 		return ""
+	if hab.logica == &"LaminaEnvenenada":
+		var por_segundo := hab.dano * (ficha.multiplicador(hab.elemento) if ficha else 1.0)
+		return "Veneno: %s por segundo, por %d s (%s no total)" % [numero(por_segundo), roundi(Player.TEMPO_VENENO), numero(por_segundo * Player.TEMPO_VENENO)]
 	var nome: String = ELEMENTOS.get(hab.elemento, String(hab.elemento))
 	if ficha == null:
 		return "Dano: %s (%s)" % [numero(hab.dano), nome]
 	var mult := ficha.multiplicador(hab.elemento)
 	var poder := "físico" if hab.elemento == &"fisico" else "mágico"
 	var base := "%s × poder %s x%s" % [numero(hab.dano), poder, numero(mult)]
+	if hab.logica == &"LequeAdagas":
+		return "Dano: %s de físico por adaga (%s)" % [numero(hab.dano * mult), base]
+	if hab.logica == &"LuzSagrada":
+		return "Dano: %s de luz; %s em slimes da noite (%s)" % [numero(hab.dano * mult), numero(hab.dano * mult * 3.0), base]
 	if hab.logica == &"TiroCarregado":
 		return "Dano: %s a %s %s, conforme a carga (%s)" % [numero(hab.dano * mult), numero(hab.dano * 3.0 * mult), nome, base]
 	return "Dano: %s de %s (%s)" % [numero(hab.dano * mult), nome, base]
 
 
 ## Efeitos em linhas curtas (atordoa, congela, prende, área, alcance, bônus).
-static func efeitos(hab: HabilidadeData) -> Array[String]:
+static func efeitos(hab: HabilidadeData, ficha: Ficha = null) -> Array[String]:
 	var l: Array[String] = []
 	match hab.logica:
 		&"Investida":
@@ -98,6 +105,33 @@ static func efeitos(hab: HabilidadeData) -> Array[String]:
 			l.append("Área: raio de %s" % blocos(Logicas.Bomba.RAIO))
 			l.append("Slimes levam o dobro de dano")
 			l.append("Incendeia árvores")
+		&"GolpeFurtivo":
+			l.append("Avança até o inimigo (alcance: %s)" % blocos(hab.alcance))
+			l.append("Dano dobrado se ele não perseguia você (x%s)" % numero(Logicas.GolpeFurtivo.MULTIPLICADOR))
+		&"LaminaEnvenenada":
+			l.append("Seus golpes envenenam por %d s" % roundi(Player.TEMPO_VENENO))
+			l.append("Dura %s s" % numero(Logicas.LaminaEnvenenada.DURACAO))
+		&"BombaFumaca":
+			l.append("Inimigos perdem você de vista e param de perseguir")
+			l.append("Você fica meio transparente")
+			l.append("Dura %s s" % numero(Logicas.BombaFumaca.DURACAO))
+		&"LequeAdagas":
+			l.append("%d adagas em leque" % Logicas.LequeAdagas.ADAGAS)
+		&"Cura":
+			var vida := Logicas.Cura.quantidade(ficha) if ficha else Logicas.Cura.BASE
+			l.append("Cura %s de vida (%s + %s por ponto de Espírito)" % [numero(vida), numero(Logicas.Cura.BASE), numero(Logicas.Cura.POR_ESPIRITO)])
+			l.append("Área: aliados num raio de %s" % blocos(Logicas.Cura.RAIO))
+		&"EscudoSagrado":
+			l.append("Dano recebido: -%s%%" % numero(Logicas.EscudoSagrado.REDUCAO * 100.0))
+			l.append("Dura %s s" % numero(Logicas.EscudoSagrado.DURACAO))
+			l.append("Área: aliados num raio de %s" % blocos(Logicas.EscudoSagrado.RAIO))
+		&"LuzSagrada":
+			l.append("Área: tudo num raio de %s" % blocos(Logicas.LuzSagrada.RAIO))
+			l.append("Slimes da noite levam o triplo de dano")
+		&"Bencao":
+			l.append("Recupera %s de vida por segundo" % numero(Logicas.Bencao.VIDA_POR_SEGUNDO))
+			l.append("Dura %s s" % numero(Logicas.Bencao.DURACAO))
+			l.append("Área: aliados num raio de %s" % blocos(Logicas.Bencao.RAIO))
 	return l
 
 

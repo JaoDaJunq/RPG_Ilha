@@ -1,7 +1,7 @@
 class_name Criacao
 extends CanvasLayer
 ## Tela de criação do personagem, a primeira vez que o jogador entra num mundo.
-## Passo 1: raça (Humano ou Ogro), rosto e pele. O bonequinho ao lado aparece "pelado" (só a
+## Passo 1: raça (Humano, Ogro, Elfo ou Anão), rosto e pele. O bonequinho ao lado aparece "pelado" (só a
 ## roupinha branca) e muda na hora a cada escolha. Passo 2: a classe; o boneco veste as roupas
 ## base dela e pega a arma. "Entrar no mundo" manda a escolha ao anfitrião (Player).
 ## Tudo é local até confirmar: quem cria o personagem de verdade é o anfitrião.
@@ -14,6 +14,9 @@ const FUNDO := "res://assets/sprites/menu_fundo.png"
 const ESCALA_BONECO := 3.0
 const COR_TEXTO := Tema.COR_TEXTO
 const COR_TEXTO_2 := Tema.COR_TEXTO_2
+## Botões por linha: 4 raças numa linha e 5 classes noutra (letra um pouco menor).
+const COLUNAS_RACA := 4
+const COLUNAS_CLASSE := 5
 
 var raca: StringName = RacaData.TODAS[0]
 var classe: StringName = ClasseData.TODAS[0]
@@ -202,8 +205,7 @@ func _montar_raca() -> Control:
 	var v := VBoxContainer.new()
 	v.add_theme_constant_override(&"separation", 10)
 	v.add_child(_rotulo("Raça", 22, Tema.COR_DESTAQUE))
-	var linha := HBoxContainer.new()
-	linha.add_theme_constant_override(&"separation", 12)
+	var linha := _grade_botoes(COLUNAS_RACA)
 	v.add_child(linha)
 	var grupo := ButtonGroup.new()
 	for id in RacaData.TODAS:
@@ -254,12 +256,11 @@ func _montar_classe() -> Control:
 	var v := VBoxContainer.new()
 	v.add_theme_constant_override(&"separation", 10)
 	v.add_child(_rotulo("Classe", 22, Tema.COR_DESTAQUE))
-	var linha := HBoxContainer.new()
-	linha.add_theme_constant_override(&"separation", 12)
+	var linha := _grade_botoes(COLUNAS_CLASSE)
 	v.add_child(linha)
 	var grupo := ButtonGroup.new()
 	for id in ClasseData.TODAS:
-		var b := _botao_escolha(ClasseData.carregar(id).nome, grupo)
+		var b := _botao_escolha(ClasseData.carregar(id).nome, grupo, 16)
 		b.pressed.connect(escolher_classe.bind(id))
 		linha.add_child(b)
 		_botoes_classe[id] = b
@@ -281,12 +282,24 @@ func _montar_classe() -> Control:
 	return v
 
 
-func _botao_escolha(texto: String, grupo: ButtonGroup) -> Button:
+## Botões de escolha em linhas de `colunas` botões, que dividem a largura da coluna.
+func _grade_botoes(colunas: int) -> GridContainer:
+	var g := GridContainer.new()
+	g.columns = colunas
+	g.add_theme_constant_override(&"h_separation", 10 if colunas <= 4 else 6)
+	g.add_theme_constant_override(&"v_separation", 10)
+	return g
+
+
+func _botao_escolha(texto: String, grupo: ButtonGroup, tamanho_letra := 0) -> Button:
 	var b := Button.new()
 	b.text = texto
 	b.toggle_mode = true
 	b.button_group = grupo
-	b.custom_minimum_size = Vector2(150, 46)
+	b.custom_minimum_size = Vector2(96, 46)
+	b.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	if tamanho_letra > 0:
+		b.add_theme_font_size_override(&"font_size", tamanho_letra)
 	return b
 
 
