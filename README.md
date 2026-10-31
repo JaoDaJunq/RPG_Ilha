@@ -13,6 +13,7 @@ Co-op online de sobrevivência e exploração numa ilha de fantasia que reage ao
 - Personagens por peças (estilo Forager): cabeça, tronco, pezinhos e mãozinhas; o item da barra vai na mão. Cada classe começa com a sua arma.
 - Gosma curativa (2 gel de slime): botão direito com ela na mão recupera vida.
 - Animais (galinha, coelho, ovelha e javali): passeiam, fogem, o javali revida; deixam carne, pena, couro e ovo. Carne crua vira assada na fogueira.
+- Saque no chão (como no Minecraft): animais, slimes e baú quebrado soltam os itens no chão; é só chegar perto para pegar (o que não couber na mochila fica lá, e some depois de 5 minutos).
 - Personagem de frente, de perfil e de costas; 4 habilidades por classe. Balanceamento em [design/balanceamento.md](design/balanceamento.md).
 - Noite perigosa: slimes mais fortes no escuro, que fogem da luz e derretem ao amanhecer; derrotados deixam gel de slime.
 - Arte no estilo Tiny Swords:

@@ -42,6 +42,9 @@ func _ready() -> void:
 		if j != w.jogador:
 			(j as Player).ganhar_xp(25)  # o cliente sobe para o nível 2
 
+	# Um item caído no chão, longe de todos: o cliente tem que ver o mesmo item.
+	World.soltar_itens(w, w.centro + Vector2(-220, 140), [[&"couro", 2]])
+
 	# O anfitrião lança uma bola de fogo para o cliente ver.
 	await esperar(0.5)
 	w.jogador.mira_forcada = w.jogador.global_position + Vector2(-200, 0)
@@ -82,6 +85,7 @@ func _ready() -> void:
 	checar(relatorio.get("agilidade", 0) == Ficha.criar(&"ogro", &"arqueiro").valor(&"agilidade") + 1, "cliente vê a própria Agilidade subir (%s)" % relatorio.get("agilidade"))
 	checar(relatorio.get("antes_estado", -1) == ResourceNode.Estado.ESGOTADO, "quem entra depois vê a árvore já cortada")
 	checar(relatorio.get("noite", false), "quem entra depois recebe a noite que já tinha caído")
+	checar(relatorio.get("item_chao", []) == ["couro", 2], "cliente vê o item caído no chão com o item e a quantidade certos (%s)" % [relatorio.get("item_chao")])
 	if prints:
 		await salvar_print("rede/anfitriao.png")
 		await esperar(2.0)  # dá tempo do cliente salvar o print dele

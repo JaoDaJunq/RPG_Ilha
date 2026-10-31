@@ -48,7 +48,11 @@ func _ready() -> void:
 	for n in w.entidades.get_children():
 		if n is Slime and not String(n.name).begins_with("SlimeNoite"):
 			slimes += 1
+	var no_chao := []
+	for i in get_tree().get_nodes_in_group(&"itens_chao"):
+		no_chao = [String((i as ItemChao).item), (i as ItemChao).quantidade]
 	w.relatorio_teste.rpc_id(1, {
+		"item_chao": no_chao,
 		"jogadores": get_tree().get_nodes_in_group(&"jogadores").size(),
 		"slimes": slimes,
 		"madeira": p.inventario.quantidade_de(&"madeira"),

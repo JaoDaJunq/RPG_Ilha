@@ -48,7 +48,9 @@ func _ready() -> void:
 			if n is Hurtbox:
 				n.receber(1.0, &"fisico", p)
 	await esperar(0.1)
-	checar(inv.quantidade_de(&"pedra") == 5 and inv.quantidade_de(&"bau") == 1, "quebrar o baú devolve o que tinha dentro e o próprio baú")
+	checar(inv.quantidade_de(&"pedra") == 0 and inv.quantidade_de(&"bau") == 1, "quebrar o baú devolve o próprio baú e solta o conteúdo no chão")
+	await pegar_do_chao(p)
+	checar(inv.quantidade_de(&"pedra") == 5, "pegar do chão devolve o que tinha dentro do baú")
 	terminar()
 
 

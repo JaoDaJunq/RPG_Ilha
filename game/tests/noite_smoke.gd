@@ -29,6 +29,7 @@ func _ready() -> void:
 	# Derrotar dá gel de slime.
 	s.hurtbox.receber(999.0, &"fisico", p)
 	await esperar(0.1)
+	await pegar_do_chao(p)
 	checar(p.inventario.quantidade_de(&"gel_slime") >= 2, "quem derrotou ganhou gel de slime (%d)" % p.inventario.quantidade_de(&"gel_slime"))
 
 	# Outro slime da noite derrete quando amanhece.

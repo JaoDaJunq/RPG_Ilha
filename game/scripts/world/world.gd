@@ -10,6 +10,7 @@ const ARVORE := preload("res://scenes/world/arvore.tscn")
 const PEDRA := preload("res://scenes/world/pedra.tscn")
 const SLIME := preload("res://scenes/enemies/slime.tscn")
 const JOGADOR := preload("res://scenes/player/player.tscn")
+const ITEM_CHAO := preload("res://scenes/world/item_chao.tscn")
 ## Nossas peças no estilo Tiny Swords (L14): acampamento e pedras/criaturas, quadros de
 ## 128x128 no MESMO pixel do pacote (escala 0,25 como as peças dele), base 8 px acima do fundo.
 const TEX_ACAMPAMENTO := preload("res://assets/sprites/tiny/acampamento.png")
@@ -75,6 +76,7 @@ var _registros: Dictionary = {}
 var _id_por_peer: Dictionary[int, String] = {}
 var _restaurar_depois: Dictionary[int, Dictionary] = {}
 var _tempo_salvar := 0.0
+var _contador_itens := 0
 var _gelo: Dictionary[Vector2i, float] = {}  # célula congelada → segundos restantes
 var _rng := RandomNumberGenerator.new()
 var _bosque := FastNoiseLite.new()  # onde ficam os bosques
@@ -168,6 +170,31 @@ static func dar_xp_em_volta(quem: Node, pos: Vector2, quantidade: int) -> void:
 	for j in quem.get_tree().get_nodes_in_group(&"jogadores"):
 		if (j as Player).global_position.distance_to(pos) <= RAIO_XP:
 			(j as Player).ganhar_xp(quantidade)
+
+
+## Solta itens no chão ao redor de `pos` (chamado pelo anfitrião): `itens` é uma lista de
+## [id, quantidade]; cada pilha vira uma ItemChao que salta para um ponto perto (até 12 px).
+static func soltar_itens(quem: Node, pos: Vector2, itens: Array) -> void:
+	var w: World = quem.get_tree().get_first_node_in_group(&"mundo")
+	if w == null or not w.multiplayer.is_server():
+		return
+	for e in itens:
+		var id := StringName(e[0])
+		var resto := int(e[1])
+		if not ItemData.existe(id):
+			continue
+		var pilha := maxi(1, ItemData.carregar(id).pilha)
+		while resto > 0:
+			var n := mini(resto, pilha)
+			resto -= n
+			w._contador_itens += 1
+			var i: ItemChao = ITEM_CHAO.instantiate()
+			i.name = "ItemChao%d" % w._contador_itens
+			i.item = id
+			i.quantidade = n
+			i.origem = pos
+			i.position = pos + Vector2.from_angle(randf() * TAU) * randf_range(4.0, 12.0)
+			w.entidades.add_child(i, true)
 
 
 ## Congela a água neste ponto (chamado pelo anfitrião, ex.: lança de gelo passando).

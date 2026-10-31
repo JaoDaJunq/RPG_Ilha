@@ -2,7 +2,7 @@ class_name Animal
 extends CharacterBody2D
 ## Animal da ilha (L22 + a ovelha do Tiny Swords). Passeia perto de onde nasceu; quando
 ## apanha, foge de quem bateu (o javali, ao contrário, investe contra quem bateu). Ao morrer,
-## o saque vai para quem deu o último golpe. Só o anfitrião decide; os outros recebem a
+## o saque cai no chão (ItemChao) para qualquer jogador pegar. Só o anfitrião decide; os outros recebem a
 ## posição, a animação e o lado (MultiplayerSynchronizer).
 
 const FOLHA := preload("res://assets/sprites/tiny/animais/animais.png")
@@ -117,14 +117,11 @@ func _piscar() -> void:
 
 
 func _on_morreu() -> void:
-	if _de_quem is Player:
-		var p := _de_quem as Player
-		var ganhou: Array[String] = []
-		for s in ESPECIES[especie].saque:
-			var n := randi_range(s[1], s[2])
-			if n > 0:
-				p.inventario.adicionar(s[0], n)
-				ganhou.append("%d %s" % [n, ItemData.carregar(s[0]).nome.to_lower()])
-		p.avisar("+" + ", ".join(ganhou), &"item")
+	var saque := []
+	for s in ESPECIES[especie].saque:
+		var n := randi_range(s[1], s[2])
+		if n > 0:
+			saque.append([s[0], n])
+	World.soltar_itens(self, global_position, saque)
 	World.efeito_todos(self, &"poeira", global_position)
 	queue_free()

@@ -23,6 +23,9 @@ func _ready() -> void:
 	checar(is_instance_valid(g) and g.global_position.distance_to(p.global_position) > antes + 8.0, "a galinha foge de quem bateu")
 	g.hurtbox.receber(9.0, &"fisico", p)
 	await esperar(0.2)
+	checar(get_tree().get_nodes_in_group(&"itens_chao").size() >= 2, "o saque caiu no chão (e não foi direto para a mochila)")
+	checar(p.inventario.quantidade_de(&"carne_crua") == 0, "nada na mochila antes de pegar")
+	await pegar_do_chao(p)
 	checar(p.inventario.quantidade_de(&"carne_crua") >= 1 and p.inventario.quantidade_de(&"pena") >= 1, "a galinha deixou carne crua e pena")
 
 	# O javali investe contra quem bateu.
