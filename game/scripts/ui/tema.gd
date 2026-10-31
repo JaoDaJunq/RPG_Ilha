@@ -57,6 +57,8 @@ static func tema() -> Theme:
 		t.set_constant(&"outline_size", tipo, 4)
 		t.set_font_size(&"font_size", tipo, 16)
 
+	_variacoes_de_botao(t)
+
 	# Campo de texto (IP), lista do OptionButton e dicas do mouse.
 	var campo := StyleBoxFlat.new()
 	campo.bg_color = COR_FUNDO
@@ -76,6 +78,7 @@ static func tema() -> Theme:
 	t.set_color(&"font_color", &"PopupMenu", COR_TEXTO)
 	t.set_color(&"font_hover_color", &"PopupMenu", COR_DESTAQUE)
 	t.set_color(&"font_color", &"TooltipLabel", COR_TEXTO)
+	_barras_e_controles(t)
 	_tema = t
 	return t
 
@@ -132,6 +135,164 @@ static func fatias(nome: String) -> Texture2D:
 	var tex := ImageTexture.create_from_image(junta)
 	_cache[nome] = tex
 	return tex
+
+
+# --- Home e menus -----------------------------------------------------------------------
+
+const COR_TINTA := Color("3d2a1a")  # texto escuro sobre o papel claro
+const COR_FACIL := Color("3f7d3a")
+const COR_NORMAL := Color("8a5f14")
+const COR_DIFICIL := Color("a82f2f")
+const COR_AVISO := Color("e7b36e")
+
+
+## Botões do menu: BotaoGrande (azul, Jogar/Configurações), BotaoVermelho (Sair/Apagar),
+## BotaoPequeno e BotaoPequenoVermelho (listas e formulários). Com o mouse em cima ou o
+## teclado em cima (foco) ficam mais claros; apertados, afundam.
+static func _variacoes_de_botao(t: Theme) -> void:
+	var tamanhos := {
+		&"BotaoGrande": [Vector4(30, 14, 30, 20), 30],
+		&"BotaoVermelho": [Vector4(30, 14, 30, 20), 30],
+		&"BotaoPequeno": [Vector4(18, 10, 18, 14), 18],
+		&"BotaoPequenoVermelho": [Vector4(18, 10, 18, 14), 18],
+	}
+	for nome in tamanhos:
+		var vermelho := String(nome).contains("Vermelho")
+		var familia := "Buttons/BigRedButton_" if vermelho else "Buttons/BigBlueButton_"
+		var margens: Vector4 = tamanhos[nome][0]
+		var normal := _caixa(familia + "Regular", margens, 22)
+		var destaque := _caixa(familia + "Regular", margens, 22)
+		destaque.modulate_color = Color(1.2, 1.2, 1.2)
+		var apertado := _caixa(familia + "Pressed", Vector4(margens.x, margens.y + 4, margens.z, margens.w - 4), 22)
+		var desligado := _caixa(familia + "Regular", margens, 22)
+		desligado.modulate_color = Color(0.55, 0.55, 0.6, 0.85)
+		for caixa in [normal, destaque, apertado, desligado]:
+			caixa.expand_margin_top = 8
+			caixa.expand_margin_bottom = 6
+			caixa.expand_margin_left = 6
+			caixa.expand_margin_right = 6
+		t.set_type_variation(nome, &"Button")
+		t.set_stylebox(&"normal", nome, normal)
+		t.set_stylebox(&"hover", nome, destaque)
+		t.set_stylebox(&"focus", nome, destaque)
+		t.set_stylebox(&"pressed", nome, apertado)
+		t.set_stylebox(&"hover_pressed", nome, apertado)
+		t.set_stylebox(&"disabled", nome, desligado)
+		t.set_font_size(&"font_size", nome, tamanhos[nome][1])
+		t.set_font(&"font", nome, fonte_negrito())
+		t.set_color(&"font_color", nome, COR_TEXTO)
+		t.set_color(&"font_focus_color", nome, Color.WHITE)
+		t.set_color(&"font_hover_color", nome, Color.WHITE)
+		t.set_color(&"font_pressed_color", nome, COR_DESTAQUE)
+		t.set_color(&"font_hover_pressed_color", nome, COR_DESTAQUE)
+		t.set_color(&"font_disabled_color", nome, Color(0.8, 0.8, 0.8, 0.7))
+		t.set_color(&"font_outline_color", nome, COR_CONTORNO)
+		t.set_constant(&"outline_size", nome, 5)
+	# Título dentro da fita e rótulos de cabeçalho.
+	t.set_type_variation(&"RotuloTitulo", &"Label")
+	t.set_font(&"font", &"RotuloTitulo", fonte_negrito())
+	t.set_color(&"font_color", &"RotuloTitulo", COR_TEXTO)
+	t.set_color(&"font_outline_color", &"RotuloTitulo", COR_CONTORNO)
+	t.set_constant(&"outline_size", &"RotuloTitulo", 10)
+	# Texto escuro, para as listas de papel claro (sem contorno).
+	t.set_type_variation(&"RotuloTinta", &"Label")
+	t.set_color(&"font_color", &"RotuloTinta", COR_TINTA)
+	t.set_constant(&"outline_size", &"RotuloTinta", 0)
+
+
+## Barra de rolagem e controle de volume.
+static func _barras_e_controles(t: Theme) -> void:
+	var trilho := StyleBoxFlat.new()
+	trilho.bg_color = Color(0.09, 0.09, 0.13, 0.55)
+	trilho.set_corner_radius_all(5)
+	trilho.content_margin_left = 10  # sem margem a barra de rolagem some (largura zero)
+	trilho.content_margin_right = 10
+	trilho.content_margin_top = 10
+	trilho.content_margin_bottom = 10
+	var alca := StyleBoxFlat.new()
+	alca.bg_color = Color("c9a24f")
+	alca.border_color = Color("f2dc9a")
+	alca.set_border_width_all(1)
+	alca.set_corner_radius_all(5)
+	var alca_destaque := alca.duplicate() as StyleBoxFlat
+	alca_destaque.bg_color = Color("e2bd62")
+	for tipo in [&"VScrollBar", &"HScrollBar"]:
+		t.set_stylebox(&"scroll", tipo, trilho)
+		t.set_stylebox(&"scroll_focus", tipo, trilho)
+		t.set_stylebox(&"grabber", tipo, alca)
+		t.set_stylebox(&"grabber_highlight", tipo, alca_destaque)
+		t.set_stylebox(&"grabber_pressed", tipo, alca_destaque)
+	# Volume: trilho escuro, parte cheia dourada e a bolinha azul do pacote.
+	var trilho_slider := StyleBoxFlat.new()
+	trilho_slider.bg_color = Color(0.09, 0.09, 0.13, 0.7)
+	trilho_slider.border_color = COR_BORDA
+	trilho_slider.set_border_width_all(2)
+	trilho_slider.set_corner_radius_all(6)
+	trilho_slider.content_margin_top = 8
+	trilho_slider.content_margin_bottom = 8
+	var cheio := StyleBoxFlat.new()
+	cheio.bg_color = Color("c9a24f")
+	cheio.set_corner_radius_all(6)
+	cheio.content_margin_top = 8
+	cheio.content_margin_bottom = 8
+	t.set_stylebox(&"slider", &"HSlider", trilho_slider)
+	t.set_stylebox(&"grabber_area", &"HSlider", cheio)
+	t.set_stylebox(&"grabber_area_highlight", &"HSlider", cheio)
+	var bolinha := bolinha_azul()
+	t.set_icon(&"grabber", &"HSlider", bolinha)
+	t.set_icon(&"grabber_highlight", &"HSlider", bolinha)
+	t.set_icon(&"grabber_disabled", &"HSlider", bolinha)
+
+
+## Bolinha azul do pacote (controle do volume), reduzida a 40 px.
+static func bolinha_azul() -> Texture2D:
+	if not _cache.has("bolinha"):
+		var img := (load(PASTA + "Buttons/TinyRoundBlueButton.png") as Texture2D).get_image()
+		img.convert(Image.FORMAT_RGBA8)
+		img.resize(40, 40, Image.INTERPOLATE_NEAREST)
+		_cache["bolinha"] = ImageTexture.create_from_image(img)
+	return _cache["bolinha"]
+
+
+## Negrito para os títulos e botões (a fonte padrão, engrossada).
+static func fonte_negrito() -> Font:
+	if not _cache.has("negrito"):
+		var f := FontVariation.new()
+		f.base_font = ThemeDB.fallback_font
+		f.variation_embolden = 0.55
+		_cache["negrito"] = f
+	return _cache["negrito"]
+
+
+## Papel claro (listas): como o painel, mas creme, para texto escuro.
+static func papel_claro() -> StyleBoxTexture:
+	var s := _caixa("Papers/RegularPaper", Vector4(16, 12, 16, 12), 20)
+	s.axis_stretch_horizontal = StyleBoxTexture.AXIS_STRETCH_MODE_TILE_FIT
+	s.axis_stretch_vertical = StyleBoxTexture.AXIS_STRETCH_MODE_TILE_FIT
+	return s
+
+
+## Fita do pacote (cabeçalhos e título). `fila`: 0 azul, 1 vermelha, 2 amarela, 3 roxa, 4
+## cinza. As pontas ficam como são e o meio estica; `escala` 1.0 é o tamanho original
+## (128 px de altura) e 0.5 a metade (pixel inteiro, como o resto da interface).
+static func fita(fila: int, escala := 0.5) -> StyleBoxTexture:
+	var chave := "fita%d_%.2f" % [fila, escala]
+	if not _cache.has(chave):
+		var img := (load(PASTA + "Ribbons/BigRibbons.png") as Texture2D).get_image()
+		img.convert(Image.FORMAT_RGBA8)
+		var junta := Image.create(128 + 64 + 128, 128, false, Image.FORMAT_RGBA8)
+		junta.blit_rect(img, Rect2i(0, fila * 128, 128, 128), Vector2i(0, 0))
+		junta.blit_rect(img, Rect2i(192, fila * 128, 64, 128), Vector2i(128, 0))
+		junta.blit_rect(img, Rect2i(320, fila * 128, 128, 128), Vector2i(192, 0))
+		if escala != 1.0:
+			junta.resize(int(320 * escala), int(128 * escala), Image.INTERPOLATE_NEAREST)
+		_cache[chave] = ImageTexture.create_from_image(junta)
+	var s := StyleBoxTexture.new()
+	s.texture = _cache[chave]
+	s.texture_margin_left = 128 * escala
+	s.texture_margin_right = 128 * escala
+	s.axis_stretch_horizontal = StyleBoxTexture.AXIS_STRETCH_MODE_TILE_FIT
+	return s
 
 
 static func _caixa(nome: String, conteudo: Vector4, canto := 32) -> StyleBoxTexture:
