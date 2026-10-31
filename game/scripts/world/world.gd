@@ -140,7 +140,7 @@ func registrar_jogador_local(p: Player) -> void:
 		var ips := ", ".join(Net.enderecos_locais())
 		Events.aviso.emit("Você é o anfitrião. Seus amigos entram pelo IP: %s" % (ips if ips != "" else "?"))
 	else:
-		Events.aviso.emit("Explore a clareira: segure E nas árvores e pedras.")
+		Events.aviso.emit("Explore a clareira: segure o clique nas árvores e pedras.")
 
 
 func ponto_de_nascer(indice: int) -> Vector2:  # abaixo da fogueira, sem encostar nela
@@ -309,7 +309,7 @@ func _cliente_pronto(raca: StringName, classe: StringName, id_jogador: String) -
 	for r in get_tree().get_nodes_in_group(&"recursos"):
 		(r as ResourceNode).enviar_estado_para(peer)
 	for c in _lista_construcoes():
-		_construir.rpc_id(peer, c[0], Vector2i(c[1], c[2]))  # o conteúdo dos baús fica só aqui
+		_construir.rpc_id(peer, c[0], Vector2i(c[1], c[2]), int(c[3]) if c[0] != "bau" and c.size() > 3 else 0)  # o conteúdo dos baús fica só aqui
 	for j in get_tree().get_nodes_in_group(&"jogadores"):
 		if j.name != str(peer):
 			(j as Player).enviar_progresso_para(peer)
@@ -386,8 +386,9 @@ func _carregar_mundo() -> void:
 		if r:
 			r.carregar_estado(int(recursos[nome][0]), int(recursos[nome][1]))
 	for c in dados.get("construcoes", []):
-		var p := _criar_peca(StringName(c[0]), Vector2i(int(c[1]), int(c[2])))
-		if p and c.size() > 3:
+		var baus: bool = c[0] == "bau"
+		var p := _criar_peca(StringName(c[0]), Vector2i(int(c[1]), int(c[2])), int(c[3]) if not baus and c.size() > 3 else 0)
+		if p and baus and c.size() > 3:
 			p.conteudo = c[3]
 	bau_acampamento.conteudo = dados.get("bau_acampamento", [])
 
@@ -893,7 +894,7 @@ func pode_construir(item_id: StringName, cel: Vector2i, quem: Node2D) -> bool:
 
 ## O jogador pede para pôr o item da mão no tile.
 @rpc("any_peer", "call_local", "reliable")
-func pedir_construir(cel: Vector2i) -> void:
+func pedir_construir(cel: Vector2i, rot := 0) -> void:
 	if not multiplayer.is_server():
 		return
 	var peer := multiplayer.get_remote_sender_id()
@@ -904,16 +905,16 @@ func pedir_construir(cel: Vector2i) -> void:
 	if not pode_construir(item_id, cel, quem):
 		return
 	quem.inventario.gastar(quem.barra_escolhida, 1)
-	_construir.rpc(String(item_id), cel)
+	_construir.rpc(String(item_id), cel, rot)
 
 
 @rpc("any_peer", "call_local", "reliable")
-func _construir(item_id: String, cel: Vector2i) -> void:
+func _construir(item_id: String, cel: Vector2i, rot := 0) -> void:
 	if Net.veio_do_anfitriao():
-		_criar_peca(StringName(item_id), cel)
+		_criar_peca(StringName(item_id), cel, rot)
 
 
-func _criar_peca(item_id: StringName, cel: Vector2i) -> Construcao:
+func _criar_peca(item_id: StringName, cel: Vector2i, rot := 0) -> Construcao:
 	var tipo := ItemData.carregar(item_id).construcao
 	var chave := _chave(cel, camada_de(tipo))
 	if _pecas.has(chave):
@@ -922,6 +923,7 @@ func _criar_peca(item_id: StringName, cel: Vector2i) -> Construcao:
 	c.tipo = tipo
 	c.item = item_id
 	c.celula = cel
+	c.lateral = rot == 1
 	c.name = "Peca_" + chave
 	c.position = Vector2(cel * T) + Vector2(T / 2.0, T)
 	if _pisos == null:
@@ -953,5 +955,5 @@ func _lista_construcoes() -> Array:
 	var lista := []
 	for chave in _pecas:
 		var c := _pecas[chave]
-		lista.append([String(c.item), c.celula.x, c.celula.y, c.conteudo] if c.tipo == &"bau" else [String(c.item), c.celula.x, c.celula.y])
+		lista.append([String(c.item), c.celula.x, c.celula.y, c.conteudo] if c.tipo == &"bau" else [String(c.item), c.celula.x, c.celula.y, 1 if c.lateral else 0])
 	return lista

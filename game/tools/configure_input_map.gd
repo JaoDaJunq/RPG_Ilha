@@ -8,12 +8,11 @@ const TECLAS := {
 	"mover_baixo": [KEY_S, KEY_DOWN],
 	"mover_esquerda": [KEY_A, KEY_LEFT],
 	"mover_direita": [KEY_D, KEY_RIGHT],
-	"interagir": [KEY_E],
-	# Habilidades da classe em Q, R, F e G; os números são da barra de itens (Minecraft).
+	# Habilidades da classe em Q, R, T e E; os números são da barra de itens (Minecraft).
 	"habilidade_1": [KEY_Q],
 	"habilidade_2": [KEY_R],
-	"habilidade_3": [KEY_F],
-	"habilidade_4": [KEY_G],
+	"habilidade_3": [KEY_T],
+	"habilidade_4": [KEY_E],
 	"barra_1": [KEY_1],
 	"barra_2": [KEY_2],
 	"barra_3": [KEY_3],
@@ -24,14 +23,16 @@ const TECLAS := {
 	"barra_8": [KEY_8],
 	"barra_9": [KEY_9],
 	"mochila": [KEY_I, KEY_TAB],
-	"esquivar": [KEY_SPACE],
+	"esquivar": [KEY_SHIFT],  # o dash
 	"ficha": [KEY_C],
 	"alternar_noite": [KEY_N],
 	"alternar_som": [KEY_M],
 }
 
 const MOUSE := {
+	# Clique esquerdo: um clique abre baú e bancada; segurar corta, minera, quebra e golpeia.
 	"atacar": [MOUSE_BUTTON_LEFT],
+	"interagir": [MOUSE_BUTTON_LEFT],
 	"usar": [MOUSE_BUTTON_RIGHT],  # comer, beber, usar o item da mão
 }
 

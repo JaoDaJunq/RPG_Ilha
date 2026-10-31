@@ -207,7 +207,7 @@ func _decidir(alvo: Player, delta: float) -> Vector2:
 			if not _acertou_pulo and alvo and para_alvo.length() < 12.0:
 				_acertou_pulo = true
 				if alvo.vida.tomar_dano(dano_contato, &"fisico"):
-					alvo.avisar("O slime pulou em você! Esquive (Espaço) quando ele achatar.")
+					alvo.avisar("O slime pulou em você! Esquive (Shift) quando ele achatar.")
 			if _tempo_estado >= _TEMPO_PULO:
 				_recarga = recarga_contato
 				_mudar(Estado.PERSEGUINDO if ve_alvo else Estado.PASSEANDO)

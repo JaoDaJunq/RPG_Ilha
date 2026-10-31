@@ -1,7 +1,7 @@
 class_name Player
 extends CharacterBody2D
 ## Jogador: anda com WASD, mira com o mouse, segura E para coletar, clique para golpear,
-## Espaço para esquivar e 1–4 para as habilidades da classe.
+## Shift para o dash (esquiva) e Q, R, T, E para as habilidades da classe.
 ##
 ## Rede: o nome do nó é o id do jogador na rede. Cada jogador controla o próprio
 ## movimento (sincronizado pelo MultiplayerSynchronizer). Tudo que muda o mundo
@@ -143,15 +143,24 @@ func _unhandled_input(event: InputEvent) -> void:
 	for k in Inventory.BARRA:
 		if event.is_action_pressed(StringName("barra_%d" % (k + 1))):
 			barra_escolhida = k
+	# Rodinha: troca o item da barra; com uma peça de construção na mão, gira a peça.
 	if event is InputEventMouseButton and event.pressed and not Input.is_key_pressed(KEY_CTRL):
-		if event.button_index == MOUSE_BUTTON_WHEEL_DOWN:
-			barra_escolhida = (barra_escolhida + 1) % Inventory.BARRA
-		elif event.button_index == MOUSE_BUTTON_WHEEL_UP:
-			barra_escolhida = (barra_escolhida + Inventory.BARRA - 1) % Inventory.BARRA
+		var giro := 1 if event.button_index == MOUSE_BUTTON_WHEEL_DOWN else (-1 if event.button_index == MOUSE_BUTTON_WHEEL_UP else 0)
+		if giro != 0:
+			var item := item_na_mao()
+			if item and item.construcao in [&"parede", &"porta"]:
+				rotacao = 1 - rotacao
+			else:
+				barra_escolhida = (barra_escolhida + giro + Inventory.BARRA) % Inventory.BARRA
 	if event.is_action_pressed(&"usar"):
 		_pedir_usar.rpc_id(1, barra_escolhida)
+	# Clique esquerdo: pôr a peça da mão; abrir baú ou bancada (um clique); segurar em árvore
+	# ou pedra coleta (_processar_interacao); em qualquer outro lugar, golpeia (e repete
+	# enquanto segura, para quebrar construções e lutar).
 	if event.is_action_pressed(&"atacar"):
-		if not _construir_aqui():
+		if _construir_aqui():
+			_ignorar_clique = true
+		elif not alvo_ao_alcance():
 			golpear()
 	elif event.is_action_pressed(&"esquivar"):
 		esquivar()
@@ -575,8 +584,26 @@ func _atualizar_alvo() -> void:
 
 
 func _processar_interacao(delta: float) -> void:
-	if not Input.is_action_pressed(&"interagir") or not alvo_ao_alcance():
+	# Clique esquerdo (fora da interface): segurar coleta árvore e pedra e golpeia o resto;
+	# um clique rápido (soltou antes de 0,3 s) em baú ou bancada abre; segurar neles quebra.
+	var antes := _segurando
+	_segurando = (Input.is_action_pressed(&"atacar") or Input.is_action_pressed(&"interagir")) \
+			and get_viewport().gui_get_hovered_control() == null
+	if _segurando:
+		_tempo_segurando += delta
+	elif antes:
+		if not _ignorar_clique and _tempo_segurando < 0.3 and alvo_ao_alcance() and not alvo.dono() is ResourceNode:
+			_pedir_interacao.rpc_id(1, alvo.dono().get_path())
+		_tempo_segurando = 0.0
+		_ignorar_clique = false
+	var em_recurso := alvo_ao_alcance() and alvo.dono() is ResourceNode
+	if not _segurando or not em_recurso:
 		_progresso = 0.0
+		var na_mao := item_na_mao()
+		var em_objeto := alvo_ao_alcance() and not em_recurso
+		if _segurando and not _ignorar_clique and (na_mao == null or na_mao.construcao == &"") \
+				and (not em_objeto or _tempo_segurando > 0.35):
+			golpear()  # golpes seguidos: lutar e quebrar construções
 		return
 	_progresso += delta
 	if _progresso >= _tempo_coleta():
@@ -656,7 +683,7 @@ func _construir_aqui() -> bool:
 	if item == null or item.construcao == &"":
 		return false
 	var w := get_tree().get_first_node_in_group(&"mundo") as World
-	w.pedir_construir.rpc_id(1, _tile_da_mira())
+	w.pedir_construir.rpc_id(1, _tile_da_mira(), rotacao)
 	return true
 
 
@@ -677,6 +704,7 @@ func _atualizar_previa() -> void:
 	var w := get_tree().get_first_node_in_group(&"mundo") as World
 	var cel := _tile_da_mira()
 	_previa.texture = item.icone
+	_previa.rotation = PI / 2.0 if rotacao == 1 and item.construcao in [&"parede", &"porta"] else 0.0
 	_previa.global_position = Vector2(cel * World.T) + Vector2(World.T, World.T) / 2.0
 	_previa.modulate = Color(0.6, 1.0, 0.6, 0.75) if w.pode_construir(item.id, cel, self) else Color(1.0, 0.45, 0.45, 0.6)
 
@@ -709,3 +737,11 @@ func _pedir_usar(espaco: int) -> void:
 		vida.curar(dados.cura)
 		World.efeito_todos(self, &"subir_nivel", global_position)
 		avisar("+%d de vida" % int(dados.cura), &"item")
+
+
+## O clique esquerdo foi apertado no mundo (não na mochila) e continua apertado.
+var _segurando := false
+var _tempo_segurando := 0.0
+var _ignorar_clique := false  # o clique pôs uma peça: não abre nem golpeia
+## Peça de construção girada (0 de frente, 1 de lado), escolhida com a rodinha.
+var rotacao := 0

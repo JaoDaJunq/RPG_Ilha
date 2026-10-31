@@ -13,7 +13,7 @@ const ICONES_ATRIBUTO := {
 	&"espirito": preload("res://assets/sprites/tiny/icones/icone_espirito.png"),
 }
 const ICONE_XP := preload("res://assets/sprites/tiny/icones/icone_experiencia.png")
-const TECLA_E := preload("res://assets/sprites/tiny/icones/tecla_e.png")
+var _dica_alvo: Label
 const COR_TEXTO := Tema.COR_TEXTO
 const COR_TEXTO_2 := Tema.COR_TEXTO_2
 
@@ -117,6 +117,7 @@ func _atualizar_tecla_e() -> void:
 		_tecla_e.visible = false
 		return
 	_tecla_e.visible = true
+	_dica_alvo.text = "segure" if alvo.dono() is ResourceNode else "clique"
 	_tecla_progresso.visible = jogador.progresso_interacao() > 0.0
 	_tecla_progresso.value = jogador.progresso_interacao() * 100.0
 	var dono := alvo.dono()
@@ -172,8 +173,8 @@ func _rodape_ficha() -> String:
 		"Dano físico x%.1f · mágico x%.1f" % [f.multiplicador_fisico(), f.multiplicador_magico()],
 		"%s: %s" % [f.raca.habilidade_nome, f.raca.habilidade_descricao],
 		"",
-		"WASD andar · E coletar · clique golpear · Espaço esquivar",
-		"1–4 habilidades · C ficha · N dia/noite · M som",
+		"WASD andar · clique abre, segurar coleta e golpeia · Shift dash",
+		"Q R T E habilidades · 1-9 itens · I mochila · C ficha · N dia/noite",
 	])
 
 
@@ -236,7 +237,7 @@ func _montar() -> void:
 	pv.add_child(_rotulo("C · ficha", 16, COR_TEXTO_2))
 
 	# Barra de baixo, no centro: os 9 itens (teclas 1-9, como no Minecraft) e, ao lado,
-	# a esquiva (Espaço) e as habilidades da classe (Q, R, F, G).
+	# o dash (Shift) e as habilidades da classe (Q, R, T, E).
 	var barra := HBoxContainer.new()
 	barra.add_theme_constant_override(&"separation", 4)
 	barra.set_anchors_and_offsets_preset(Control.PRESET_CENTER_BOTTOM, Control.PRESET_MODE_MINSIZE, 10)
@@ -258,10 +259,10 @@ func _montar() -> void:
 	var folga := Control.new()
 	folga.custom_minimum_size = Vector2(14, 0)
 	barra.add_child(folga)
-	_slot_esquiva = _slot("Espaço")
+	_slot_esquiva = _slot("Shift")
 	_slot_esquiva.icone.texture = ICONE_ESQUIVA
 	barra.add_child(_slot_esquiva.fundo)
-	for tecla in ["Q", "R", "F", "G"]:
+	for tecla in ["Q", "R", "T", "E"]:
 		var s := _slot(tecla)
 		barra.add_child(s.fundo)
 		_slots.append(s)
@@ -325,9 +326,13 @@ func _montar() -> void:
 	_tecla_e.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	_tecla_e.visible = false
 	_raiz.add_child(_tecla_e)
-	_tecla_e.add_child(_icone(TECLA_E, Vector2(32, 32)))
+	# Em cima do alvo: "segure" (árvore, pedra) ou "clique" (baú, bancada); o E virou habilidade.
+	_dica_alvo = _rotulo("", 14)
+	_dica_alvo.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	_dica_alvo.custom_minimum_size = Vector2(60, 0)
+	_tecla_e.add_child(_dica_alvo)
 	_tecla_progresso = _barra(Color("f0c860"), 4)
-	_tecla_progresso.custom_minimum_size = Vector2(32, 4)
+	_tecla_progresso.custom_minimum_size = Vector2(60, 4)
 	_tecla_e.add_child(_tecla_progresso)
 
 

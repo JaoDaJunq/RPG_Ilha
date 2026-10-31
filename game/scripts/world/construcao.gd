@@ -22,6 +22,8 @@ const CAMADA_PORTA := 1 << 6
 var tipo: StringName  # a construção (parede, porta...)
 var item: StringName  # o item que volta ao quebrar
 var celula: Vector2i
+## Parede ou porta girada (vista de lado, correndo de cima para baixo): rodinha do mouse.
+var lateral := false
 var _golpes := 0
 var _sprite: Sprite2D
 var _aberta := false
@@ -41,11 +43,11 @@ func _ready() -> void:
 	add_child(_sprite)
 	match tipo:
 		&"parede":
-			_mostrar(load(ARTE + "parede.png"))
-			_colisao(Vector2(16, 8), 1)
+			_mostrar(_arte("parede"))
+			_colisao(Vector2(6, 16) if lateral else Vector2(16, 8), 1)
 		&"porta":
-			_mostrar(load(ARTE + "porta_fechada.png"))
-			_colisao(Vector2(16, 8), CAMADA_PORTA)
+			_mostrar(_arte("porta_fechada"))
+			_colisao(Vector2(6, 16) if lateral else Vector2(16, 8), CAMADA_PORTA)
 		&"chao":
 			_mostrar(load(ARTE + "chao.png"))  # fica no nó Pisos, embaixo do resto (World)
 		&"tocha":
@@ -174,7 +176,7 @@ func _process(_delta: float) -> void:
 			perto = true
 	if perto != _aberta:
 		_aberta = perto
-		_mostrar(load(ARTE + ("porta_aberta.png" if perto else "porta_fechada.png")))
+		_mostrar(_arte("porta_aberta" if perto else "porta_fechada"))
 
 
 ## Só o anfitrião: cada golpe de jogador tira um pouco; no último, a peça volta como item.
@@ -196,3 +198,9 @@ func _on_atingido(_quantidade: float, dano: StringName, origem: Node) -> void:
 				(origem as Player).inventario.adicionar(StringName(e[0]), int(e[1]))
 		(origem as Player).inventario.adicionar(item, 1)
 		World.quebrar_construcao(self)
+
+
+## Arte da peça; girada usa a versão vista de lado (<nome>_lado.png), se existir.
+func _arte(nome: String) -> Texture2D:
+	var lado := ARTE + nome + "_lado.png"
+	return load(lado) if lateral and ResourceLoader.exists(lado) else load(ARTE + nome + ".png")
