@@ -4,7 +4,6 @@ extends CanvasLayer
 ## recursos, barra de habilidades, avisos, ficha (C), nomes dos outros jogadores e a
 ## teclinha E em cima do que dá para coletar quando o jogador está perto.
 
-const ITENS: Array[StringName] = [&"madeira", &"pedra", &"carvao"]
 const ICONE_ESQUIVA := preload("res://assets/sprites/tiny/icones/icone_esquiva.png")
 const ICONES_ATRIBUTO := {
 	&"forca": preload("res://assets/sprites/tiny/icones/icone_forca.png"),
@@ -20,7 +19,8 @@ const COR_TEXTO_2 := Tema.COR_TEXTO_2
 
 var jogador: Player
 var _raiz: Control
-var _contagens: Dictionary[StringName, Label] = {}
+var _itens_barra: Array[Dictionary] = []  # {fundo, selecionado, icone, sombra, qtd}
+var _mochila: Mochila
 var _titulo_personagem: Label
 var _retrato: TextureRect
 var _barra_vida: ProgressBar
@@ -50,6 +50,7 @@ func _ready() -> void:
 func configurar(p: Player) -> void:
 	jogador = p
 	jogador.inventario.mudou.connect(_atualizar_itens)
+	_mochila.configurar(p)
 	jogador.vida.mudou.connect(func(atual: float, maximo: float) -> void: _barra_vida.value = atual / maximo * 100.0)
 	jogador.progresso_mudou.connect(_atualizar_progresso)
 	_retrato.texture = _retrato_de(p)
@@ -58,6 +59,7 @@ func configurar(p: Player) -> void:
 		var tem := i < hab.size()
 		_slots[i].icone.texture = hab[i].icone if tem else null
 		_slots[i].fundo.tooltip_text = ("%s · %d de mana\n%s" % [hab[i].nome, hab[i].custo_mana, hab[i].descricao]) if tem else ""
+		_slots[i].fundo.visible = tem  # classe com 2 habilidades: F e G somem
 	_atualizar_progresso()
 	_atualizar_itens()
 
@@ -77,7 +79,13 @@ func ficha_visivel() -> bool:
 
 
 func _unhandled_input(event: InputEvent) -> void:
-	if event.is_action_pressed(&"ficha") and jogador:
+	if event.is_action_pressed(&"mochila") and jogador:
+		_mochila.alternar()
+		get_viewport().set_input_as_handled()
+	elif event.is_action_pressed(&"ui_cancel") and _mochila.aberta():
+		_mochila.fechar()
+		get_viewport().set_input_as_handled()
+	elif event.is_action_pressed(&"ficha") and jogador:
 		_atualizar_progresso()
 		_ficha.visible = not _ficha.visible
 
@@ -94,6 +102,8 @@ func _process(delta: float) -> void:
 		_slots[i].sombra.anchor_top = 1.0 - jogador.recarga_restante(i)
 		_slots[i].selecionado.visible = jogador._carregando == i
 	_slot_esquiva.sombra.anchor_top = 1.0 - jogador.recarga_esquiva_restante()
+	for k in _itens_barra.size():
+		_itens_barra[k].selecionado.visible = k == jogador.barra_escolhida
 	_carga.visible = carga >= 0.0
 	_carga.value = carga * 100.0
 	_atualizar_tecla_e()
@@ -136,9 +146,15 @@ func _atualizar_nomes() -> void:
 			_nomes.erase(p)
 
 
+## A barra de itens mostra os espaços 0-8 do inventário.
 func _atualizar_itens() -> void:
-	for id in _contagens:
-		_contagens[id].text = str(jogador.inventario.quantidade_de(id))
+	var inv := jogador.inventario
+	for k in _itens_barra.size():
+		var id := inv.item_em(k)
+		var dados := ItemData.carregar(id) if ItemData.existe(id) else null
+		_itens_barra[k].icone.texture = dados.icone if dados else null
+		_itens_barra[k].qtd.text = str(inv.qtd_em(k)) if inv.qtd_em(k) > 1 else ""
+		_itens_barra[k].fundo.tooltip_text = dados.nome if dados else ""
 
 
 func _texto_ficha() -> String:
@@ -219,42 +235,39 @@ func _montar() -> void:
 	pv.add_child(_linha_com_icone(ICONE_XP, _barra_xp))
 	pv.add_child(_rotulo("C · ficha", 16, COR_TEXTO_2))
 
-	# Recursos (cima-direita).
-	var recursos := _painel()
-	recursos.grow_horizontal = Control.GROW_DIRECTION_BEGIN
-	recursos.set_anchors_and_offsets_preset(Control.PRESET_TOP_RIGHT, Control.PRESET_MODE_MINSIZE, 12)
-	var linha := HBoxContainer.new()
-	linha.add_theme_constant_override(&"separation", 10)
-	recursos.add_child(linha)
-	for id in ITENS:
-		var dados := ItemData.carregar(id)
-		var icone := _icone(dados.icone, Vector2(40, 36))
-		icone.modulate = dados.cor_icone
-		icone.tooltip_text = dados.nome
-		icone.mouse_filter = Control.MOUSE_FILTER_PASS
-		linha.add_child(icone)
-		var n := _rotulo("0", 16)
-		n.custom_minimum_size = Vector2(28, 0)
-		linha.add_child(n)
-		_contagens[id] = n
-
-	# Barra de habilidades (embaixo, no centro).
+	# Barra de baixo, no centro: os 9 itens (teclas 1-9, como no Minecraft) e, ao lado,
+	# a esquiva (Espaço) e as habilidades da classe (Q, R, F, G).
 	var barra := HBoxContainer.new()
-	barra.add_theme_constant_override(&"separation", 6)
+	barra.add_theme_constant_override(&"separation", 4)
 	barra.set_anchors_and_offsets_preset(Control.PRESET_CENTER_BOTTOM, Control.PRESET_MODE_MINSIZE, 10)
 	barra.grow_horizontal = Control.GROW_DIRECTION_BOTH
 	barra.grow_vertical = Control.GROW_DIRECTION_BEGIN
 	_raiz.add_child(barra)
+	for k in Inventory.BARRA:
+		var s := _slot(str(k + 1))
+		var qtd := _rotulo("", 14)
+		qtd.set_anchors_preset(Control.PRESET_FULL_RECT)
+		qtd.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
+		qtd.vertical_alignment = VERTICAL_ALIGNMENT_BOTTOM
+		qtd.offset_right = -6
+		qtd.offset_bottom = -3
+		s.fundo.add_child(qtd)
+		s.qtd = qtd
+		barra.add_child(s.fundo)
+		_itens_barra.append(s)
+	var folga := Control.new()
+	folga.custom_minimum_size = Vector2(14, 0)
+	barra.add_child(folga)
 	_slot_esquiva = _slot("Espaço")
 	_slot_esquiva.icone.texture = ICONE_ESQUIVA
 	barra.add_child(_slot_esquiva.fundo)
-	var folga := Control.new()
-	folga.custom_minimum_size = Vector2(10, 0)
-	barra.add_child(folga)
-	for i in 6:
-		var s := _slot(str(i + 1))
+	for tecla in ["Q", "R", "F", "G"]:
+		var s := _slot(tecla)
 		barra.add_child(s.fundo)
 		_slots.append(s)
+
+	_mochila = Mochila.new()
+	_raiz.add_child(_mochila)
 
 	# Aviso e carga, logo acima da barra.
 	_aviso = _rotulo("", 16)

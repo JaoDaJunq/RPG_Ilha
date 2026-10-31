@@ -82,7 +82,11 @@ static func tema() -> Theme:
 
 ## Papel escuro com cantos dourados (9 partes: os cantos não esticam).
 static func painel() -> StyleBoxTexture:
-	return _caixa("Papers/SpecialPaper", Vector4(22, 18, 22, 18))
+	var s := _caixa("Papers/SpecialPaper", Vector4(22, 18, 22, 18))
+	# O miolo do papel tem manchinhas: repetir em vez de esticar (esticadas viram borrões).
+	s.axis_stretch_horizontal = StyleBoxTexture.AXIS_STRETCH_MODE_TILE_FIT
+	s.axis_stretch_vertical = StyleBoxTexture.AXIS_STRETCH_MODE_TILE_FIT
+	return s
 
 
 ## Quadradinho azul de um espaço da barra de habilidades (peça única de 64 px).

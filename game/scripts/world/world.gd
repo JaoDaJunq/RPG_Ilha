@@ -616,7 +616,9 @@ func _objeto_acampamento(qual: int, pos: Vector2, colisao: Vector2) -> Node2D:
 	_ocupados.append(pos)
 	if colisao == Vector2.ZERO:
 		return _sprite(TEX_ACAMPAMENTO, regiao, pos, null, ESCALA_TS, PE_NOSSO)
-	var corpo := StaticBody2D.new()
+	# A bancada abre a fabricação 3x3 (segurar E). Nome fixo: igual em todos os jogadores.
+	var corpo: StaticBody2D = Bancada.new() if qual == Acamp.BANCADA else StaticBody2D.new()
+	corpo.name = "Acamp%d" % qual
 	corpo.position = pos
 	var forma := CollisionShape2D.new()
 	var ret := RectangleShape2D.new()

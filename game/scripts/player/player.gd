@@ -632,3 +632,10 @@ func item_na_mao() -> ItemData:
 func poder_da_mao(tipo: StringName) -> float:
 	var item := item_na_mao()
 	return item.poder if item and item.ferramenta == tipo else 1.0
+
+
+## O anfitrião manda o dono abrir a mochila (na bancada, com a grade 3x3).
+@rpc("any_peer", "call_local", "reliable")
+func abrir_mochila(na_bancada: bool) -> void:
+	if Net.veio_do_anfitriao() and eh_local():
+		Events.abrir_mochila.emit(na_bancada)
