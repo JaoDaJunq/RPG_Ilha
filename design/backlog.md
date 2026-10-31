@@ -63,22 +63,15 @@ Tudo o que foi pedido para testar funcionou. Observações:
 L07: laboratório Godot isolado em `art/piloto_c02/abrir.cmd`, captura real revisada em `evidence/piloto_c02/dia.png`. Recortes e escala de exibição preparados; terreno v2 simplificado. A01j permanece pendente de avaliação visual do João e integração no jogo principal. O laboratório usa poses paradas, sem combate/coleta; não equivale à conclusão da migração.
 
 - [x] A01i C02: João escolheu a proposta de pixel art fina. Conceito preservado em `art/conceitos/estilo/estilo_pixel_fino_v1.png`; pasta de aprovação atualizada. Desenho liso não escolhido.
-- [ ] A01j Lote piloto C02: Humano Mago, Ogro Arqueiro, árvore, pedra e terreno; definir resolução/escala coerentes com a câmera, comparar na mesma área e validar com captura real. Preservar detalhes de rosto e legibilidade dos recursos antes de refazer os demais assets.
 
 - [x] A01 Conceito visual (T06) → bíblia visual aprovada.
 - [x] A01b Lote L01 (aventureiro, árvore, pedras): aprovado e no jogo (29/10). Ferramenta `game/tools/importar_folha.gd` converte as folhas do Codex.
-- [ ] A01c Aventureiro redesenhado já no tamanho do jogo (~28 px): o L01 veio fino demais e perdeu detalhe no rosto ao reduzir pela metade.
 - [x] A01d Lote L02 (chão, acampamento, plantas, slime): aprovado e no jogo (29/10). Chão convertido com --preencher (sem grade).
 - [x] A01e Lotes L03 (personagens) e L04 (interface, ícones, armadilha): aprovados e no jogo (29/10).
-- [ ] A01f L05 (costas, perfil e caminhada dos 6 personagens): no jogo para o João ver; aguardando aprovação. Ogros com "presinhas" que parecem lágrimas.
-- [ ] A01h L06 (chão liso): no jogo; aguardando aprovação. As divisas entre grama, areia, terra e água agora são suaves e curvas (shader `chao_suave`), sem degraus de tile; a arte de bordas do L06 foi descartada.
-- [ ] A01k L08 piloto SIMPLES (sentido do Forager: formas grandes, 4 cores por objeto, contorno de 1 px, arte pedida já no tamanho final). Teste no jogo em `tests/piloto_simples.tscn` (zoom 4), prints em `evidence/piloto_simples/`. Aguardando o João escolher entre L07 (pixel fino) e L08 (simples). Falta: terra e grama lisa próprias, água sem grade de risquinhos, presas do Ogro.
+- [x] A01f L05 (costas, perfil e caminhada): substituído pelos personagens do L15 (estilo Tiny Swords).
 - [x] A01l **Jogo migrado para o estilo Tiny Swords (30/10)**: terreno, espuma, árvores, tocos, arbustos e interface do pacote; câmera em zoom 4. Provisório: árvore queimada só escurece, sem marca de machado; beira da ilha em degraus (terreno em blocos).
 - [x] A01m Personagens próprios no estilo Tiny Swords (L15, 30/10): os 6 (Humano e Ogro x Guerreiro, Mago, Arqueiro) com parado, respirando, 2 passos, preparando e golpe, de perfil. Ilustração do Codex pixelizada aqui na densidade do pacote. No jogo; aguardando o João testar.
 - [x] A01n Acampamento, pedras, cogumelo e slime refeitos (L14) e efeitos, gelo, armadilha e ícones (L16) no estilo Tiny Swords, comparados lado a lado com o pacote. No jogo; aguardando o João testar.
 - [ ] A01o Próximos: animação de dano e de coletar dos personagens, mais quadros de caminhada (hoje 2 passos), árvore queimada própria, marca de machado.
+- [ ] A01p *(guardado, 31/10)* Mais efeitos com o Pixelbolt (receitas em `art/fx_receitas/`): fogo na fogueira e nas árvores, fumaça, respingo na água, golpe do guerreiro, cura, raio. O João pediu para esperar.
 - [ ] A01g Fonte pixel própria (a do pacote placeholder tinha o "i" quebrado; hoje usa a fonte padrão do Godot). Ex.: Pixelify Sans (OFL), precisa de autorização para baixar.
-- [ ] A02 Tileset da clareira (grama, terra, areia, água) no padrão aprovado.
-- [ ] A03 Personagem provisório próprio (4 direções: parado, andar, atacar, coletar).
-- [ ] A04 Árvore (inteira, sendo cortada, toco, queimada), pedra, slime.
-- [ ] A05 Efeitos: bola de fogo, chamas na árvore, acerto.
