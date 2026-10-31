@@ -189,6 +189,7 @@ func _process(delta: float) -> void:
 	if not multiplayer.has_multiplayer_peer() or not multiplayer.is_server():
 		return
 	_process_salvar(delta)
+	_process_noite(delta)
 	if _gelo.is_empty():
 		return
 	for cel in _gelo.keys():
@@ -592,6 +593,8 @@ func _tile_ts(v: int) -> Vector2i:
 
 func _montar_acampamento() -> void:
 	var fogueira := _objeto_acampamento(Acamp.FOGUEIRA, centro + Vector2(0, 12), Vector2.ZERO)
+	fogueira.add_to_group(&"luz_protege")  # os slimes da noite não chegam perto
+	fogueira.set_meta(&"raio_luz", 72.0)
 	var luz := PointLight2D.new()
 	luz.texture = LUZ
 	luz.color = Color(1, 0.55, 0.25)
@@ -766,3 +769,60 @@ func _aplicar_ciclo(para_noite: bool, imediato: bool) -> void:
 		(luz as PointLight2D).enabled = noite
 	if not imediato:
 		Events.aviso.emit("A noite caiu. Fique perto da fogueira." if noite else "Amanheceu.")
+	if not noite and multiplayer.has_multiplayer_peer() and multiplayer.is_server():
+		for s in get_tree().get_nodes_in_group(&"inimigos"):
+			if s is Slime and s.noturno:
+				s.derreter()
+
+
+# --- Noite perigosa ----------------------------------------------------------------
+## À noite o anfitrião faz nascer slimes mais fortes no escuro, longe dos jogadores e da
+## luz (mais jogadores, mais slimes). A fogueira e as tochas protegem: o slime foge da luz
+## e não persegue quem está dentro dela. Ao amanhecer os slimes da noite derretem.
+const INTERVALO_NOITE := 6.0
+const LIMITE_NOITE := 4  # + 2 por jogador
+var _tempo_noite := 0.0
+var _nascidos_noite := 0
+
+
+func _process_noite(delta: float) -> void:
+	if not noite:
+		return
+	_tempo_noite += delta
+	if _tempo_noite < INTERVALO_NOITE:
+		return
+	_tempo_noite = 0.0
+	var jogadores := get_tree().get_nodes_in_group(&"jogadores")
+	var da_noite := 0
+	for s in get_tree().get_nodes_in_group(&"inimigos"):
+		if s is Slime and s.noturno:
+			da_noite += 1
+	if da_noite >= LIMITE_NOITE + 2 * jogadores.size():
+		return
+	var celulas: Array[Vector2i] = []
+	for cel in _tipo:
+		if _tipo[cel] == Chao.GRAMA:
+			celulas.append(cel)
+	for tentativa in 20:
+		var p := _ponto_em(celulas)
+		var longe := true
+		for j in jogadores:
+			if (j as Node2D).global_position.distance_to(p) < 150.0:
+				longe = false
+		if longe and luz_que_protege(self, p) == Vector2.INF:
+			_nascidos_noite += 1
+			var s: Slime = SLIME.instantiate()
+			s.name = "SlimeNoite%d" % _nascidos_noite
+			s.noturno = true
+			s.position = p
+			entidades.add_child(s, true)
+			return
+
+
+## Centro da luz que protege este ponto (fogueira, tocha), ou Vector2.INF se está no escuro.
+static func luz_que_protege(quem: Node, pos: Vector2) -> Vector2:
+	for luz in quem.get_tree().get_nodes_in_group(&"luz_protege"):
+		var n := luz as Node2D
+		if n.global_position.distance_to(pos) <= float(n.get_meta(&"raio_luz", 48.0)):
+			return n.global_position
+	return Vector2.INF

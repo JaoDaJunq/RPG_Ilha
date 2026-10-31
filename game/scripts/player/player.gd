@@ -80,6 +80,7 @@ func _ready() -> void:
 	_recargas.resize(habilidades().size())
 	_recargas.fill(0.0)
 	ponto_de_retorno = position
+	_montar_item_na_mao()
 	visual.sprite_frames = _montar_frames()
 	visual.play(animacao)
 	camera.enabled = eh_local()
@@ -131,6 +132,9 @@ func _physics_process(delta: float) -> void:
 	_atualizar_alvo()
 	_processar_interacao(delta)
 	_animar(entrada)
+	var na_mao := inventario.item_em(barra_escolhida)
+	if item_mao != na_mao:
+		item_mao = na_mao
 
 
 func _unhandled_input(event: InputEvent) -> void:
@@ -639,3 +643,53 @@ func poder_da_mao(tipo: StringName) -> float:
 func abrir_mochila(na_bancada: bool) -> void:
 	if Net.veio_do_anfitriao() and eh_local():
 		Events.abrir_mochila.emit(na_bancada)
+
+
+# --- Item na mão (F05) ------------------------------------------------------------
+## O item da barra aparece na mão (o ícone dele, no pixel do pacote) e gira a cada golpe,
+## como no Minecraft. `item_mao` é sincronizado: os outros jogadores veem o mesmo.
+var item_mao: StringName = &""
+var _na_mao: Sprite2D
+var _golpe_visto := false
+var _balanco: Tween
+const MAO := Vector2(6, -11)  # onde fica a mão da frente, olhando para a direita
+
+
+func _montar_item_na_mao() -> void:
+	_na_mao = Sprite2D.new()
+	_na_mao.centered = false
+	_na_mao.scale = Vector2(0.25, 0.25)
+	_na_mao.visible = false
+	add_child(_na_mao)
+
+
+func _process(_delta: float) -> void:
+	if _na_mao == null:
+		return
+	var dados := ItemData.carregar(item_mao) if ItemData.existe(item_mao) else null
+	_na_mao.visible = dados != null
+	if dados == null:
+		return
+	if _na_mao.texture != dados.icone:
+		_na_mao.texture = dados.icone
+	var w := float(dados.icone.get_width())
+	var h := float(dados.icone.get_height())
+	var esquerda := String(animacao).ends_with("esquerda")
+	_na_mao.flip_h = esquerda
+	# O ícone é desenhado na diagonal, com o cabo embaixo: o cabo fica na mão.
+	_na_mao.offset = Vector2(-w * (0.8 if esquerda else 0.2), -h * 0.8)
+	_na_mao.position = Vector2(-MAO.x if esquerda else MAO.x, MAO.y)
+	var golpeando := String(animacao).begins_with("golpe")
+	if golpeando and not _golpe_visto:
+		_balancar(esquerda)
+	_golpe_visto = golpeando
+
+
+func _balancar(esquerda: bool) -> void:
+	if _balanco:
+		_balanco.kill()
+	var lado := -1.0 if esquerda else 1.0
+	_na_mao.rotation = -0.7 * lado
+	_balanco = create_tween()
+	_balanco.tween_property(_na_mao, "rotation", 1.3 * lado, 0.12).set_ease(Tween.EASE_OUT)
+	_balanco.tween_property(_na_mao, "rotation", 0.0, 0.14)

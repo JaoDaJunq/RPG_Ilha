@@ -22,12 +22,15 @@ const XP_DERROTA := 10
 @export var animacao: StringName = &"parado"
 ## Congelado ou preso (sincronizado para todos verem a cor).
 @export var parado := false
+## Slime da noite: nasce no escuro, é mais forte e derrete quando amanhece.
+@export var noturno := false
 
 var _recarga := 0.0
 var _empurrao := Vector2.ZERO
 var _congelado := 0.0
 var _preso := 0.0
 var _dano_visivel := 0.0  # mostra o quadro de dano por um instante
+var _ultimo_atacante: Player
 
 @onready var visual: AnimatedSprite2D = $Visual
 @onready var vida: HealthComponent = $HealthComponent
@@ -46,6 +49,12 @@ func _ready() -> void:
 	SpriteSheets.adicionar_quadros(f, &"dano", [achatado], 1.0)
 	visual.sprite_frames = f
 	visual.play(animacao)
+	if noturno:
+		vida.maximo *= 1.6
+		vida.atual = vida.maximo
+		dano_contato *= 1.5
+		velocidade *= 1.15
+		raio_visao *= 1.4
 	if multiplayer.is_server():
 		hurtbox.atingido.connect(_on_atingido)
 		vida.morreu.connect(_on_morreu)
@@ -82,9 +91,15 @@ func _physics_process(delta: float) -> void:
 	parado = congelado() or preso()
 	var alvo := _jogador_mais_proximo()
 	var dir := Vector2.ZERO
-	if alvo and not parado:
+	# A luz protege da noite: o slime noturno foge se estiver dentro dela e não persegue quem
+	# está nela (os do dia não ligam).
+	var luz := World.luz_que_protege(self, global_position) if noturno else Vector2.INF
+	if luz != Vector2.INF and not parado:
+		dir = (global_position - luz).normalized()
+	elif alvo and not parado:
 		var para_alvo := alvo.global_position - global_position
-		if para_alvo.length() < raio_visao:
+		var alvo_na_luz := noturno and World.luz_que_protege(self, alvo.global_position) != Vector2.INF
+		if para_alvo.length() < raio_visao and not alvo_na_luz:
 			dir = para_alvo.normalized()
 			visual.flip_h = dir.x < 0.0
 		if para_alvo.length() < 12.0 and _recarga <= 0.0:
@@ -110,6 +125,8 @@ func _jogador_mais_proximo() -> Player:
 
 func _on_atingido(quantidade: float, tipo: StringName, origem: Node) -> void:
 	var dano := quantidade
+	if origem is Player:
+		_ultimo_atacante = origem
 	match tipo:
 		&"gelo":
 			_congelado = TEMPO_CONGELADO
@@ -142,6 +159,18 @@ func _piscar() -> void:
 
 
 func _on_morreu() -> void:
-	World.dar_xp_em_volta(self, global_position, XP_DERROTA)
-	World.avisar_todos(self, "Slime derrotado! +%d de experiência para quem estava perto." % XP_DERROTA)
+	var xp := XP_DERROTA * (2 if noturno else 1)
+	World.dar_xp_em_volta(self, global_position, xp)
+	World.avisar_todos(self, "Slime derrotado! +%d de experiência para quem estava perto." % xp)
+	# Saque: gel de slime para quem derrotou (o da noite deixa mais).
+	if is_instance_valid(_ultimo_atacante):
+		var gel := (2 if noturno else 1) + randi() % 2
+		_ultimo_atacante.inventario.adicionar(&"gel_slime", gel)
+		_ultimo_atacante.avisar("+%d gel de slime" % gel, &"item")
+	queue_free()
+
+
+## O sol derrete o slime da noite (só o anfitrião chama).
+func derreter() -> void:
+	World.efeito_todos(self, &"poeira", global_position)
 	queue_free()
