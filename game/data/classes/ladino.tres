@@ -1,0 +1,19 @@
+[gd_resource type="Resource" script_class="ClasseData" load_steps=7 format=3]
+
+[ext_resource type="Script" path="res://scripts/data/classe_data.gd" id="1_script"]
+[ext_resource type="Script" path="res://scripts/data/habilidade_data.gd" id="2_hab_script"]
+[ext_resource type="Resource" path="res://data/habilidades/golpe_furtivo.tres" id="3_hab"]
+[ext_resource type="Resource" path="res://data/habilidades/lamina_envenenada.tres" id="4_hab"]
+[ext_resource type="Resource" path="res://data/habilidades/bomba_fumaca.tres" id="5_hab"]
+[ext_resource type="Resource" path="res://data/habilidades/leque_adagas.tres" id="6_hab"]
+
+[resource]
+script = ExtResource("1_script")
+id = &"ladino"
+nome = "Ladino"
+familia = "Sombria"
+descricao = "Rápido e traiçoeiro: golpes pelas costas, veneno e fuga."
+atributos = Dictionary[StringName, int]({&"forca": 5, &"vitalidade": 5, &"agilidade": 8, &"intelecto": 3, &"espirito": 4})
+habilidades = Array[ExtResource("2_hab_script")]([ExtResource("3_hab"), ExtResource("4_hab"), ExtResource("5_hab"), ExtResource("6_hab")])
+ramo_a = "Assassino"
+ramo_b = "Trapaceiro"

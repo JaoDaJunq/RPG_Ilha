@@ -32,3 +32,34 @@ Machado não ajuda a minerar e picareta não ajuda a cortar.
 | Guerreiro | Investida | Giro | Bloqueio (6 mana, 10 s; 3 s com 60% menos dano) | Fúria (8 mana, 14 s; 5 s com +50% dano e +25% velocidade) |
 | Mago | Bola de fogo | Lança de gelo | Raio (10 mana, 3 s; atordoa 1,2 s) | Nova de gelo (12 mana, 8 s; congela em volta) |
 | Arqueiro | Tiro carregado | Armadilha | Chuva de flechas (10 mana, 6 s) | Bomba (9 mana, 5 s; explode em área, queima árvores) |
+
+## Raças e classes novas (31/10/2026)
+
+Raças (somam aos atributos da classe; a habilidade de raça está em `Ficha`):
+
+| Raça | Bônus | Habilidade |
+|---|---|---|
+| Elfo | Agilidade +2, Intelecto +1, Vitalidade −1 | Passo leve: anda 10% mais rápido (`Ficha.velocidade`) |
+| Anão | Vitalidade +2, Força +1, Agilidade −1 | Mineiro: quebra pedra 25% mais rápido (`Ficha.tempo_coleta(true)`, tempo ÷ 1,25; árvore não muda) |
+
+Classes (25 pontos de atributo, como as outras):
+
+| Classe | Atributos | Arma e roupas |
+|---|---|---|
+| Ladino (foco Agilidade) | Força 5, Vitalidade 5, Agilidade 8, Intelecto 3, Espírito 4 | Adagas (poder 1,8, golpe de espada), Colete e Bandana do ladino |
+| Clérigo (foco Espírito) | Força 4, Vitalidade 6, Agilidade 3, Intelecto 4, Espírito 8 | Maça (poder 1,5, golpe de espada), Túnica e Touca do clérigo |
+
+Habilidades (Q R T E):
+
+| Classe | Habilidade | Mana | Recarga | O que faz |
+|---|---|---|---|---|
+| Ladino | Golpe furtivo | 8 | 7 s | Avança até o inimigo da mira (alcance 4 blocos) e dá 2,5 de dano físico; dobra se ele não estava perseguindo o ladino |
+| Ladino | Lâmina envenenada | 6 | 14 s | 6 s de golpes envenenados: 0,6 de vida por segundo (x poder físico) durante 3 s |
+| Ladino | Bomba de fumaça | 8 | 16 s | 3 s: os inimigos perdem o ladino de vista e param de perseguir; ele fica semi-transparente |
+| Ladino | Leque de adagas | 9 | 5 s | 3 adagas em leque (16 graus entre elas), 1 de dano físico cada, alcance ~95 px |
+| Clérigo | Cura | 10 | 6 s | Cura ele e os aliados num raio de 3,5 blocos: 10 + 2 por ponto de Espírito |
+| Clérigo | Escudo sagrado | 8 | 12 s | 4 s com 50% menos dano para ele e os aliados em 3,5 blocos (não derruba um Bloqueio mais forte) |
+| Clérigo | Luz sagrada | 10 | 7 s | 2 de dano de luz em 2,5 blocos; triplo em slime da noite |
+| Clérigo | Bênção | 12 | 20 s | 8 s: ele e os aliados em 3,5 blocos recuperam 3 de vida por segundo |
+
+Veneno: um tique por segundo, 3 tiques; um golpe novo recomeça a contagem. Vale para slime e animal.

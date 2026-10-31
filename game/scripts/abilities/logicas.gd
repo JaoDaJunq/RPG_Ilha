@@ -1,6 +1,6 @@
 class_name Logicas
 extends RefCounted
-## As lógicas das habilidades da raiz de Guerreiro, Mago e Arqueiro.
+## As lógicas das habilidades da raiz de Guerreiro, Mago, Arqueiro, Ladino e Clérigo.
 ## Cada classe interna é apontada pelo campo `logica` de um HabilidadeData.
 
 const BOLA_DE_FOGO := preload("res://scenes/abilities/fireball.tscn")
@@ -8,6 +8,7 @@ const LANCA_GELO := preload("res://scenes/abilities/lanca_gelo.tscn")
 const FLECHA := preload("res://scenes/abilities/flecha.tscn")
 const ARMADILHA := preload("res://scenes/abilities/armadilha.tscn")
 const BOMBA := preload("res://scenes/abilities/bomba.tscn")
+const ADAGA := preload("res://scenes/abilities/adaga.tscn")
 
 
 static func lancar(cena: PackedScene, quem: Player, dir: Vector2, dano: float, velocidade_mult := 1.0) -> Projetil:
@@ -185,8 +186,151 @@ class Bomba extends HabilidadeLogica:
 				World.efeito_todos(quem, &"explosao", pos))
 
 
+## Ladino: avança até o inimigo perto do mouse e dá um golpe forte; dobra se ele não perseguia.
+class GolpeFurtivo extends HabilidadeLogica:
+	const RAIO_MIRA := 28.0
+	const MULTIPLICADOR := 2.0
+	const COLADO := 12.0  # px que sobram entre o ladino e o inimigo depois do avanço
+	const DURACAO_AVANCO := 0.12
+
+	func executar(quem: Player, hab: HabilidadeData, _dir: Vector2, alvo: Vector2, _carga: float) -> void:
+		var inimigo := Logicas.inimigo_na_mira(quem, alvo, hab.alcance, RAIO_MIRA)
+		if inimigo == null:
+			return
+		var area := inimigo.get_node_or_null("Hurtbox") as Hurtbox
+		if area == null:
+			return
+		var furtivo: bool = not (inimigo.has_method(&"persegue") and inimigo.persegue(quem))
+		var dano := dano_de(quem, hab) * (MULTIPLICADOR if furtivo else 1.0)
+		var onde := inimigo.global_position
+		var para := onde - quem.global_position
+		var anda := maxf(0.0, para.length() - COLADO)
+		if anda > 0.0:
+			quem.mover_por_habilidade(para.normalized() * anda, DURACAO_AVANCO)
+		World.efeito_todos(quem, &"poeira", quem.global_position)
+		area.receber(dano, &"fisico", quem)
+		quem.envenenar_atingido(area)
+		World.efeito_todos(quem, &"giro", onde + Vector2(0, -8))
+		if furtivo:
+			quem.avisar("Golpe furtivo! Dano dobrado.")
+
+
+## Ladino: por 6 s, os golpes envenenam (dano pequeno por segundo, por 3 s).
+class LaminaEnvenenada extends HabilidadeLogica:
+	const DURACAO := 6.0
+
+	func executar(quem: Player, hab: HabilidadeData, _dir: Vector2, _alvo: Vector2, _carga: float) -> void:
+		quem.envenenar_golpes(DURACAO, dano_de(quem, hab))
+		World.efeito_todos(quem, &"poeira", quem.global_position)
+
+
+## Ladino: por 3 s os inimigos perdem o jogador de vista e param de perseguir.
+class BombaFumaca extends HabilidadeLogica:
+	const DURACAO := 3.0
+
+	func executar(quem: Player, _hab: HabilidadeData, _dir: Vector2, _alvo: Vector2, _carga: float) -> void:
+		quem.esconder(DURACAO)
+		for desvio in [Vector2(-8, 2), Vector2(8, 2), Vector2(0, -6)]:
+			World.efeito_todos(quem, &"poeira", quem.global_position + desvio)
+
+
+## Ladino: três adagas em leque.
+class LequeAdagas extends HabilidadeLogica:
+	const ABERTURA := 0.28  # radianos (16 graus) entre uma adaga e a vizinha
+	const ADAGAS := 3
+
+	func executar(quem: Player, hab: HabilidadeData, dir: Vector2, _alvo: Vector2, _carga: float) -> void:
+		var dano := dano_de(quem, hab)
+		for k in ADAGAS:
+			Logicas.lancar(Logicas.ADAGA, quem, dir.rotated((k - (ADAGAS - 1) / 2.0) * ABERTURA), dano)
+
+
+## Clérigo: cura quem está perto (e ele mesmo).
+class Cura extends HabilidadeLogica:
+	const RAIO := 56.0
+	const BASE := 10.0
+	const POR_ESPIRITO := 2.0
+
+	static func quantidade(ficha: Ficha) -> float:
+		return BASE + POR_ESPIRITO * ficha.valor(&"espirito")
+
+	func executar(quem: Player, _hab: HabilidadeData, _dir: Vector2, _alvo: Vector2, _carga: float) -> void:
+		var cura := quantidade(quem.ficha)
+		for j in Logicas.jogadores_em_volta(quem, RAIO):
+			j.vida.curar(cura)
+			World.efeito_todos(j, &"subir_nivel", j.global_position + Vector2(0, -14))
+
+
+## Clérigo: ele e quem está perto tomam 50% menos dano por 4 s.
+class EscudoSagrado extends HabilidadeLogica:
+	const RAIO := 56.0
+	const REDUCAO := 0.5
+	const DURACAO := 4.0
+
+	func executar(quem: Player, _hab: HabilidadeData, _dir: Vector2, _alvo: Vector2, _carga: float) -> void:
+		for j in Logicas.jogadores_em_volta(quem, RAIO):
+			j.bloquear(REDUCAO, DURACAO)
+			World.efeito_preso_todos(j, &"escudo", DURACAO, Vector2(0, -9))
+
+
+## Clérigo: luz em volta; slimes da noite levam o triplo (isso fica no Slime).
+class LuzSagrada extends HabilidadeLogica:
+	const RAIO := 40.0
+
+	func executar(quem: Player, hab: HabilidadeData, _dir: Vector2, _alvo: Vector2, _carga: float) -> void:
+		var centro := quem.global_position + Vector2(0, -8)
+		acertar_em_volta(quem, centro, RAIO, dano_de(quem, hab), &"luz")
+		World.efeito_todos(quem, &"subir_nivel", quem.global_position + Vector2(0, -14))
+
+
+## Clérigo: por 8 s, ele e quem está perto recuperam vida aos poucos.
+class Bencao extends HabilidadeLogica:
+	const RAIO := 56.0
+	const DURACAO := 8.0
+	const VIDA_POR_SEGUNDO := 3.0
+
+	func executar(quem: Player, _hab: HabilidadeData, _dir: Vector2, _alvo: Vector2, _carga: float) -> void:
+		for j in Logicas.jogadores_em_volta(quem, RAIO):
+			j.abencoar(DURACAO, VIDA_POR_SEGUNDO)
+			World.efeito_todos(j, &"subir_nivel", j.global_position + Vector2(0, -14))
+
+
+## Jogadores (o próprio incluso) a até `raio` px de quem lançou: os aliados do Clérigo.
+static func jogadores_em_volta(quem: Player, raio: float) -> Array[Player]:
+	var l: Array[Player] = []
+	for n in quem.get_tree().get_nodes_in_group(&"jogadores"):
+		var p := n as Player
+		if p and not p.criando and p.global_position.distance_to(quem.global_position) <= raio:
+			l.append(p)
+	return l
+
+
+## O inimigo ou animal mais perto do ponto da mira (até `raio_mira` dele), desde que esteja a
+## até `alcance` px de quem lançou. Nulo se não houver.
+static func inimigo_na_mira(quem: Player, mira: Vector2, alcance: float, raio_mira: float) -> Node2D:
+	var melhor: Node2D = null
+	var menor := raio_mira
+	for n in quem.get_tree().get_nodes_in_group(&"inimigos") + quem.get_tree().get_nodes_in_group(&"animais"):
+		var e := n as Node2D
+		if e == null or e.is_queued_for_deletion() or e.global_position.distance_to(quem.global_position) > alcance:
+			continue
+		var d := e.global_position.distance_to(mira)
+		if d <= menor:
+			menor = d
+			melhor = e
+	return melhor
+
+
 static func criar(nome: StringName) -> HabilidadeLogica:
 	match nome:
+		&"GolpeFurtivo": return GolpeFurtivo.new()
+		&"LaminaEnvenenada": return LaminaEnvenenada.new()
+		&"BombaFumaca": return BombaFumaca.new()
+		&"LequeAdagas": return LequeAdagas.new()
+		&"Cura": return Cura.new()
+		&"EscudoSagrado": return EscudoSagrado.new()
+		&"LuzSagrada": return LuzSagrada.new()
+		&"Bencao": return Bencao.new()
 		&"Investida": return Investida.new()
 		&"Giro": return Giro.new()
 		&"BolaDeFogo": return BolaDeFogo.new()

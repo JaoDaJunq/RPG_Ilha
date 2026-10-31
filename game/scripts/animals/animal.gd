@@ -28,7 +28,13 @@ const NIVEIS := {&"galinha": 1, &"coelho": 1, &"ovelha": 1, &"javali": 2}
 @export var especie: StringName = &"galinha"
 @export var animacao: StringName = &"parado"
 @export var olhando_esquerda := false
+## Envenenado (sincronizado para todos verem a cor verde).
+@export var envenenado := false
 
+# Veneno (Lâmina envenenada do Ladino): uma pancada de `_veneno_dano` por segundo.
+var _veneno_golpes := 0
+var _veneno_espera := 0.0
+var _veneno_dano := 0.0
 var _casa := Vector2.INF
 var _destino := Vector2.INF
 var _tempo := 0.0
@@ -73,8 +79,38 @@ func _ready() -> void:
 		vida.morreu.connect(_on_morreu)
 
 
+## Só o anfitrião chama (Lâmina envenenada): perde `dano` de vida por segundo durante
+## `segundos` (um golpe novo recomeça a contagem).
+func envenenar(segundos: float, dano: float) -> void:
+	_veneno_golpes = maxi(1, roundi(segundos))
+	_veneno_espera = 1.0
+	_veneno_dano = dano
+	envenenado = true
+
+
+## Está atrás deste jogador? (Golpe furtivo: quem não persegue leva o dobro.) Só o javali
+## bravo persegue, e só quem bateu nele e ainda não sumiu de vista.
+func persegue(jogador: Node) -> bool:
+	return ESPECIES[especie].get("bravo", false) and _assustado > 0.0 and _de_quem == jogador
+
+
+func _processar_veneno(delta: float) -> void:
+	if _veneno_golpes <= 0:
+		return
+	_veneno_espera -= delta
+	if _veneno_espera > 0.0:
+		return
+	_veneno_espera += 1.0
+	_veneno_golpes -= 1
+	if _veneno_golpes <= 0:
+		envenenado = false
+	if vida.tomar_dano(_veneno_dano, &"veneno"):
+		_piscar.rpc(vida.atual)
+
+
 func _physics_process(delta: float) -> void:
 	visual.flip_h = olhando_esquerda
+	visual.modulate = Color(0.65, 1.0, 0.55) if envenenado else Color.WHITE
 	if visual.animation != animacao:
 		visual.play(animacao)
 	if not multiplayer.is_server():
@@ -84,10 +120,16 @@ func _physics_process(delta: float) -> void:
 	_tempo += delta
 	_assustado = maxf(0.0, _assustado - delta)
 	_recarga = maxf(0.0, _recarga - delta)
+	_processar_veneno(delta)
+	if is_queued_for_deletion():
+		return  # o veneno o derrotou
 	var dados: Dictionary = ESPECIES[especie]
 	var dir := Vector2.ZERO
 	var rapidez: float = dados.vel
 	var recuando := false
+	# Bomba de fumaça: quem some de vista deixa de ser perseguido (ou de assustar o bicho).
+	if _assustado > 0.0 and is_instance_valid(_de_quem) and _de_quem is Player and (_de_quem as Player).escondido():
+		_assustado = 0.0
 	if _assustado > 0.0 and is_instance_valid(_de_quem):
 		var para := _de_quem.global_position - global_position
 		if dados.get("bravo", false):

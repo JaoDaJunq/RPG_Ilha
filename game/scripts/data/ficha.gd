@@ -9,6 +9,11 @@ const NOMES := {
 	&"intelecto": "Intelecto", &"espirito": "Espírito",
 }
 
+## Habilidades de raça: Elfo (Passo leve) anda 10% mais rápido; Anão (Mineiro) quebra pedra
+## 25% mais rápido.
+const ELFO_VELOCIDADE := 1.1
+const ANAO_MINERACAO := 1.25
+
 var raca: RacaData
 var classe: ClasseData
 var valores: Dictionary[StringName, int] = {}
@@ -48,7 +53,7 @@ func regeneracao_mana() -> float:
 
 
 func velocidade() -> float:
-	return 68.0 + valor(&"agilidade") * 2.0
+	return (68.0 + valor(&"agilidade") * 2.0) * (ELFO_VELOCIDADE if raca.id == &"elfo" else 1.0)
 
 
 func multiplicador_fisico() -> float:
@@ -59,9 +64,11 @@ func multiplicador_magico() -> float:
 	return 1.0 + (valor(&"intelecto") - 5) * 0.1
 
 
-## Multiplica o tempo de cada golpe de coleta (menos é mais rápido).
-func tempo_coleta() -> float:
-	return clampf(1.0 - (valor(&"forca") - 5) * 0.05, 0.6, 1.3)
+## Multiplica o tempo de cada golpe de coleta (menos é mais rápido). `minerando`: o recurso
+## é pedra (o Anão, com o Mineiro, quebra 25% mais rápido).
+func tempo_coleta(minerando := false) -> float:
+	var t := clampf(1.0 - (valor(&"forca") - 5) * 0.05, 0.6, 1.3)
+	return t / ANAO_MINERACAO if minerando and raca.id == &"anao" else t
 
 
 func recarga_esquiva() -> float:

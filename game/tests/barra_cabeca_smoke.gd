@@ -158,7 +158,7 @@ func _descricao(w: World, p: Player) -> void:
 			vazias.append(h.id)
 		if h.dano > 0.0 and d.dano == "":
 			vazias.append(h.id + " (sem dano)")
-	checar(vazias.is_empty(), "as 12 habilidades têm descrição, números e efeitos (faltam: %s)" % ", ".join(vazias))
+	checar(vazias.is_empty(), "as 20 habilidades têm descrição, números e efeitos (faltam: %s)" % ", ".join(vazias))
 
 
 func _clicar_direito(fundo: Control) -> void:

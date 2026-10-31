@@ -53,8 +53,12 @@ func proteger(segundos: float) -> void:
 
 
 ## Toma menos dano por alguns segundos (Bloqueio): `fracao` 0,6 = 60% a menos.
+## Uma redução mais fraca não derruba a mais forte que ainda está valendo (Bloqueio + Escudo).
 func reduzir_dano(fracao: float, segundos: float) -> void:
-	_reducao = clampf(fracao, 0.0, 1.0)
+	fracao = clampf(fracao, 0.0, 1.0)
+	if _reducao_restante > 0.0 and fracao < _reducao:
+		return
+	_reducao = fracao
 	_reducao_restante = segundos
 
 
