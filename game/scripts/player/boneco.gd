@@ -15,6 +15,8 @@ const PASTA := "res://assets/sprites/tiny/bonecos/"
 const ARCO := preload("res://assets/sprites/tiny/itens/arco_puxando.png")
 const FLECHA := preload("res://assets/sprites/tiny/itens/flecha_deitada.png")
 const QUADRO_ARCO := 64
+## Raças que vestem as roupas de outra (mesmo corpo).
+const ROUPA_DE := {"elfo": "humano", "anao": "ogro"}
 
 var animation: StringName = &"parado_direita"
 ## Item da mão (id), definido pelo Player a cada quadro.
@@ -54,8 +56,10 @@ func vestir(aparencia: Dictionary, equipado: Dictionary) -> void:
 		raca = "humano"  # raça sem arte ainda
 		pasta = PASTA + "humano/"
 	var rosto := pasta + "rosto_%d/" % (int(aparencia.get("rosto", 0)) + 1)
-	var roupa := pasta + _classe_da_roupa(corpo, "") + "/"
-	var chapeu := pasta + _classe_da_roupa(String(equipado.get("cabeca", &"")), "") + "/"
+	# Elfo veste as roupas do humano e anão as do ogro (mesmo corpo, L25).
+	var doadora: String = ROUPA_DE.get(raca, raca)
+	var roupa := PASTA + doadora + "/" + _classe_da_roupa(corpo, "") + "/"
+	var chapeu := PASTA + doadora + "/" + _classe_da_roupa(String(equipado.get("cabeca", &"")), "") + "/"
 	var vistas := {}
 	for v in ["", "_frente", "_costas"]:
 		var pos := _ler_pecas(pasta + "base/pecas" + v + ".json")
@@ -78,6 +82,12 @@ func vestir(aparencia: Dictionary, equipado: Dictionary) -> void:
 			d.chapeu = load(chapeu + "cabeca" + v + ".png")
 			# O chapéu acompanha a cabeça: guarda o lugar dele em relação à cabeça base.
 			pos["chapeu"] = pc["cabeca"]
+			if doadora != raca:
+				# Chapéu de outra raça: vai junto com a cabeça (base) desta raça.
+				var cab_doadora := _ler_pecas(PASTA + doadora + "/base/pecas" + v + ".json")
+				var cab_esta := _ler_pecas(pasta + "base/pecas" + v + ".json")
+				if cab_doadora.has("cabeca"):
+					pos["chapeu"] += (cab_esta["cabeca"] as Vector2) - (cab_doadora["cabeca"] as Vector2)
 		vistas[v] = d
 	var pele := int(aparencia.get("pele", 0))
 	for v in vistas:
