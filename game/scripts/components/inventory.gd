@@ -35,6 +35,8 @@ var na_bancada := false
 ## Baú aberto (o dono vê os espaços 46-72). No anfitrião, `bau_aberto` é o nó do baú.
 var com_bau := false
 var bau_aberto: Node
+## Itens que faltavam na receita escolhida; usados só como sombras pela interface.
+var sombras_receita: Dictionary[int, StringName] = {}
 
 
 func _init() -> void:
@@ -167,6 +169,10 @@ func pedir_fechar() -> void:
 	_pedido_fechar.rpc_id(1)
 
 
+func pedir_receita(resultado: StringName) -> void:
+	_pedido_receita.rpc_id(1, resultado)
+
+
 func pedir_bancada(ligada: bool) -> void:
 	_pedido_bancada.rpc_id(1, ligada)
 
@@ -187,6 +193,8 @@ func _pedido_clique(espaco: int, direito: bool, rapido: bool) -> void:
 		_clique_direito(espaco)
 	else:
 		_clique_esquerdo(espaco)
+	if espaco >= GRADE and espaco < MAO and _ids[espaco] != &"":
+		sombras_receita.erase(espaco)
 	_enviar()
 
 
@@ -231,7 +239,104 @@ func _pedido_fechar() -> void:
 			_ids[i] = &""
 			_qtds[i] = 0
 	na_bancada = false
+	sombras_receita.clear()
 	_enviar()
+
+
+@rpc("any_peer", "call_local", "reliable")
+func _pedido_receita(resultado: StringName) -> void:
+	if not _pedido_do_dono():
+		return
+	var receita: ReceitaData = null
+	for candidata in ReceitaData.todas():
+		if candidata.resultado == resultado and _receita_cabe(candidata):
+			receita = candidata
+			break
+	if receita == null:
+		return
+	var indices: Array[int] = []
+	if na_bancada:
+		for k in 9:
+			indices.append(GRADE + k)
+	else:
+		indices = GRADE_2X2.duplicate()
+	# Simula a devolução primeiro para não perder itens se a mochila estiver cheia.
+	var ids_teste: Array[StringName] = _ids.duplicate()
+	var qtds_teste: PackedInt32Array = _qtds.duplicate()
+	for i in indices:
+		if ids_teste[i] != &"":
+			var sobra_teste: int = _guardar_em(ids_teste, qtds_teste, ids_teste[i], qtds_teste[i], 0, GUARDAR)
+			if sobra_teste > 0:
+				return
+			ids_teste[i] = &""
+			qtds_teste[i] = 0
+	_ids = ids_teste
+	_qtds = qtds_teste
+	var alvos: Dictionary[int, StringName] = _posicoes_receita(receita, indices.size())
+	sombras_receita.clear()
+	for espaco in alvos:
+		var item: StringName = alvos[espaco]
+		var origem: int = _buscar_item_guardado(item)
+		if origem < 0:
+			sombras_receita[espaco] = item
+		else:
+			_ids[espaco] = item
+			_qtds[espaco] = 1
+			_tirar(origem, 1)
+	_enviar()
+
+
+func _receita_cabe(receita: ReceitaData) -> bool:
+	if receita.sem_forma:
+		return receita.ingredientes.size() <= (9 if na_bancada else 4)
+	if receita.padrao.is_empty() or receita.padrao[0].is_empty():
+		return false
+	return receita.padrao.size() <= (3 if na_bancada else 2) and receita.padrao[0].length() <= (3 if na_bancada else 2)
+
+
+func _posicoes_receita(receita: ReceitaData, total: int) -> Dictionary[int, StringName]:
+	var alvos: Dictionary[int, StringName] = {}
+	var indices: Array[int] = GRADE_2X2.duplicate() if total == 4 else []
+	if total == 9:
+		for k in 9:
+			indices.append(GRADE + k)
+	if receita.sem_forma:
+		for k in receita.ingredientes.size():
+			alvos[indices[k]] = receita.ingredientes[k]
+		return alvos
+	for y in receita.padrao.size():
+		for x in receita.padrao[y].length():
+			var letra: String = receita.padrao[y][x]
+			if letra != " ":
+				alvos[indices[y * (3 if total == 9 else 2) + x]] = receita.chave.get(letra, &"")
+	return alvos
+
+
+func _buscar_item_guardado(item: StringName) -> int:
+	for i in GUARDAR:
+		if _ids[i] == item and _qtds[i] > 0:
+			return i
+	return -1
+
+
+func _guardar_em(ids: Array[StringName], qtds: PackedInt32Array, item_id: StringName, quantidade: int, de: int, ate: int) -> int:
+	if not ItemData.existe(item_id):
+		return quantidade
+	var pilha: int = ItemData.carregar(item_id).pilha
+	for i in range(de, ate):
+		if ids[i] == item_id and qtds[i] < pilha:
+			var passa: int = mini(quantidade, pilha - qtds[i])
+			qtds[i] += passa
+			quantidade -= passa
+	for i in range(de, ate):
+		if quantidade <= 0:
+			break
+		if ids[i] == &"":
+			var passa: int = mini(quantidade, pilha)
+			ids[i] = item_id
+			qtds[i] = passa
+			quantidade -= passa
+	return quantidade
 
 
 @rpc("any_peer", "call_local", "reliable")
@@ -424,11 +529,11 @@ func _enviar() -> void:
 		return
 	var dono := get_parent().get_multiplayer_authority()
 	if dono != multiplayer.get_unique_id():
-		_receber.rpc_id(dono, _ids, _qtds, na_bancada, is_instance_valid(bau_aberto))
+		_receber.rpc_id(dono, _ids, _qtds, na_bancada, is_instance_valid(bau_aberto), sombras_receita)
 
 
 @rpc("any_peer", "reliable")
-func _receber(ids: Array, qtds: PackedInt32Array, bancada: bool, bau: bool) -> void:
+func _receber(ids: Array, qtds: PackedInt32Array, bancada: bool, bau: bool, sombras: Dictionary) -> void:
 	if not Net.veio_do_anfitriao():
 		return
 	for i in mini(ids.size(), ESPACOS):
@@ -436,6 +541,9 @@ func _receber(ids: Array, qtds: PackedInt32Array, bancada: bool, bau: bool) -> v
 	_qtds = qtds
 	na_bancada = bancada
 	com_bau = bau
+	sombras_receita.clear()
+	for espaco in sombras:
+		sombras_receita[int(espaco)] = StringName(sombras[espaco])
 	mudou.emit()
 
 

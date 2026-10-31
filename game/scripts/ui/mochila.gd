@@ -24,6 +24,10 @@ var _grade_bau: GridContainer
 var _cursor: Control
 var _cursor_icone: TextureRect
 var _cursor_qtd: Label
+var _lista_receitas: VBoxContainer
+var _filtro_receitas: CheckButton
+var _modo_atual: StringName = &"mochila"
+var _botoes_receitas: Array[Dictionary] = []
 
 
 func _ready() -> void:
@@ -59,6 +63,7 @@ func abrir(modo: StringName) -> void:
 	if jogador == null:
 		return
 	visible = true
+	_modo_atual = modo
 	_titulo.text = {&"mochila": "Mochila", &"bancada": "Bancada de trabalho", &"bau": "Baú"}.get(modo, "Mochila")
 	_fabricacao.visible = modo != &"bau"
 	_caixa_personagem.visible = modo == &"mochila"
@@ -132,6 +137,30 @@ func _montar() -> void:
 	_resultado.fundo.size_flags_vertical = Control.SIZE_SHRINK_CENTER
 	_resultado.fundo.custom_minimum_size = Vector2(TAM + 12, TAM + 12)
 	fab.add_child(_resultado.fundo)
+	var receitas := PanelContainer.new()
+	receitas.add_theme_stylebox_override(&"panel", Tema.painel())
+	receitas.custom_minimum_size = Vector2(230, 0)
+	fab.add_child(receitas)
+	var lista_vertical := VBoxContainer.new()
+	lista_vertical.add_theme_constant_override(&"separation", 4)
+	receitas.add_child(lista_vertical)
+	var cabecalho_receitas := _rotulo("Receitas", 17)
+	cabecalho_receitas.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	lista_vertical.add_child(cabecalho_receitas)
+	_filtro_receitas = CheckButton.new()
+	_filtro_receitas.text = "Só as que dá para fazer"
+	_filtro_receitas.add_theme_font_size_override(&"font_size", 13)
+	_filtro_receitas.toggled.connect(func(_ligado: bool) -> void: _atualizar_receitas())
+	lista_vertical.add_child(_filtro_receitas)
+	var rolagem := ScrollContainer.new()
+	rolagem.custom_minimum_size = Vector2(214, 210)
+	rolagem.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	lista_vertical.add_child(rolagem)
+	_lista_receitas = VBoxContainer.new()
+	_lista_receitas.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	_lista_receitas.add_theme_constant_override(&"separation", 3)
+	rolagem.add_child(_lista_receitas)
+	_montar_lista_receitas()
 
 	# Baú (27), só quando um baú está aberto.
 	var do_bau: Array[int] = []
@@ -235,9 +264,13 @@ func _espaco(indice: int) -> Dictionary:
 	fundo.gui_input.connect(_clique.bind(indice))
 	var icone := _icone()
 	fundo.add_child(icone)
+	var sombra := _icone()
+	sombra.modulate = Color(0.12, 0.13, 0.17, 0.72)
+	sombra.visible = false
+	fundo.add_child(sombra)
 	var qtd := _qtd()
 	fundo.add_child(qtd)
-	return {fundo = fundo, icone = icone, qtd = qtd}
+	return {fundo = fundo, icone = icone, sombra = sombra, qtd = qtd}
 
 
 func _icone() -> TextureRect:
@@ -285,17 +318,95 @@ func _atualizar() -> void:
 	var inv := jogador.inventario
 	for par in _espacos:
 		_mostrar(par[1], inv.item_em(par[0]), inv.qtd_em(par[0]))
+		par[1].sombra.texture = _textura(inv.sombras_receita.get(par[0], &""))
+		par[1].sombra.visible = inv.item_em(par[0]) == &"" and inv.sombras_receita.has(par[0])
+		if par[1].sombra.visible and ItemData.existe(inv.sombras_receita[par[0]]):
+			par[1].fundo.tooltip_text = "Falta: " + ItemData.carregar(inv.sombras_receita[par[0]]).nome
 	var r := inv.receita_atual()
 	_mostrar(_resultado, r.resultado if r else &"", r.quantidade if r else 0)
 	_cursor_icone.texture = _textura(inv.item_em(Inventory.MAO))
 	_cursor_qtd.text = str(inv.qtd_em(Inventory.MAO)) if inv.qtd_em(Inventory.MAO) > 1 else ""
+	_atualizar_receitas()
 
 
 func _mostrar(e: Dictionary, id: StringName, qtd: int) -> void:
 	e.icone.texture = _textura(id)
+	e.sombra.visible = false
 	e.qtd.text = str(qtd) if qtd > 1 else ""
 	e.fundo.tooltip_text = ItemData.carregar(id).nome if ItemData.existe(id) else ""
 
 
 func _textura(id: StringName) -> Texture2D:
 	return ItemData.carregar(id).icone if ItemData.existe(id) else null
+
+
+func _montar_lista_receitas() -> void:
+	for filho in _lista_receitas.get_children():
+		filho.queue_free()
+	_botoes_receitas.clear()
+	for receita in ReceitaData.todas():
+		var botao := Button.new()
+		botao.custom_minimum_size = Vector2(204, 42)
+		botao.alignment = HORIZONTAL_ALIGNMENT_LEFT
+		botao.theme_type_variation = &"BotaoPequeno"
+		botao.icon = _textura(receita.resultado)
+		botao.add_theme_constant_override("icon_max_width", 32)
+		botao.text = ItemData.carregar(receita.resultado).nome if ItemData.existe(receita.resultado) else String(receita.resultado)
+		botao.add_theme_font_size_override(&"font_size", 14)
+		botao.pressed.connect(_selecionar_receita.bind(receita.resultado))
+		_lista_receitas.add_child(botao)
+		_botoes_receitas.append({botao = botao, receita = receita})
+
+
+func _atualizar_receitas() -> void:
+	if _lista_receitas == null or jogador == null:
+		return
+	var grade_lado: int = 3 if _modo_atual == &"bancada" else 2
+	var itens: Dictionary[StringName, int] = jogador.inventario.itens()
+	var indices: Array[int] = []
+	if grade_lado == 3:
+		for k in 9:
+			indices.append(Inventory.GRADE + k)
+	else:
+		indices = Inventory.GRADE_2X2.duplicate()
+	for espaco in indices:
+		var id: StringName = jogador.inventario.item_em(espaco)
+		if id != &"":
+			itens[id] = itens.get(id, 0) + jogador.inventario.qtd_em(espaco)
+	for par in _botoes_receitas:
+		var receita: ReceitaData = par.receita
+		var cabe: bool = receita.sem_forma and receita.ingredientes.size() <= grade_lado * grade_lado
+		if not receita.sem_forma:
+			cabe = not receita.padrao.is_empty() and receita.padrao.size() <= grade_lado and receita.padrao[0].length() <= grade_lado
+		var faltas: Dictionary[StringName, int] = {}
+		if receita.sem_forma:
+			for item in receita.ingredientes:
+				faltas[item] = faltas.get(item, 0) + 1
+		else:
+			for linha in receita.padrao:
+				for x in linha.length():
+					var letra: String = linha[x]
+					if letra != " ":
+						var item: StringName = receita.chave.get(letra, &"")
+						faltas[item] = faltas.get(item, 0) + 1
+		var pode: bool = cabe
+		for item in faltas:
+			if itens.get(item, 0) < faltas[item]:
+				pode = false
+		var botao: Button = par.botao
+		botao.modulate = Color.WHITE if pode else Color(0.47, 0.49, 0.54, 0.78)
+		botao.visible = cabe and (not _filtro_receitas.button_pressed or pode)
+		if cabe and not pode:
+			var nome_faltando: String = ""
+			for item in faltas:
+				if itens.get(item, 0) < faltas[item]:
+					nome_faltando = ItemData.carregar(item).nome
+					break
+			botao.tooltip_text = "Falta: " + nome_faltando
+		else:
+			botao.tooltip_text = ""
+
+
+func _selecionar_receita(resultado: StringName) -> void:
+	if jogador != null:
+		jogador.inventario.pedir_receita(resultado)
