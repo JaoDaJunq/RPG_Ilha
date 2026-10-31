@@ -34,6 +34,25 @@ var _vistas := {}
 var _vista := ""
 
 
+## Customização (L24): `aparencia` = {raca, rosto (0 a 2), pele (0 a 2)} e `equipado` =
+## {cabeca: id do item ou &"", corpo: id do item ou &""}. Sem roupa, o boneco fica com a
+## roupinha branca da raça; cada peça de roupa troca o tronco ou põe o chapéu por cima.
+## PROVISÓRIO até a arte do L24 chegar: usa as peças antigas da classe da roupa do corpo
+## (roupa_<classe>), ou as do guerreiro sem roupa.
+func vestir(aparencia: Dictionary, equipado: Dictionary) -> void:
+	var raca: StringName = aparencia.get("raca", &"humano")
+	var corpo := String(equipado.get("corpo", &""))
+	var classe := corpo.trim_prefix("roupa_") if corpo.begins_with("roupa_") else "guerreiro"
+	configurar(raca, StringName(classe))
+
+
+## Retrato para o HUD (a cabeça do boneco).
+static func retrato(aparencia: Dictionary, equipado: Dictionary) -> Texture2D:
+	var corpo := String(equipado.get("corpo", &""))
+	var classe := corpo.trim_prefix("roupa_") if corpo.begins_with("roupa_") else "guerreiro"
+	return load(PASTA + "%s_%s/cabeca.png" % [aparencia.get("raca", &"humano"), classe])
+
+
 func configurar(raca: StringName, classe: StringName) -> void:
 	for c in get_children():
 		c.queue_free()
