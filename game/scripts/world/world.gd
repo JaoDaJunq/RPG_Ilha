@@ -55,6 +55,9 @@ enum Chao { AGUA, AREIA, GRAMA }
 @export var arquivo_salvo := Salvamento.PADRAO
 ## Salvamento automático a cada tantos segundos (anfitrião).
 @export var intervalo_salvar := 60.0
+## Só o cenário (chão, árvores, acampamento), sem rede, jogador, bichos nem HUD: é o fundo
+## vivo da Home.
+@export var somente_cenario := false
 
 const MENU := "res://scenes/ui/menu.tscn"
 
@@ -66,6 +69,8 @@ var jogador: Player
 var noite := false
 ## Dificuldade do mundo (a tela de criação define).
 var dificuldade := 1  # 0 fácil, 1 normal, 2 difícil
+## Nome do mundo (o que o jogador escolheu ao criar), para salvar junto.
+var nome_mundo := ""
 var centro := Vector2.ZERO
 var _tipo: Dictionary[Vector2i, int] = {}
 var _distancia: Dictionary[Vector2i, float] = {}
@@ -98,10 +103,25 @@ func _ready() -> void:
 	_montar_acampamento()
 	_espalhar()
 	_aplicar_ciclo(false, true)
+	if somente_cenario:
+		arquivo_salvo = ""
+		hud.visible = false
+		return
+	# O mundo escolhido no menu (se o teste ou o atalho não indicou outro arquivo).
+	if Net.mundo_arquivo != "" and arquivo_salvo == Salvamento.PADRAO:
+		arquivo_salvo = Net.mundo_arquivo
+		# Vale o que o menu escolheu; se o arquivo já tem nome e dificuldade, eles ganham (ver _carregar_mundo).
+		dificuldade = Net.mundo_dificuldade
+		nome_mundo = Net.mundo_nome
 
 	if Net.iniciar() != OK:
 		_voltar_ao_menu.call_deferred()
 		return
+	# Esc: menu de pausa. Fica como primeiro filho, para receber o Esc depois do HUD (que
+	# usa o Esc para fechar a mochila e a janelinha das habilidades).
+	var pausa := Pausa.new(self)
+	add_child(pausa)
+	move_child(pausa, 0)
 	multiplayer.peer_disconnected.connect(_on_peer_saiu)
 	multiplayer.connected_to_server.connect(func() -> void: _cliente_pronto.rpc_id(1, Net.raca, Net.classe, Net.id_jogador))
 	multiplayer.connection_failed.connect(_on_conexao_perdida.bind("Não foi possível conectar ao anfitrião."))
@@ -118,6 +138,8 @@ func _ready() -> void:
 
 
 func _unhandled_input(event: InputEvent) -> void:
+	if somente_cenario:
+		return
 	if event.is_action_pressed(&"alternar_noite"):
 		alternar_noite()
 
@@ -235,6 +257,8 @@ func eh_gelo(cel: Vector2i) -> bool:
 
 
 func _process(delta: float) -> void:
+	if somente_cenario:
+		return
 	if not multiplayer.has_multiplayer_peer() or not multiplayer.is_server():
 		return
 	_process_salvar(delta)
@@ -461,6 +485,7 @@ func salvar() -> bool:
 			recursos[String(rn.name)] = [e, rn.golpes_restantes()]
 	return Salvamento.gravar({
 		"semente": semente, "noite": noite,
+		"nome": nome_mundo, "dificuldade": dificuldade,
 		"recursos": recursos, "removidos": _removidos.duplicate(),
 		"construcoes": _lista_construcoes(),
 		"bau_acampamento": bau_acampamento.conteudo,
@@ -472,6 +497,8 @@ func _carregar_mundo() -> void:
 	var dados := Salvamento.ler(arquivo_salvo)
 	if dados.is_empty():
 		return
+	dificuldade = clampi(int(dados.get("dificuldade", dificuldade)), 0, 2)
+	nome_mundo = String(dados.get("nome", nome_mundo))
 	if int(dados.get("semente", semente)) != semente:
 		push_warning("O mundo salvo é de outra semente; começando um novo.")
 		return
@@ -510,6 +537,11 @@ func _notification(what: int) -> void:
 
 func _on_conexao_perdida(motivo: String) -> void:
 	Net.ultimo_erro = motivo
+	_voltar_ao_menu()
+
+
+## Sai do mundo para a Home, salvando antes (menu de pausa).
+func sair_para_o_menu() -> void:
 	_voltar_ao_menu()
 
 

@@ -65,6 +65,7 @@ func _ready() -> void:
 	layer = 10
 	Events.aviso.connect(mostrar_aviso)
 	_montar()
+	Configuracoes.mudou.connect(_atualizar_teclas)
 
 
 func configurar(p: Player) -> void:
@@ -178,10 +179,10 @@ func mostrar_descricao(indice: int) -> void:
 	var hab := jogador.habilidades()
 	var texto: Dictionary
 	if indice < 0:
-		texto = TextoHabilidade.de_esquiva(jogador.ficha)
+		texto = TextoHabilidade.de_esquiva(jogador.ficha, Configuracoes.tecla_de(&"esquivar"))
 		_dica_slot = _slot_esquiva.fundo
 	elif indice < hab.size():
-		texto = TextoHabilidade.de_habilidade(hab[indice], TECLAS_HABILIDADE[indice], jogador.ficha)
+		texto = TextoHabilidade.de_habilidade(hab[indice], Configuracoes.tecla_de(StringName("habilidade_%d" % (indice + 1))), jogador.ficha)
 		_dica_slot = _slots[indice].fundo
 	else:
 		return
@@ -285,8 +286,8 @@ func _rodape_ficha() -> String:
 		"Dano físico x%.1f · mágico x%.1f" % [f.multiplicador_fisico(), f.multiplicador_magico()],
 		"%s: %s" % [f.raca.habilidade_nome, f.raca.habilidade_descricao],
 		"",
-		"WASD andar · clique abre, segurar coleta e golpeia · Shift dash",
-		"Q R T E habilidades · 1-9 itens · I mochila · C ficha · N dia/noite",
+		"%s andar · clique abre, segurar coleta e golpeia · %s dash" % [_teclas_de_andar(), Configuracoes.tecla_de(&"esquivar")],
+		"%s habilidades · 1-9 itens · %s mochila · %s ficha · %s dia/noite" % [_teclas_de_habilidades(), Configuracoes.tecla_de(&"mochila"), Configuracoes.tecla_de(&"ficha"), Configuracoes.tecla_de(&"alternar_noite")],
 	])
 
 
@@ -409,7 +410,8 @@ func _montar() -> void:
 	barra.grow_vertical = Control.GROW_DIRECTION_BEGIN
 	_raiz.add_child(barra)
 	for k in Inventory.BARRA:
-		var s := _slot(str(k + 1))
+		var s := _slot(Configuracoes.tecla_de(StringName("barra_%d" % (k + 1))))
+		s.acao = StringName("barra_%d" % (k + 1))
 		var qtd := _rotulo("", 14)
 		qtd.set_anchors_preset(Control.PRESET_FULL_RECT)
 		qtd.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
@@ -425,13 +427,15 @@ func _montar() -> void:
 	barra.add_child(folga)
 	# Dash e habilidades recebem o mouse (STOP): o botão direito abre a descrição e não vira
 	# "usar item" no mundo.
-	_slot_esquiva = _slot("Shift", true)
+	_slot_esquiva = _slot(Configuracoes.tecla_de(&"esquivar"), true)
+	_slot_esquiva.acao = &"esquivar"
 	_slot_esquiva.icone.texture = ICONE_ESQUIVA
 	_slot_esquiva.fundo.tooltip_text = "Botão direito: detalhes"
 	_ligar_descricao(_slot_esquiva.fundo, -1)
 	barra.add_child(_slot_esquiva.fundo)
 	for i in TECLAS_HABILIDADE.size():
-		var s := _slot(TECLAS_HABILIDADE[i], true)
+		var s := _slot(Configuracoes.tecla_de(StringName("habilidade_%d" % (i + 1))), true)
+		s.acao = StringName("habilidade_%d" % (i + 1))
 		_ligar_descricao(s.fundo, i)
 		barra.add_child(s.fundo)
 		_slots.append(s)
@@ -521,6 +525,29 @@ func _montar() -> void:
 		dv.add_child(l)
 
 
+
+## Os nomes das teclas na barra de baixo seguem o que o jogador escolheu nas configurações.
+func _atualizar_teclas() -> void:
+	for s in _itens_barra + _slots + [_slot_esquiva]:
+		if s.has("acao") and s.acao != &"":
+			s.rotulo.text = Configuracoes.tecla_de(s.acao)
+	if jogador:
+		_ficha_rodape.text = _rodape_ficha()
+
+
+func _teclas_de_andar() -> String:
+	var nomes: Array[String] = []
+	for a in [&"mover_cima", &"mover_esquerda", &"mover_baixo", &"mover_direita"]:
+		nomes.append(Configuracoes.tecla_de(a))
+	return "".join(nomes)
+
+
+func _teclas_de_habilidades() -> String:
+	var nomes: Array[String] = []
+	for i in 4:
+		nomes.append(Configuracoes.tecla_de(StringName("habilidade_%d" % (i + 1))))
+	return " ".join(nomes)
+
 ## Um espaço da barra (quadradinho azul do pacote): fundo, ícone, sombra de recarga e
 ## tecla. O selecionado (carregando) ganha uma borda dourada.
 func _slot(tecla: String, parar_mouse := false) -> Dictionary:
@@ -562,7 +589,7 @@ func _slot(tecla: String, parar_mouse := false) -> Dictionary:
 	var num := _rotulo(tecla, 14, COR_TEXTO_2)
 	num.position = Vector2(7, 2)
 	fundo.add_child(num)
-	return {fundo = fundo, selecionado = selecionado, icone = icone, sombra = sombra}
+	return {fundo = fundo, selecionado = selecionado, icone = icone, sombra = sombra, rotulo = num, acao = &""}
 
 
 func _linha_com_icone(icone: Texture2D, barra: ProgressBar) -> HBoxContainer:

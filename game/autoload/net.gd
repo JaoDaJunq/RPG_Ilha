@@ -14,6 +14,11 @@ var porta := PORTA_PADRAO
 ## Personagem escolhido no menu (raça e classe).
 var raca: StringName = &"humano"
 var classe: StringName = &"guerreiro"
+## Mundo escolhido no menu (como no Minecraft): o arquivo, o nome e a dificuldade
+## (0 fácil, 1 normal, 2 difícil). Vazio = o mundo padrão (atalhos de linha de comando e testes).
+var mundo_arquivo := ""
+var mundo_nome := ""
+var mundo_dificuldade := 1
 ## Motivo da última desconexão, para o menu mostrar.
 var ultimo_erro := ""
 ## Identidade deste jogador entre sessões (o id de rede muda a cada partida).

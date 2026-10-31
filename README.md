@@ -23,12 +23,12 @@ Co-op online de sobrevivência e exploração numa ilha de fantasia que reage ao
   - acampamento, pedras que racham, cogumelo azul que brilha à noite e slime;
   - efeitos (bola de fogo, lança de gelo, gelo na água, cristais, golpe giratório, explosão, poeira, brilho de nível) e a armadilha;
   - interface com painéis, botões, barras, retrato do personagem, ícones e teclinha E.
-- Mundo salvo: árvores cortadas, pedras, noite e o seu personagem (nível, pontos, itens, onde estava) voltam ao abrir de novo. Cada raça + classe é um personagem salvo separado. "Começar mundo novo" no menu apaga.
-- Criação de personagem no menu: raça (Humano ou Ogro) e classe (Guerreiro, Mago ou Arqueiro), com atributos que mudam vida, mana, velocidade, dano e coleta. Ficha na tecla C.
+- Mundo salvo: árvores cortadas, pedras, noite e o seu personagem (nível, pontos, itens, onde estava) voltam ao abrir de novo. Cada raça + classe é um personagem salvo separado. Vários mundos, como no Minecraft: cada um é um arquivo em `user://mundos/` com nome e dificuldade (o mundo antigo `ilha.save` aparece na lista como "Ilha").
+- Home com a ilha viva ao fundo: Jogar (Sozinho ou Multijogador, lista de mundos com Jogar e Apagar, Criar mundo novo com nome e dificuldade Fácil, Normal ou Difícil), Configurações (trocar as teclas, volume e tela cheia, gravados em `user://configuracoes.cfg`) e Sair. Raça e classe ficam para depois de entrar no mundo. Esc no mundo abre a pausa (Continuar, Configurações, Sair para o menu, que salva antes). Ficha na tecla C.
 - Níveis e experiência: derrotar slimes (dividido com quem está perto) e coletar dão experiência; cada nível dá 2 pontos de atributo (botões "+" na ficha) e 1 de habilidade (a árvore vem depois). Humano ganha 10% a mais.
 - Habilidades da classe nas teclas 1 e 2 (Investida e Giro; Bola de fogo e Lança de gelo; Tiro carregado e Armadilha), com mana e recarga, e esquiva no Espaço.
 - Reações: gelo congela (e um golpe estilhaça com dano dobrado), lança de gelo sobre a água vira ponte que derrete, fogo passa devagar para árvores vizinhas.
-- Menu: jogar sozinho, hospedar ou entrar pelo IP do anfitrião (até 4 jogadores).
+- Jogar sozinho, hospedar ou entrar pelo IP do anfitrião (até 4 jogadores).
 - Multiplayer: cada um com a sua câmera; o anfitrião cuida do mundo (árvores, slimes, dano, inventário, dia e noite) e quem entra depois vê o que já mudou.
 - Ilha gerada (sempre a mesma), com água que bloqueia, areia, grama, árvores, pedras, plantas e slimes.
 - Acampamento com fogueira e barraca; a fogueira ilumina à noite.
@@ -45,7 +45,7 @@ Co-op online de sobrevivência e exploração numa ilha de fantasia que reage ao
 1. Abra o Godot 4.7.2, clique em **Importar** e escolha `game/project.godot`.
 2. Aperte **F5** e escolha no menu.
 
-**Jogar com amigos na mesma rede (casa, Wi-Fi):** um clica em **Hospedar para amigos**; o menu mostra o IP dele (ex.: 192.168.0.10). Os outros digitam esse IP e clicam em **Entrar**. Pela internet: veja [docs/jogar_pela_internet.md](docs/jogar_pela_internet.md) (Hamachi, Radmin VPN ou Tailscale).
+**Jogar com amigos na mesma rede (casa, Wi-Fi):** um clica em **Jogar > Multijogador > Hospedar** e escolhe o mundo; a tela mostra o IP dele (ex.: 192.168.0.10). Os outros digitam esse IP e clicam em **Entrar no jogo de um amigo**. Pela internet: veja [docs/jogar_pela_internet.md](docs/jogar_pela_internet.md) (Hamachi, Radmin VPN ou Tailscale).
 
 Atalhos para testar sem o menu: `-- --solo`, `-- --hospedar` ou `-- --entrar=IP` no fim do comando do Godot.
 

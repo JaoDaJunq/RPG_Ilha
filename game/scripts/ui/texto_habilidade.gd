@@ -27,10 +27,10 @@ static func de_habilidade(hab: HabilidadeData, tecla: String, ficha: Ficha) -> D
 
 
 ## O dash (Shift) não é uma HabilidadeData: vem das constantes do jogador.
-static func de_esquiva(ficha: Ficha) -> Dictionary:
+static func de_esquiva(ficha: Ficha, tecla := "Shift") -> Dictionary:
 	var distancia := Player.VELOCIDADE_ESQUIVA * Player.DURACAO_ESQUIVA
 	return {
-		titulo = "Shift · Dash",
+		titulo = "%s · Dash" % tecla,
 		descricao = "Um pulo rápido de %s na direção em que você anda (parado, na direção do mouse). Dá para fugir do pulo do slime." % blocos(distancia),
 		mana = "Sem custo de mana",
 		recarga = "Recarga: %s s" % numero(ficha.recarga_esquiva() if ficha else 1.2),
