@@ -43,8 +43,9 @@ func _ready() -> void:
 	var anfitriao: Player = w.entidades.get_node_or_null("1")
 
 	var slimes := 0
+	# Conta os slimes do dia (os da noite nascem a qualquer momento enquanto é noite).
 	for n in w.entidades.get_children():
-		if n is Slime:
+		if n is Slime and not String(n.name).begins_with("SlimeNoite"):
 			slimes += 1
 	w.relatorio_teste.rpc_id(1, {
 		"jogadores": get_tree().get_nodes_in_group(&"jogadores").size(),
