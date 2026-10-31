@@ -17,6 +17,7 @@
 | 29/10/2026 | Proposta v2 de personagem aprovada: 5 raças, 7 classes em 4 famílias, 5 atributos, reações entre elementos e arte em camadas (`design/classes.md`). |
 | 29/10/2026 | **C02: João escolheu pixel art mais fina** (`art/conceitos/estilo/estilo_pixel_fino_v1.png`) e acrescentou **Forager e Moonlighter** como inspiração. Preservar cores e clima do C01. Direção registrada em `design/identidade.md`; a escala dos sprites e a tradução para o jogo serão validadas num lote piloto. Aprovação de estilo, sem mudança de mecânicas ou aprovação automática de L05/L06. |
 | 30/10/2026 | **Estilo Tiny Swords.** Depois dos pilotos L08 (simples), L09 (pixel v2) e L10 (desenho HD), o João escolheu o estilo do pacote Tiny Swords (Pixel Frog) e pediu para usar os assets dele onde der e criar os nossos com base neles. Pacote gratuito baixado em `art/terceiros/tiny_swords/` (uso comercial permitido, sem redistribuir). Piloto no jogo: `tests/piloto_tiny.tscn`. Processo em `design/processo_arte.md`. |
+| 31/10/2026 | **Pixelbolt para efeitos.** O João achou o Pixelbolt (ferramenta MIT que gera pixel art e animação a partir de receitas em texto, com simulação de fogo, fumaça e líquido) e autorizou o teste. Efeitos animados (bola de fogo, lança de gelo, estouro de gelo) feitos com ele, nas cores do Tiny Swords, comparados com o pacote e postos no jogo. Exceção à regra "arte nunca por código", só para efeitos. A explosão continua a do pacote. |
 
 ## Em aberto (o João decide)
 

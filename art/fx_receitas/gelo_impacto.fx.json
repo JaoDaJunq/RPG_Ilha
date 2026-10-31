@@ -1,0 +1,646 @@
+{
+  "format": "pixelforge-fx",
+  "version": 1,
+  "name": "gelo_impacto",
+  "width": 64,
+  "height": 64,
+  "palette": {
+    "W": "#ffffff",
+    "p": "#c6f0db",
+    "c": "#9cbeaa",
+    "b": "#4697ac",
+    "B": "#485884",
+    "n": "#161c2e",
+    "s": "#5e5455"
+  },
+  "symbols": {
+    "stand-in": [
+      ".....ssssss.....",
+      "....ssssssss....",
+      "....ssssssss....",
+      "....ssssssss....",
+      "....ssssssss....",
+      ".....ssssss.....",
+      "......ssss......",
+      "...ssssssssss...",
+      "..ssssssssssss..",
+      "..ssssssssssss..",
+      ".sss.ssssss.sss.",
+      ".sss.ssssss.sss.",
+      ".sss.ssssss.sss.",
+      ".sss.ssssss.sss.",
+      ".sss.ssssss.sss.",
+      ".sss.ssssss.sss.",
+      ".sss.ssssss.sss.",
+      ".sss.ssssss.sss.",
+      ".ss..ssssss..ss.",
+      ".ss..ssssss..ss.",
+      ".....ssssss.....",
+      ".....ssssss.....",
+      "....sss..sss....",
+      "....sss..sss....",
+      "....sss..sss....",
+      "....sss..sss....",
+      "....sss..sss....",
+      "....sss..sss....",
+      "....sss..sss....",
+      "....sss..sss....",
+      "....sss..sss....",
+      "....sss..sss....",
+      "....sss..sss....",
+      "...ssss..ssss..."
+    ],
+    "shard-0": [
+      ".bpp..",
+      "BbccpW",
+      "..bb.."
+    ],
+    "shard-45": [
+      "B....",
+      ".bp..",
+      ".bcp.",
+      "..bp.",
+      "....W"
+    ],
+    "shard-90": [
+      ".B.",
+      "bb.",
+      "pcb",
+      "pcb",
+      ".p.",
+      ".W."
+    ],
+    "shard-135": [
+      "....B",
+      "..pb.",
+      ".pcb.",
+      ".pb..",
+      "W...."
+    ],
+    "shard-180": [
+      "..ppb.",
+      "WpccbB",
+      "..bb.."
+    ],
+    "shard-225": [
+      "W....",
+      ".pp..",
+      ".bcp.",
+      "..bb.",
+      "....B"
+    ],
+    "shard-270": [
+      ".W.",
+      ".p.",
+      "pcb",
+      "pcb",
+      "bb.",
+      ".B."
+    ],
+    "shard-315": [
+      "....W",
+      "..pp.",
+      ".pcb.",
+      ".bb..",
+      "B...."
+    ],
+    "chip-0": [
+      "bcp"
+    ],
+    "chip-45": [
+      "b..",
+      ".c.",
+      "..p"
+    ],
+    "chip-90": [
+      "b",
+      "c",
+      "p"
+    ],
+    "chip-135": [
+      "..b",
+      ".c.",
+      "p.."
+    ],
+    "chip-180": [
+      "pcb"
+    ],
+    "chip-225": [
+      "p..",
+      ".c.",
+      "..b"
+    ],
+    "chip-270": [
+      "p",
+      "c",
+      "b"
+    ],
+    "chip-315": [
+      "..p",
+      ".c.",
+      "b.."
+    ],
+    "bit-0": [
+      "bc"
+    ],
+    "bit-45": [
+      "b.",
+      ".c"
+    ],
+    "bit-90": [
+      "b",
+      "c"
+    ],
+    "bit-135": [
+      ".b",
+      "c."
+    ],
+    "bit-180": [
+      "cb"
+    ],
+    "bit-225": [
+      "c.",
+      ".b"
+    ],
+    "bit-270": [
+      "c",
+      "b"
+    ],
+    "bit-315": [
+      ".c",
+      "b."
+    ],
+    "glint-1": [
+      "p"
+    ],
+    "glint-3": [
+      ".p.",
+      "pWp",
+      ".p."
+    ],
+    "glint-5": [
+      "..p..",
+      "..c..",
+      "pcWcp",
+      "..c..",
+      "..p.."
+    ],
+    "flake": [
+      "..p..",
+      "p.c.p",
+      ".cWc.",
+      "p.c.p",
+      "..p.."
+    ],
+    "flake-s": [
+      "p.p",
+      ".c.",
+      "p.p"
+    ],
+    "flake-far": [
+      "b.b",
+      ".c.",
+      "b.b"
+    ],
+    "mote": [
+      "c"
+    ],
+    "mote-dim": [
+      "b"
+    ]
+  },
+  "anchor": [
+    32,
+    40
+  ],
+  "effects": {
+    "impact": {
+      "frames": 12,
+      "duration": {
+        "from": 40,
+        "to": 100,
+        "ease": "in"
+      },
+      "seed": 9,
+      "looks": {
+        "chill": {
+          "colors": [
+            "b",
+            "c",
+            "p"
+          ],
+          "thresholds": [
+            0.25,
+            0.5,
+            0.8
+          ]
+        },
+        "crystal": {
+          "colors": [
+            "b",
+            "c",
+            "p",
+            "W"
+          ],
+          "thresholds": [
+            0.15,
+            0.35,
+            0.62,
+            0.92
+          ],
+          "outline": "n"
+        },
+        "flash": {
+          "colors": [
+            "c",
+            "p",
+            "W"
+          ],
+          "thresholds": [
+            0.3,
+            0.55,
+            0.8
+          ]
+        }
+      },
+      "cleanup": {
+        "corners": true,
+        "strays": true
+      },
+      "layers": [
+        {
+          "kind": "ring",
+          "look": "chill",
+          "at": [
+            32,
+            40
+          ],
+          "frames": [
+            1,
+            5
+          ],
+          "radius": [
+            9,
+            21
+          ],
+          "width": [
+            5,
+            3,
+            2
+          ],
+          "noise": 0.9,
+          "scale": 4,
+          "power": [
+            1.3,
+            0.8,
+            0.3
+          ]
+        },
+        {
+          "kind": "star",
+          "look": "crystal",
+          "at": [
+            32,
+            40
+          ],
+          "frames": [
+            0,
+            2
+          ],
+          "points": 12,
+          "ratio": 0.5,
+          "radius": [
+            16,
+            19
+          ],
+          "width": [
+            3.5,
+            3
+          ],
+          "core": 3.5,
+          "angle": -90,
+          "power": [
+            1.2,
+            1.1
+          ],
+          "cue": "hit"
+        },
+        {
+          "kind": "star",
+          "look": "crystal",
+          "at": [
+            32,
+            40
+          ],
+          "frames": [
+            2,
+            4
+          ],
+          "points": 12,
+          "ratio": 0.5,
+          "radius": [
+            15,
+            11
+          ],
+          "width": [
+            3,
+            2.5
+          ],
+          "core": 3,
+          "angle": -90,
+          "noise": 0.9,
+          "scale": 4,
+          "power": [
+            0.65,
+            0.25
+          ],
+          "ease": "linear"
+        },
+        {
+          "kind": "star",
+          "look": "flash",
+          "at": [
+            32,
+            40
+          ],
+          "frames": [
+            0,
+            2
+          ],
+          "points": 4,
+          "ratio": 0.5,
+          "radius": [
+            8,
+            4
+          ],
+          "width": 1.5,
+          "angle": 45,
+          "power": [
+            1.2,
+            0.8
+          ]
+        }
+      ],
+      "emitters": [
+        {
+          "name": "frost",
+          "at": [
+            32,
+            40
+          ],
+          "ring": {
+            "radius": 4,
+            "even": true,
+            "outward": true
+          },
+          "burst": 12,
+          "start": 2,
+          "angle": [
+            -15,
+            15
+          ],
+          "speed": [
+            1.4,
+            2.4
+          ],
+          "drag": 0.18,
+          "life": [
+            3,
+            4
+          ],
+          "shapes": [
+            [
+              "glint-3",
+              "glint-1",
+              "glint-1"
+            ],
+            [
+              "flake-s",
+              "mote",
+              "mote"
+            ]
+          ]
+        },
+        {
+          "name": "shards",
+          "at": [
+            32,
+            40
+          ],
+          "ring": {
+            "radius": 6,
+            "arc": [
+              185,
+              355
+            ],
+            "even": true,
+            "outward": true
+          },
+          "burst": 8,
+          "start": 2,
+          "angle": [
+            -20,
+            20
+          ],
+          "speed": [
+            3.2,
+            4.3
+          ],
+          "gravity": [
+            0,
+            0.4
+          ],
+          "drag": 0.08,
+          "life": [
+            7,
+            9
+          ],
+          "face": true,
+          "shapes": [
+            [
+              "shard-0",
+              "shard-0",
+              "shard-0",
+              "chip-0",
+              "bit-0"
+            ],
+            [
+              "shard-45",
+              "shard-45",
+              "shard-45",
+              "chip-45",
+              "bit-45"
+            ],
+            [
+              "shard-90",
+              "shard-90",
+              "shard-90",
+              "chip-90",
+              "bit-90"
+            ],
+            [
+              "shard-135",
+              "shard-135",
+              "shard-135",
+              "chip-135",
+              "bit-135"
+            ],
+            [
+              "shard-180",
+              "shard-180",
+              "shard-180",
+              "chip-180",
+              "bit-180"
+            ],
+            [
+              "shard-225",
+              "shard-225",
+              "shard-225",
+              "chip-225",
+              "bit-225"
+            ],
+            [
+              "shard-270",
+              "shard-270",
+              "shard-270",
+              "chip-270",
+              "bit-270"
+            ],
+            [
+              "shard-315",
+              "shard-315",
+              "shard-315",
+              "chip-315",
+              "bit-315"
+            ]
+          ],
+          "remaps": [
+            {},
+            {},
+            {
+              "W": "p",
+              "p": "c"
+            }
+          ]
+        },
+        {
+          "name": "shards-low",
+          "at": [
+            32,
+            40
+          ],
+          "ring": {
+            "radius": 6,
+            "arc": [
+              15,
+              165
+            ],
+            "even": true,
+            "outward": true
+          },
+          "burst": 5,
+          "start": 2,
+          "angle": [
+            -20,
+            20
+          ],
+          "speed": [
+            2,
+            2.7
+          ],
+          "gravity": [
+            0,
+            0.3
+          ],
+          "drag": 0.12,
+          "life": [
+            6,
+            8
+          ],
+          "face": true,
+          "shapes": [
+            [
+              "shard-0",
+              "shard-0",
+              "chip-0",
+              "bit-0"
+            ],
+            [
+              "shard-45",
+              "shard-45",
+              "chip-45",
+              "bit-45"
+            ],
+            [
+              "shard-90",
+              "shard-90",
+              "chip-90",
+              "bit-90"
+            ],
+            [
+              "shard-135",
+              "shard-135",
+              "chip-135",
+              "bit-135"
+            ],
+            [
+              "shard-180",
+              "shard-180",
+              "chip-180",
+              "bit-180"
+            ],
+            [
+              "shard-225",
+              "shard-225",
+              "chip-225",
+              "bit-225"
+            ],
+            [
+              "shard-270",
+              "shard-270",
+              "chip-270",
+              "bit-270"
+            ],
+            [
+              "shard-315",
+              "shard-315",
+              "chip-315",
+              "bit-315"
+            ]
+          ],
+          "remaps": [
+            {},
+            {
+              "W": "p",
+              "p": "c"
+            }
+          ]
+        },
+        {
+          "name": "glints",
+          "at": [
+            32,
+            38
+          ],
+          "area": [
+            28,
+            20
+          ],
+          "burst": 4,
+          "start": 4,
+          "life": [
+            4,
+            6
+          ],
+          "shapes": [
+            "glint-1",
+            "glint-3",
+            "glint-5",
+            "glint-3",
+            "glint-1"
+          ]
+        }
+      ]
+    }
+  }
+}

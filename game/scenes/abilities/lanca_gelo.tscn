@@ -2,8 +2,8 @@
 
 [ext_resource type="Script" path="res://scripts/abilities/projetil.gd" id="1_projetil"]
 [ext_resource type="Texture2D" path="res://assets/luz/luz_radial.tres" id="2_luz"]
-[ext_resource type="Texture2D" path="res://assets/sprites/tiny/fx/lanca_gelo.png" id="3_textura"]
-[ext_resource type="Texture2D" path="res://assets/sprites/tiny/fx/cristais.png" id="4_impacto"]
+[ext_resource type="Texture2D" path="res://assets/sprites/tiny/fx/lanca_gelo_anim.png" id="3_textura"]
+[ext_resource type="Texture2D" path="res://assets/sprites/tiny/fx/gelo_impacto.png" id="4_impacto"]
 
 [sub_resource type="CircleShape2D" id="Shape_proj"]
 radius = 4.0
@@ -23,14 +23,14 @@ duracao = 1.0
 elemento = &"gelo"
 congela_agua = true
 textura = ExtResource("3_textura")
-quadro = Vector2i(89, 21)
-quadros = 1
-fps = 1.0
+quadro = Vector2i(96, 96)
+quadros = 8
+fps = 16.7
 angulo_da_arte = 0.0
 escala_arte = 0.25
 textura_impacto = ExtResource("4_impacto")
-quadro_impacto = Vector2i(81, 63)
-quadros_impacto = 1
+quadro_impacto = Vector2i(64, 64)
+quadros_impacto = 12
 escala_impacto = 0.25
 
 [node name="Visual" type="AnimatedSprite2D" parent="."]

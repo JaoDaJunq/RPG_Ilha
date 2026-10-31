@@ -1,0 +1,20 @@
+pacote | ../art/terceiros/tiny_swords/Tiny Swords (Free Pack)/Particle FX/Fire_01.png | 256 0 64 64 | 0.25
+pacote | ../art/terceiros/tiny_swords/Tiny Swords (Free Pack)/Particle FX/Fire_02.png | 192 0 64 64 | 0.25
+pacote | ../art/terceiros/tiny_swords/Tiny Swords (Free Pack)/Particle FX/Explosion_01.png | 576 0 192 192 | 0.25
+pacote | ../art/terceiros/tiny_swords/Tiny Swords (Free Pack)/Particle FX/Explosion_01.png | 960 0 192 192 | 0.25
+pacote | res://assets/sprites/tiny/fx/bola_de_fogo.png | 0 0 68 36 | 0.25
+pacote | res://assets/sprites/tiny/fx/lanca_gelo.png | 0 0 89 21 | 0.25
+pacote | res://assets/sprites/tiny/fx/cristais.png | 0 0 81 63 | 0.25
+nosso | res://assets/sprites/tiny/fx/bola_de_fogo_anim.png | 0 0 112 112 | 0.25
+nosso | res://assets/sprites/tiny/fx/bola_de_fogo_anim.png | 336 0 112 112 | 0.25
+nosso | res://assets/sprites/tiny/fx/bola_de_fogo_anim.png | 672 0 112 112 | 0.25
+nosso | res://assets/sprites/tiny/fx/lanca_gelo_anim.png | 0 0 96 96 | 0.25
+nosso | res://assets/sprites/tiny/fx/lanca_gelo_anim.png | 384 0 96 96 | 0.25
+nosso | res://assets/sprites/tiny/fx/gelo_impacto.png | 0 0 64 64 | 0.25
+nosso | res://assets/sprites/tiny/fx/gelo_impacto.png | 64 0 64 64 | 0.25
+nosso | res://assets/sprites/tiny/fx/gelo_impacto.png | 192 0 64 64 | 0.25
+nosso | res://assets/sprites/tiny/fx/gelo_impacto.png | 320 0 64 64 | 0.25
+nosso | res://assets/sprites/tiny/fx/explosao_anim.png | 96 0 96 96 | 0.25
+nosso | res://assets/sprites/tiny/fx/explosao_anim.png | 192 0 96 96 | 0.25
+nosso | res://assets/sprites/tiny/fx/explosao_anim.png | 384 0 96 96 | 0.25
+nosso | res://assets/sprites/tiny/fx/explosao_anim.png | 768 0 96 96 | 0.25

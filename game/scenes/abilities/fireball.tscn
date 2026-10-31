@@ -2,7 +2,7 @@
 
 [ext_resource type="Script" path="res://scripts/abilities/projetil.gd" id="1_projetil"]
 [ext_resource type="Texture2D" path="res://assets/luz/luz_radial.tres" id="2_luz"]
-[ext_resource type="Texture2D" path="res://assets/sprites/tiny/fx/bola_de_fogo.png" id="3_textura"]
+[ext_resource type="Texture2D" path="res://assets/sprites/tiny/fx/bola_de_fogo_anim.png" id="3_textura"]
 [ext_resource type="Texture2D" path="res://assets/tiny_swords/fx/explosao.png" id="4_impacto"]
 
 [sub_resource type="CircleShape2D" id="Shape_proj"]
@@ -23,9 +23,9 @@ duracao = 1.2
 elemento = &"fogo"
 congela_agua = false
 textura = ExtResource("3_textura")
-quadro = Vector2i(68, 36)
-quadros = 1
-fps = 1.0
+quadro = Vector2i(112, 112)
+quadros = 8
+fps = 16.7
 angulo_da_arte = 0.0
 escala_arte = 0.25
 textura_impacto = ExtResource("4_impacto")

@@ -124,3 +124,23 @@ A comparação lado a lado (`evidence/comparacao/l12_atual.png`, em cima o pacot
 
   O teste (`evidence/comparacao/teste_pixelizado.png`) ficou na densidade exata do pacote.
 - O pedido de ilustração precisa de: "NÃO desenhe pixel art", "nada fino demais" (some ao reduzir) e "de perfil para a direita".
+
+## Efeitos animados com o Pixelbolt (31/10)
+
+O Pixelbolt (`C:\Projetos\ferramentas\pixelbolt`, licença MIT, sem dependências, roda com Node) gera efeitos animados a partir de receitas em texto, com simulação de fogo, fumaça e líquido.
+
+- **Receitas:** em `art/fx_receitas/`, geradas por `gerar.mjs` a partir dos exemplos dele:
+  - as cores são trocadas pelas do Tiny Swords (fogo: #955c3c, #cf8935, #cea554, #ffdc00, #ffffff; gelo: tons azul-esverdeados do pacote);
+  - fica só a direção para a direita, porque o jogo gira o efeito;
+  - a peça é aumentada na receita (`aumentar`), nunca esticando o pixel.
+- **Gerar:**
+  1. `node bin/pixelbolt.js compile <receita> --out <saida.json>`;
+  2. `render <saida.json> --out <pasta>`;
+  3. `game/tools/importar_pixelbolt.gd` converte a folha para a tira do jogo;
+  4. `gif ... --scale 4` gera a prévia animada para o João ver.
+- **No jogo:**
+  - bola de fogo: 8 quadros;
+  - lança de gelo: 8 quadros;
+  - estouro de gelo, quando a lança acerta: 12 quadros.
+
+  A explosão continua a do pacote. Comparação: `evidence/comparacao/pixelbolt_fx.png` e os GIFs `pixelbolt_*.gif`.

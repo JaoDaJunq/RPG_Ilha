@@ -2,16 +2,16 @@
 
 importer="texture"
 type="CompressedTexture2D"
-uid="uid://by0sf23rcthb2"
-path="res://.godot/imported/lanca_gelo.png-7f853b483c0a002f8343e498a6d52509.ctex"
+uid="uid://cmwpht7udkjlc"
+path="res://.godot/imported/bola_de_fogo_anim.png-6f47bb9fa723012602f8a05ae3da0982.ctex"
 metadata={
 "vram_texture": false
 }
 
 [deps]
 
-source_file="res://assets/sprites/tiny/fx/lanca_gelo.png"
-dest_files=["res://.godot/imported/lanca_gelo.png-7f853b483c0a002f8343e498a6d52509.ctex"]
+source_file="res://assets/sprites/tiny/fx/bola_de_fogo_anim.png"
+dest_files=["res://.godot/imported/bola_de_fogo_anim.png-6f47bb9fa723012602f8a05ae3da0982.ctex"]
 
 [params]
 

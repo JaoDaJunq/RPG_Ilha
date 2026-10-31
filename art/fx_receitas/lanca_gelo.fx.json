@@ -1,0 +1,468 @@
+{
+  "format": "pixelforge-fx",
+  "version": 1,
+  "name": "lanca_gelo",
+  "width": 96,
+  "height": 96,
+  "palette": {
+    "W": "#ffffff",
+    "p": "#c6f0db",
+    "c": "#9cbeaa",
+    "b": "#4697ac",
+    "B": "#485884",
+    "n": "#161c2e",
+    "s": "#5e5455"
+  },
+  "symbols": {
+    "stand-in": [
+      ".....ssssss.....",
+      "....ssssssss....",
+      "....ssssssss....",
+      "....ssssssss....",
+      "....ssssssss....",
+      ".....ssssss.....",
+      "......ssss......",
+      "...ssssssssss...",
+      "..ssssssssssss..",
+      "..ssssssssssss..",
+      ".sss.ssssss.sss.",
+      ".sss.ssssss.sss.",
+      ".sss.ssssss.sss.",
+      ".sss.ssssss.sss.",
+      ".sss.ssssss.sss.",
+      ".sss.ssssss.sss.",
+      ".sss.ssssss.sss.",
+      ".sss.ssssss.sss.",
+      ".ss..ssssss..ss.",
+      ".ss..ssssss..ss.",
+      ".....ssssss.....",
+      ".....ssssss.....",
+      "....sss..sss....",
+      "....sss..sss....",
+      "....sss..sss....",
+      "....sss..sss....",
+      "....sss..sss....",
+      "....sss..sss....",
+      "....sss..sss....",
+      "....sss..sss....",
+      "....sss..sss....",
+      "....sss..sss....",
+      "....sss..sss....",
+      "...ssss..ssss..."
+    ],
+    "shard-0": [
+      ".bpp..",
+      "BbccpW",
+      "..bb.."
+    ],
+    "shard-45": [
+      "B....",
+      ".bp..",
+      ".bcp.",
+      "..bp.",
+      "....W"
+    ],
+    "shard-90": [
+      ".B.",
+      "bb.",
+      "pcb",
+      "pcb",
+      ".p.",
+      ".W."
+    ],
+    "shard-135": [
+      "....B",
+      "..pb.",
+      ".pcb.",
+      ".pb..",
+      "W...."
+    ],
+    "shard-180": [
+      "..ppb.",
+      "WpccbB",
+      "..bb.."
+    ],
+    "shard-225": [
+      "W....",
+      ".pp..",
+      ".bcp.",
+      "..bb.",
+      "....B"
+    ],
+    "shard-270": [
+      ".W.",
+      ".p.",
+      "pcb",
+      "pcb",
+      "bb.",
+      ".B."
+    ],
+    "shard-315": [
+      "....W",
+      "..pp.",
+      ".pcb.",
+      ".bb..",
+      "B...."
+    ],
+    "chip-0": [
+      "bcp"
+    ],
+    "chip-45": [
+      "b..",
+      ".c.",
+      "..p"
+    ],
+    "chip-90": [
+      "b",
+      "c",
+      "p"
+    ],
+    "chip-135": [
+      "..b",
+      ".c.",
+      "p.."
+    ],
+    "chip-180": [
+      "pcb"
+    ],
+    "chip-225": [
+      "p..",
+      ".c.",
+      "..b"
+    ],
+    "chip-270": [
+      "p",
+      "c",
+      "b"
+    ],
+    "chip-315": [
+      "..p",
+      ".c.",
+      "b.."
+    ],
+    "bit-0": [
+      "bc"
+    ],
+    "bit-45": [
+      "b.",
+      ".c"
+    ],
+    "bit-90": [
+      "b",
+      "c"
+    ],
+    "bit-135": [
+      ".b",
+      "c."
+    ],
+    "bit-180": [
+      "cb"
+    ],
+    "bit-225": [
+      "c.",
+      ".b"
+    ],
+    "bit-270": [
+      "c",
+      "b"
+    ],
+    "bit-315": [
+      ".c",
+      "b."
+    ],
+    "glint-1": [
+      "p"
+    ],
+    "glint-3": [
+      ".p.",
+      "pWp",
+      ".p."
+    ],
+    "glint-5": [
+      "..p..",
+      "..c..",
+      "pcWcp",
+      "..c..",
+      "..p.."
+    ],
+    "flake": [
+      "..p..",
+      "p.c.p",
+      ".cWc.",
+      "p.c.p",
+      "..p.."
+    ],
+    "flake-s": [
+      "p.p",
+      ".c.",
+      "p.p"
+    ],
+    "flake-far": [
+      "b.b",
+      ".c.",
+      "b.b"
+    ],
+    "mote": [
+      "c"
+    ],
+    "mote-dim": [
+      "b"
+    ]
+  },
+  "anchor": [
+    48,
+    60
+  ],
+  "effects": {
+    "projectile": {
+      "frames": 8,
+      "duration": 60,
+      "loop": true,
+      "seed": 5,
+      "turn": {
+        "angles": [
+          0
+        ],
+        "about": [
+          48,
+          60
+        ]
+      },
+      "looks": {
+        "tail": {
+          "colors": [
+            "n",
+            "B",
+            "b",
+            "c"
+          ],
+          "thresholds": [
+            0.12,
+            0.25,
+            0.5,
+            0.8
+          ]
+        },
+        "shard": {
+          "colors": [
+            "c"
+          ],
+          "thresholds": [
+            0.12
+          ],
+          "lit": {
+            "colors": [
+              "p"
+            ],
+            "thresholds": [
+              0.45
+            ]
+          },
+          "shade": {
+            "colors": [
+              "b",
+              "B"
+            ],
+            "thresholds": [
+              0.12,
+              0.45
+            ]
+          },
+          "outline": "n"
+        },
+        "gleam": {
+          "colors": [
+            "p",
+            "W"
+          ],
+          "thresholds": [
+            0.4,
+            0.75
+          ]
+        }
+      },
+      "cleanup": {
+        "corners": true,
+        "strays": true
+      },
+      "layers": [
+        {
+          "kind": "beam",
+          "look": "tail",
+          "at": [
+            45,
+            60
+          ],
+          "to": [
+            15,
+            60
+          ],
+          "width": 10.5,
+          "fade": 0.95,
+          "wobble": 0.3,
+          "wavelength": 9.75,
+          "waves": 2,
+          "noise": 0.5,
+          "scale": 3,
+          "power": 1.6
+        },
+        {
+          "kind": "star",
+          "look": "shard",
+          "at": [
+            50.25,
+            60
+          ],
+          "points": 2,
+          "angle": 0,
+          "radius": 28.5,
+          "ratio": 0.38,
+          "width": 7.5,
+          "core": 0,
+          "power": 1.4
+        },
+        {
+          "kind": "star",
+          "look": "gleam",
+          "at": [
+            54,
+            55.5
+          ],
+          "points": 4,
+          "angle": 0,
+          "ratio": 1,
+          "radius": [
+            1.5,
+            1.5,
+            1.5,
+            4.5,
+            7.5,
+            4.5,
+            1.5,
+            1.5
+          ],
+          "width": 1.2000000000000002,
+          "core": 0.8,
+          "power": [
+            0,
+            0,
+            0,
+            1.1,
+            1.2,
+            1.1,
+            0,
+            0
+          ],
+          "ease": "linear"
+        }
+      ],
+      "emitters": [
+        {
+          "name": "streaks",
+          "at": [
+            39,
+            60
+          ],
+          "area": [
+            6,
+            12
+          ],
+          "rate": 1,
+          "angle": [
+            177,
+            183
+          ],
+          "speed": [
+            2.4000000000000004,
+            3.3000000000000003
+          ],
+          "drag": 0.03,
+          "life": [
+            4,
+            6
+          ],
+          "shapes": [
+            [
+              "mote",
+              "mote",
+              "mote-dim"
+            ]
+          ],
+          "trail": {
+            "color": "b",
+            "length": 3
+          }
+        },
+        {
+          "name": "sparkle",
+          "at": [
+            39,
+            60
+          ],
+          "area": [
+            18,
+            14
+          ],
+          "rate": 0.5,
+          "angle": [
+            165,
+            195
+          ],
+          "speed": [
+            0.6000000000000001,
+            1.35
+          ],
+          "drag": 0.08,
+          "life": [
+            4,
+            6
+          ],
+          "shapes": [
+            "glint-1",
+            "glint-3",
+            "glint-5",
+            "glint-3",
+            "glint-1"
+          ]
+        },
+        {
+          "name": "flakes",
+          "at": [
+            33,
+            60
+          ],
+          "area": [
+            12,
+            15
+          ],
+          "rate": 0.6,
+          "angle": [
+            160,
+            200
+          ],
+          "speed": [
+            0.75,
+            1.35
+          ],
+          "drag": 0.05,
+          "life": [
+            4,
+            7
+          ],
+          "shapes": [
+            [
+              "mote",
+              "mote",
+              "mote-dim"
+            ],
+            [
+              "flake-s",
+              "mote",
+              "mote-dim"
+            ]
+          ]
+        }
+      ]
+    }
+  }
+}
