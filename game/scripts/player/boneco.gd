@@ -22,6 +22,12 @@ var item: StringName = &""
 ## Quanto a corda do arco está puxada (0 a 1; -1 sem puxar), definido pelo Player.
 var carga := -1.0
 
+## Pose de dor (Player.reagir_ao_golpe): o corpo é empurrado alguns pixels da arte para longe
+## do golpe por TEMPO_DOR segundos e volta.
+const TEMPO_DOR := 0.18
+var _dor := 0.0
+var _dor_desvio := Vector2.ZERO
+
 var _base := {}  # peça -> posição de descanso (pixels da arte)
 var _pecas := {}  # peça -> Sprite2D
 var _item: Sprite2D
@@ -83,6 +89,19 @@ func _usar_vista(v: String) -> void:
 	move_child(_flecha, get_child_count() - 2)
 
 
+## O personagem apanhou: `dir` é para onde o golpe empurra (mundo). Encolhe o corpo para longe dele.
+func dor(dir: Vector2) -> void:
+	_dor = TEMPO_DOR
+	_dor_desvio = Vector2(roundf(dir.x * 3.0) * signf(scale.x), roundf(dir.y * 2.0))
+
+
+## Metade do tempo no desvio inteiro, o resto na metade (sempre em pixels da arte).
+func _desvio_dor() -> Vector2:
+	if _dor <= 0.0:
+		return Vector2.ZERO
+	return (_dor_desvio * (1.0 if _dor > TEMPO_DOR * 0.5 else 0.5)).round()
+
+
 func play(nome: StringName = &"") -> void:
 	if nome == &"" or nome == animation:
 		return
@@ -109,6 +128,7 @@ func _process(delta: float) -> void:
 	var andando := String(animation).begins_with("andar")
 	var passo := sin(_tempo * 11.0) if andando else 0.0
 	var respira := sin(_tempo * 2.4)
+	_dor = maxf(0.0, _dor - delta)
 	if _golpe >= 0.0:
 		_golpe += delta
 		if _golpe > 0.32:
@@ -118,7 +138,7 @@ func _process(delta: float) -> void:
 
 ## Põe cada peça no lugar, com os desvios da animação (arredondados em pixels da arte).
 func _posar(passo: float, respira: float, golpe: float) -> void:
-	var corpo := Vector2(0, roundf(-absf(passo) * 2.0) if passo != 0.0 else roundf(respira * 0.6 - 0.4))
+	var corpo := Vector2(0, roundf(-absf(passo) * 2.0) if passo != 0.0 else roundf(respira * 0.6 - 0.4)) + _desvio_dor()
 	_por("tronco", corpo)
 	_por("cabeca", corpo + Vector2(0, roundf(respira * 0.5)) if passo == 0.0 else corpo)
 	# De perfil os pés vão para a frente e para trás; de frente e de costas, só sobem e descem.

@@ -318,6 +318,47 @@ func _impulsionar(deslocamento: Vector2, duracao: float) -> void:
 	_impulso_restante = duracao
 
 
+# --- Reação ao golpe de inimigo ou animal ---------------------------------------------
+## Dar um passo para trás, mostrar a dor (corpo vermelho e encolhido, visível para todos) e
+## tremer de leve a tela de quem apanhou. A proteção de 0,5 s depois do golpe vem do
+## HealthComponent (invulneravel_por), então inimigos amontoados não encadeiam golpes.
+const EMPURRAO_DANO := 9.0  # px, para longe de quem bateu
+const DURACAO_EMPURRAO := 0.12
+const TREMOR_DANO := 0.75  # px do mundo (3 px na tela com o zoom 4)
+const DURACAO_TREMOR := 0.2
+
+var _tremor := 0.0
+var _tween_dano: Tween
+var _vida_vista := -1.0
+
+
+## Só o anfitrião chama, logo depois de um golpe de inimigo ou animal que tirou vida.
+## `origem` é onde estava quem bateu.
+func reagir_ao_golpe(origem: Vector2) -> void:
+	var dir := global_position - origem
+	dir = dir.normalized() if dir.length() > 0.1 else Vector2.DOWN
+	mover_por_habilidade(dir * EMPURRAO_DANO, DURACAO_EMPURRAO)
+	_reagir_dor.rpc(dir)
+
+
+@rpc("any_peer", "call_local", "reliable")
+func _reagir_dor(dir: Vector2) -> void:
+	if not Net.veio_do_anfitriao():
+		return
+	visual.dor(dir)
+	if eh_local():
+		_tremor = DURACAO_TREMOR
+
+
+## A câmera do dono treme de leve e vai parando.
+func _tremer(delta: float) -> void:
+	if _tremor > 0.0:
+		_tremor = maxf(0.0, _tremor - delta)
+		camera.offset = Vector2(randf_range(-1.0, 1.0), randf_range(-1.0, 1.0)) * TREMOR_DANO * (_tremor / DURACAO_TREMOR)
+	elif camera.offset != Vector2.ZERO:
+		camera.offset = Vector2.ZERO
+
+
 @rpc("any_peer", "call_local", "reliable")
 func _pedir_golpe(dir: Vector2) -> void:
 	if not multiplayer.is_server() or not _pedido_do_dono():
@@ -524,15 +565,22 @@ func _mana_sync(valor: float) -> void:
 func _vida_sync(atual: float) -> void:
 	if not Net.veio_do_anfitriao():
 		return
+	# No anfitrião a vida já mudou antes deste aviso chegar: compara com a última que viu.
 	var antes := vida.atual
+	if multiplayer.is_server():
+		antes = _vida_vista if _vida_vista >= 0.0 else vida.maximo
+	_vida_vista = atual
 	if not multiplayer.is_server():
 		vida.atual = atual
 		vida.mudou.emit(atual, vida.maximo)
 	if atual < antes:
 		Sfx.tocar(&"acerto", -6.0)
-		var t := create_tween()
-		t.tween_property(visual, "modulate", Color(1.0, 0.45, 0.45), 0.05)
-		t.tween_property(visual, "modulate", Color.WHITE, 0.25)
+		if _tween_dano:
+			_tween_dano.kill()
+		_tween_dano = create_tween()
+		_tween_dano.tween_property(visual, "modulate", Color(1.0, 0.3, 0.3), 0.04)
+		_tween_dano.tween_interval(0.08)
+		_tween_dano.tween_property(visual, "modulate", Color.WHITE, 0.3)
 
 
 @rpc("any_peer", "reliable")
@@ -676,10 +724,11 @@ var item_mao: StringName = &""
 var carga_arco := -1.0
 
 
-func _process(_delta: float) -> void:
+func _process(delta: float) -> void:
 	_atualizar_previa()
 	if eh_local():
 		carga_arco = carga_atual()
+		_tremer(delta)
 	visual.item = item_mao
 	visual.carga = carga_arco
 

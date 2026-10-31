@@ -64,6 +64,8 @@ signal relatorio_recebido(peer: int, dados: Dictionary)
 ## O jogador controlado nesta máquina.
 var jogador: Player
 var noite := false
+## Dificuldade do mundo (a tela de criação define).
+var dificuldade := 1  # 0 fácil, 1 normal, 2 difícil
 var centro := Vector2.ZERO
 var _tipo: Dictionary[Vector2i, int] = {}
 var _distancia: Dictionary[Vector2i, float] = {}
@@ -152,6 +154,25 @@ func ponto_de_nascer(indice: int) -> Vector2:  # abaixo da fogueira, sem encosta
 
 func registrar_removido(nome: String) -> void:
 	_removidos.append(nome)
+
+
+## Multiplicadores da dificuldade (fácil, normal, difícil): o dano que slime e javali causam
+## (&"dano_inimigo") e a vida máxima de slimes e animais (&"vida_inimigo").
+const MULT_DIFICULDADE := {
+	&"dano_inimigo": [0.6, 1.0, 1.5],
+	&"vida_inimigo": [0.8, 1.0, 1.3],
+}
+
+
+## Multiplicador da dificuldade do mundo para `tipo`; 1,0 se não houver mundo.
+static func mult_dificuldade(quem: Node, tipo: StringName) -> float:
+	if not quem.is_inside_tree() or not MULT_DIFICULDADE.has(tipo):
+		return 1.0
+	var w: World = quem.get_tree().get_first_node_in_group(&"mundo")
+	if w == null:
+		return 1.0
+	var tabela: Array = MULT_DIFICULDADE[tipo]
+	return float(tabela[clampi(w.dificuldade, 0, tabela.size() - 1)])
 
 
 ## Efeito visual em todos os jogadores (chamado pelo anfitrião).
