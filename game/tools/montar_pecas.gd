@@ -82,6 +82,10 @@ func _init() -> void:
 		fator = pe_base.get_width() / ((ap.peca as Image).get_width() * float(ap.achado.escala))
 		print("fator pelo %s do boneco base: %.4f" % [ref_peca, fator])
 
+	# Chapéu pelo rosto (L24b): acha o rosto do boneco base dentro do montado com roupa; assim o
+	# tamanho e o lugar do chapéu saem em relação à cabeça base (e não aos pés).
+	var pelo_rosto := _rosto_no_montado(pequeno, vista) if _args.has("rosto_base_folha") else {}
+
 	# 2ª passada: cada peça em pixel art e o lugar dela (pixels da arte, origem nos pés).
 	var posicoes := {}
 	for nome in PECAS:
@@ -96,7 +100,22 @@ func _init() -> void:
 		# do montado com chapéu; se o chapéu sair mais estreito que a cabeça base, aumenta até
 		# cobri-la, com a base do chapéu no mesmo lugar.
 		var cresce := Vector2.ZERO
-		if nome == "cabeca" and vista != "" and _args.has("fator_de"):
+		var chapeu_rel := Vector2.INF
+		if nome == "cabeca" and not pelo_rosto.is_empty():
+			var k: float = pelo_rosto.k
+			w = maxi(1, roundi(peca.get_width() * escala * k))
+			h = maxi(1, roundi(peca.get_height() * escala * k))
+			var p0: Vector2 = pelo_rosto.p0
+			var pt: Vector2 = pelo_rosto.tamanho
+			if pelo_rosto.has("cabeca_bruta"):
+				chapeu_rel = p0 + (lugares[0] * REDUZ - (pelo_rosto.cabeca_bruta as Vector2)) * k
+				chapeu_rel.y += float(_args.get("ajuste_y", "0"))  # acerto fino, em pixels da arte
+				print("chapéu: k %.4f dy %d" % [k, roundi(chapeu_rel.y + h - p0.y - pt.y)])
+			else:
+				# De costas não há rosto: centralizado na cabeça, com a base do chapéu na mesma
+				# altura que de frente (--dy).
+				chapeu_rel = Vector2(p0.x + (pt.x - w) / 2.0, p0.y + pt.y + float(_args.get("dy", "0")) - h)
+		elif nome == "cabeca" and vista != "" and _args.has("fator_de"):
 			var cab := Image.load_from_file(_caminho(_args["fator_de"]).path_join("cabeca" + vista + ".png"))
 			if w < cab.get_width() + 2:
 				var k := (cab.get_width() + 2.0) / w
@@ -117,6 +136,8 @@ func _init() -> void:
 				var no_montado: Vector2 = Vector2(caixa.position) + p * REDUZ
 				var rel := (no_montado - ref) * fator
 				rel -= Vector2(cresce.x / 2.0, cresce.y)
+				if chapeu_rel != Vector2.INF:
+					rel = chapeu_rel
 				rels.append([roundi(rel.x), roundi(rel.y)])
 		posicoes[nome] = rels
 		print("%s: escala %.2f, %dx%d, lugar %s (custo %.2f)" % [nome, escala, w, h, rels, achado.custo])
@@ -245,7 +266,7 @@ func _reduzir(img: Image) -> Image:
 func _achar(peca: Image, montado: Image, nome: String, escala_fixa := 0.0, evitar := Vector2.INF) -> Dictionary:
 	var melhor := {custo = INF, escala = 1.0, pos = Vector2.ZERO}
 	# A cabeça sempre sai entre 80% e 105% (a busca solta às vezes acha uma cabeça pequena demais).
-	var faixa := [80, 110] if nome == "cabeca" else [40, 165]
+	var faixa := [80, 110] if nome == "cabeca" else ([70, 135] if nome == "rosto" else [40, 165])
 	var escalas: Array = [escala_fixa] if escala_fixa > 0.0 else range(faixa[0], faixa[1], 5).map(func(n: int) -> float: return n / 100.0)
 	var mw := montado.get_width()
 	var mh := montado.get_height()
@@ -442,3 +463,33 @@ func _topo_cranio(img: Image) -> int:
 		if n >= w * 0.6:
 			return y
 	return 0
+
+
+## O rosto do boneco base (--rosto_base_folha, --rosto_base_celula: a folha base e a célula
+## da cabeça nesta vista; a pasta base vem de --fator_de) dentro do montado reduzido. Devolve
+## k (pixels da arte por pixel da ilustração do montado), p0 e tamanho (lugar e tamanho da
+## cabeça base em pixels da arte) e cabeca_bruta (canto da cabeça no montado, em pixels da
+## ilustração, a partir da caixa do montado). De costas, k vem de --k (o achado de frente).
+func _rosto_no_montado(pequeno: Image, vista: String) -> Dictionary:
+	var base := _caminho(_args["fator_de"])
+	var folha_base := Image.load_from_file(_caminho(_args["rosto_base_folha"]))
+	folha_base.convert(Image.FORMAT_RGBA8)
+	var cab_base := _celula(folha_base, int(_args["rosto_base_celula"]))
+	cab_base = cab_base.get_region(_caixa_principal(cab_base))
+	var px_base := Image.load_from_file(base.path_join("cabeca" + vista + ".png"))
+	var razao := px_base.get_width() / float(cab_base.get_width())
+	var j: Dictionary = JSON.parse_string(FileAccess.get_file_as_string(base.path_join("pecas" + vista + ".json")))
+	var r := {p0 = Vector2(j["cabeca"][0], j["cabeca"][1]), tamanho = Vector2(px_base.get_size())}
+	if vista == "_costas":
+		r.k = float(_args["k"])
+		return r
+	var cw := cab_base.get_width()
+	var ch := cab_base.get_height()
+	var recorte := Rect2i(roundi(cw * 0.45), roundi(ch * 0.5), roundi(cw * 0.55), ch - roundi(ch * 0.5)) if vista == "" \
+			else Rect2i(roundi(cw * 0.2), roundi(ch * 0.5), roundi(cw * 0.6), ch - roundi(ch * 0.5))
+	var achado := _achar(cab_base.get_region(recorte), pequeno, "rosto")
+	var escala: float = achado.escala
+	r.k = razao / escala
+	r.cabeca_bruta = achado.pos * REDUZ - Vector2(recorte.position) * escala
+	print("rosto no montado: escala %.2f (custo %.2f)" % [escala, achado.custo])
+	return r

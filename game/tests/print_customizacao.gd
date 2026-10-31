@@ -5,14 +5,14 @@ extends TesteBase
 
 const COMBOS := [
 	[{raca = &"humano", rosto = 0, pele = 0}, {cabeca = &"elmo_guerreiro", corpo = &"roupa_guerreiro"}],
-	[{raca = &"humano", rosto = 1, pele = 0}, {cabeca = &"chapeu_mago", corpo = &"roupa_mago"}],
-	[{raca = &"humano", rosto = 2, pele = 1}, {cabeca = &"capuz_arqueiro", corpo = &"roupa_arqueiro"}],
-	[{raca = &"ogro", rosto = 0, pele = 0}, {}],
-	[{raca = &"ogro", rosto = 1, pele = 1}, {}],
-	[{raca = &"ogro", rosto = 2, pele = 2}, {}],
-	[{raca = &"ogro", rosto = 0, pele = 0}, {cabeca = &"elmo_guerreiro", corpo = &"roupa_guerreiro"}],
-	[{raca = &"ogro", rosto = 1, pele = 0}, {cabeca = &"chapeu_mago", corpo = &"roupa_mago"}],
-	[{raca = &"ogro", rosto = 2, pele = 1}, {cabeca = &"capuz_arqueiro", corpo = &"roupa_arqueiro"}],
+	[{raca = &"humano", rosto = 1, pele = 1}, {cabeca = &"chapeu_mago", corpo = &"roupa_mago"}],
+	[{raca = &"humano", rosto = 0, pele = 0}, {cabeca = &"chapeu_mago", corpo = &"roupa_mago"}],
+	[{raca = &"humano", rosto = 2, pele = 2}, {cabeca = &"capuz_arqueiro", corpo = &"roupa_arqueiro"}],
+	[{raca = &"humano", rosto = 0, pele = 0}, {cabeca = &"capuz_arqueiro", corpo = &"roupa_arqueiro"}],
+	[{raca = &"ogro", rosto = 1, pele = 0}, {cabeca = &"elmo_guerreiro", corpo = &"roupa_guerreiro"}],
+	[{raca = &"ogro", rosto = 2, pele = 1}, {cabeca = &"chapeu_mago", corpo = &"roupa_mago"}],
+	[{raca = &"ogro", rosto = 0, pele = 2}, {cabeca = &"capuz_arqueiro", corpo = &"roupa_arqueiro"}],
+	[{raca = &"humano", rosto = 1, pele = 0}, {}],
 ]
 
 
