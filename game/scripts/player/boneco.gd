@@ -15,6 +15,8 @@ const PASTA := "res://assets/sprites/tiny/bonecos/"
 var animation: StringName = &"parado_direita"
 ## Item da mão (id), definido pelo Player a cada quadro.
 var item: StringName = &""
+## Quanto a corda do arco está puxada (0 a 1; -1 sem puxar), definido pelo Player.
+var carga := -1.0
 
 var _base := {}  # peça -> posição de descanso (pixels da arte)
 var _pecas := {}  # peça -> Sprite2D

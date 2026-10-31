@@ -666,11 +666,16 @@ func abrir_mochila(modo: StringName) -> void:
 ## O item da barra vai na mão da frente do boneco (Boneco). `item_mao` é sincronizado: os
 ## outros jogadores veem o mesmo item.
 var item_mao: StringName = &""
+## Quanto a corda do arco está puxada (0 a 1; -1 sem puxar). Sincronizada pelo dono.
+var carga_arco := -1.0
 
 
 func _process(_delta: float) -> void:
 	_atualizar_previa()
+	if eh_local():
+		carga_arco = carga_atual()
 	visual.item = item_mao
+	visual.carga = carga_arco
 
 
 # --- Construção (item da mão com construcao) ---------------------------------------
