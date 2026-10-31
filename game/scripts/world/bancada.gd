@@ -44,4 +44,4 @@ func altura_visivel() -> float:
 func interagir(quem: Player) -> void:
 	quem.inventario.na_bancada = true
 	quem.inventario.reenviar()
-	quem.abrir_mochila.rpc_id(quem.get_multiplayer_authority(), true)
+	quem.abrir_mochila.rpc_id(quem.get_multiplayer_authority(), &"bancada")

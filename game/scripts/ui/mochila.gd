@@ -15,6 +15,8 @@ var _resultado: Dictionary
 var _grade_2x2: GridContainer
 var _grade_3x3: GridContainer
 var _titulo: Label
+var _fabricacao: HBoxContainer
+var _grade_bau: GridContainer
 var _cursor: Control
 var _cursor_icone: TextureRect
 var _cursor_qtd: Label
@@ -41,16 +43,19 @@ func alternar() -> void:
 	if visible:
 		fechar()
 	else:
-		abrir(false)
+		abrir(&"mochila")
 
 
-func abrir(na_bancada: bool) -> void:
+## `modo`: &"mochila" (fabricação 2x2), &"bancada" (3x3) ou &"bau" (o baú em cima).
+func abrir(modo: StringName) -> void:
 	if jogador == null:
 		return
 	visible = true
-	_titulo.text = "Bancada de trabalho" if na_bancada else "Mochila"
-	_grade_2x2.visible = not na_bancada
-	_grade_3x3.visible = na_bancada
+	_titulo.text = {&"mochila": "Mochila", &"bancada": "Bancada de trabalho", &"bau": "Baú"}.get(modo, "Mochila")
+	_fabricacao.visible = modo != &"bau"
+	_grade_bau.visible = modo == &"bau"
+	_grade_2x2.visible = modo == &"mochila"
+	_grade_3x3.visible = modo == &"bancada"
 	_atualizar()
 
 
@@ -91,6 +96,7 @@ func _montar() -> void:
 
 	# Fabricação: grade, seta e resultado.
 	var fab := HBoxContainer.new()
+	_fabricacao = fab
 	fab.alignment = BoxContainer.ALIGNMENT_CENTER
 	fab.add_theme_constant_override(&"separation", 12)
 	v.add_child(fab)
@@ -112,6 +118,15 @@ func _montar() -> void:
 	_resultado.fundo.custom_minimum_size = Vector2(TAM + 12, TAM + 12)
 	fab.add_child(_resultado.fundo)
 
+	# Baú (27), só quando um baú está aberto.
+	var do_bau: Array[int] = []
+	for k in Inventory.BAU_N:
+		do_bau.append(Inventory.BAU + k)
+	_grade_bau = _grade(9, do_bau)
+	v.add_child(_grade_bau)
+	var separador := HSeparator.new()
+	separador.add_theme_constant_override(&"separation", 6)
+	v.add_child(separador)
 	# Mochila (27) e barra (9).
 	var faixa: Array[int] = []
 	for i in range(Inventory.BARRA, Inventory.GUARDAR):

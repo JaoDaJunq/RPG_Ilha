@@ -639,11 +639,11 @@ func poder_da_mao(tipo: StringName) -> float:
 	return item.poder if item and item.ferramenta == tipo else 1.0
 
 
-## O anfitrião manda o dono abrir a mochila (na bancada, com a grade 3x3).
+## O anfitrião manda o dono abrir a tela: &"bancada" (grade 3x3) ou &"bau" (o baú em cima).
 @rpc("any_peer", "call_local", "reliable")
-func abrir_mochila(na_bancada: bool) -> void:
+func abrir_mochila(modo: StringName) -> void:
 	if Net.veio_do_anfitriao() and eh_local():
-		Events.abrir_mochila.emit(na_bancada)
+		Events.abrir_mochila.emit(modo)
 
 
 # --- Item na mão (F05) ------------------------------------------------------------

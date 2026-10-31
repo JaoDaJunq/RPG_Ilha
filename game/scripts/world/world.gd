@@ -276,6 +276,7 @@ func _pedir_nascimento() -> void:
 	_definir_nascimento.rpc_id(peer, _nascimentos[peer], _retornos.get(peer, _nascimentos[peer]))
 	if _restaurar_depois.has(peer) and entidades.has_node(str(peer)):
 		var p: Player = entidades.get_node(str(peer))
+		p.inventario.fechar_bau_servidor()  # o que estava no baú aberto fica no baú
 		p.restaurar(_restaurar_depois[peer])
 		_restaurar_depois.erase(peer)
 		p.avisar("Bem-vindo de volta! Seu %s está no nível %d." % [p.ficha.titulo(), p.nivel])
@@ -307,7 +308,7 @@ func _cliente_pronto(raca: StringName, classe: StringName, id_jogador: String) -
 	for r in get_tree().get_nodes_in_group(&"recursos"):
 		(r as ResourceNode).enviar_estado_para(peer)
 	for c in _lista_construcoes():
-		_construir.rpc_id(peer, c[0], Vector2i(c[1], c[2]))
+		_construir.rpc_id(peer, c[0], Vector2i(c[1], c[2]))  # o conteúdo dos baús fica só aqui
 	for j in get_tree().get_nodes_in_group(&"jogadores"):
 		if j.name != str(peer):
 			(j as Player).enviar_progresso_para(peer)
@@ -360,6 +361,7 @@ func salvar() -> bool:
 		"semente": semente, "noite": noite,
 		"recursos": recursos, "removidos": _removidos.duplicate(),
 		"construcoes": _lista_construcoes(),
+		"bau_acampamento": bau_acampamento.conteudo,
 		"jogadores": _registros,
 	}, arquivo_salvo)
 
@@ -383,7 +385,10 @@ func _carregar_mundo() -> void:
 		if r:
 			r.carregar_estado(int(recursos[nome][0]), int(recursos[nome][1]))
 	for c in dados.get("construcoes", []):
-		_criar_peca(StringName(c[0]), Vector2i(int(c[1]), int(c[2])))
+		var p := _criar_peca(StringName(c[0]), Vector2i(int(c[1]), int(c[2])))
+		if p and c.size() > 3:
+			p.conteudo = c[3]
+	bau_acampamento.conteudo = dados.get("bau_acampamento", [])
 
 
 func _process_salvar(delta: float) -> void:
@@ -613,7 +618,16 @@ func _montar_acampamento() -> void:
 	t.tween_property(luz, "energy", 0.85, 0.23)
 	_objeto_acampamento(Acamp.BARRACA, centro + Vector2(-50, -16), Vector2(22, 8))
 	_objeto_acampamento(Acamp.BANCADA, centro + Vector2(50, -16), Vector2(24, 8))
-	_objeto_acampamento(Acamp.BAU, centro + Vector2(48, 18), Vector2(13, 6))
+	# O baú do acampamento guarda coisas (igual ao baú construído, mas não quebra).
+	var bau := Construcao.new()
+	bau.tipo = &"bau"
+	bau.item = &"bau"
+	bau.fixa = true
+	bau.name = "BauAcampamento"
+	bau.position = centro + Vector2(48, 18)
+	entidades.add_child(bau)
+	_ocupados.append(bau.position)
+	bau_acampamento = bau
 	_objeto_acampamento(Acamp.BARRIL, centro + Vector2(-40, 20), Vector2(10, 5))
 	_objeto_acampamento(Acamp.VARAL, centro + Vector2(-84, 6), Vector2.ZERO)
 
@@ -838,6 +852,7 @@ static func luz_que_protege(quem: Node, pos: Vector2) -> Vector2:
 ## de madeira, "obj" para o resto). O anfitrião confere e manda todos criarem igual.
 var _pecas: Dictionary[String, Construcao] = {}
 var _pisos: Node2D  # chão de madeira: embaixo das pessoas e das coisas
+var bau_acampamento: Construcao
 
 
 static func camada_de(tipo: StringName) -> String:
@@ -897,11 +912,11 @@ func _construir(item_id: String, cel: Vector2i) -> void:
 		_criar_peca(StringName(item_id), cel)
 
 
-func _criar_peca(item_id: StringName, cel: Vector2i) -> void:
+func _criar_peca(item_id: StringName, cel: Vector2i) -> Construcao:
 	var tipo := ItemData.carregar(item_id).construcao
 	var chave := _chave(cel, camada_de(tipo))
 	if _pecas.has(chave):
-		return
+		return null
 	var c := Construcao.new()
 	c.tipo = tipo
 	c.item = item_id
@@ -916,6 +931,7 @@ func _criar_peca(item_id: StringName, cel: Vector2i) -> void:
 	(_pisos if tipo == &"chao" else entidades).add_child(c)
 	_pecas[chave] = c
 	Sfx.tocar(&"golpe_coleta", -6.0)
+	return c
 
 
 ## Só o anfitrião (a peça quebrou).
@@ -936,5 +952,5 @@ func _lista_construcoes() -> Array:
 	var lista := []
 	for chave in _pecas:
 		var c := _pecas[chave]
-		lista.append([String(c.item), c.celula.x, c.celula.y])
+		lista.append([String(c.item), c.celula.x, c.celula.y, c.conteudo] if c.tipo == &"bau" else [String(c.item), c.celula.x, c.celula.y])
 	return lista

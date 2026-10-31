@@ -66,8 +66,8 @@ func _physics_process(delta: float) -> void:
 func _on_area_entered(area: Area2D) -> void:
 	if _acertou or not area is Hurtbox:
 		return
-	if area.get_parent() == lancador or area.get_parent() is Player:
-		return  # sem fogo amigo
+	if area.get_parent() == lancador or area.get_parent() is Player or area.get_parent() is Construcao:
+		return  # sem fogo amigo; flechas e magias passam por cima das construções
 	_acertou = true
 	(area as Hurtbox).receber(dano, elemento, lancador)
 	set_deferred(&"monitoring", false)

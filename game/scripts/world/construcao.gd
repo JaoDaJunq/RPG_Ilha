@@ -25,6 +25,11 @@ var celula: Vector2i
 var _golpes := 0
 var _sprite: Sprite2D
 var _aberta := false
+## Baú: o que está guardado ([[id, qtd], ...], só o anfitrião sabe) e quem está com ele aberto.
+var conteudo: Array = []
+var em_uso_por: Node
+## Peça do acampamento: não quebra.
+var fixa := false
 
 
 func _ready() -> void:
@@ -52,6 +57,7 @@ func _ready() -> void:
 		&"bau":
 			_mostrar_acampamento(2)
 			_colisao(Vector2(13, 6), 1)
+			_area_de_uso()
 		&"bancada":
 			_mostrar_acampamento(4)
 			_colisao(Vector2(24, 8), 1)
@@ -130,11 +136,11 @@ func _area_de_uso() -> void:
 # --- Bancada (Interactable) --------------------------------------------------------
 
 func pode_interagir() -> bool:
-	return tipo == &"bancada"
+	return tipo == &"bancada" or tipo == &"bau"
 
 
 func texto_acao() -> String:
-	return "Usar bancada"
+	return "Abrir baú" if tipo == &"bau" else "Usar bancada"
 
 
 func destacar(ligado: bool) -> void:
@@ -149,7 +155,12 @@ func interagir(quem: Player) -> void:
 	if tipo == &"bancada":
 		quem.inventario.na_bancada = true
 		quem.inventario.reenviar()
-		quem.abrir_mochila.rpc_id(quem.get_multiplayer_authority(), true)
+		quem.abrir_mochila.rpc_id(quem.get_multiplayer_authority(), &"bancada")
+	elif tipo == &"bau":
+		if quem.inventario.abrir_bau(self):
+			quem.abrir_mochila.rpc_id(quem.get_multiplayer_authority(), &"bau")
+		else:
+			quem.avisar("Outro jogador está com este baú aberto.")
 
 
 # --- Porta e quebrar ---------------------------------------------------------------
@@ -168,7 +179,7 @@ func _process(_delta: float) -> void:
 
 ## Só o anfitrião: cada golpe de jogador tira um pouco; no último, a peça volta como item.
 func _on_atingido(_quantidade: float, dano: StringName, origem: Node) -> void:
-	if dano != &"fisico" or not origem is Player:
+	if dano != &"fisico" or not origem is Player or fixa:
 		return
 	_golpes -= 1
 	Sfx.tocar(&"golpe_coleta")
@@ -177,5 +188,11 @@ func _on_atingido(_quantidade: float, dano: StringName, origem: Node) -> void:
 	t.tween_property(_sprite, "position:x", -1.5, 0.06)
 	t.tween_property(_sprite, "position:x", 0.0, 0.04)
 	if _golpes <= 0:
+		# Baú quebrado: quem estava com ele aberto fecha, e o que tinha dentro vai para quem quebrou.
+		if is_instance_valid(em_uso_por):
+			(em_uso_por as Player).inventario.fechar_bau_servidor()
+		for e in conteudo:
+			if ItemData.existe(StringName(e[0])) and int(e[1]) > 0:
+				(origem as Player).inventario.adicionar(StringName(e[0]), int(e[1]))
 		(origem as Player).inventario.adicionar(item, 1)
 		World.quebrar_construcao(self)

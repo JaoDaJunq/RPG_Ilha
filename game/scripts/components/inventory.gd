@@ -6,6 +6,7 @@ extends Node
 ##   36 a 44  grade de fabricação 3x3 (na mochila só a 2x2 de cima à esquerda vale;
 ##            a 3x3 inteira só na bancada)
 ##   45       mão: o item que o mouse está segurando na tela da mochila
+##   46 a 72  o baú aberto (cópia do conteúdo do baú; o anfitrião grava de volta no baú)
 ## Quem manda é o anfitrião: o dono PEDE cada clique, o anfitrião aplica e manda a lista
 ## inteira de volta (pedido_clique, pedido_resultado, pedido_fechar).
 
@@ -16,7 +17,9 @@ const MOCHILA := 27
 const GUARDAR := BARRA + MOCHILA  # 36 espaços de guardar
 const GRADE := GUARDAR  # primeiro espaço da grade 3x3
 const MAO := GUARDAR + 9
-const ESPACOS := MAO + 1
+const BAU := MAO + 1
+const BAU_N := 27
+const ESPACOS := BAU + BAU_N
 ## Na mochila, a grade 2x2 são estes espaços da 3x3.
 const GRADE_2X2: Array[int] = [GRADE, GRADE + 1, GRADE + 3, GRADE + 4]
 
@@ -24,6 +27,9 @@ var _ids: Array[StringName] = []
 var _qtds: PackedInt32Array = PackedInt32Array()
 ## Grade 3x3 liberada (o dono está na bancada).
 var na_bancada := false
+## Baú aberto (o dono vê os espaços 46-72). No anfitrião, `bau_aberto` é o nó do baú.
+var com_bau := false
+var bau_aberto: Node
 
 
 func _init() -> void:
@@ -119,7 +125,7 @@ func definir(salvo: Variant) -> void:
 
 func para_salvar() -> Array:
 	var lista := []
-	for i in ESPACOS:
+	for i in MAO + 1:  # o baú aberto fica no baú, não no jogador
 		lista.append([String(_ids[i]), _qtds[i]])
 	return lista
 
@@ -150,9 +156,11 @@ func pedir_bancada(ligada: bool) -> void:
 
 @rpc("any_peer", "call_local", "reliable")
 func _pedido_clique(espaco: int, direito: bool, rapido: bool) -> void:
-	if not _pedido_do_dono() or espaco < 0 or espaco >= MAO:
+	if not _pedido_do_dono() or espaco < 0 or espaco >= ESPACOS or espaco == MAO:
 		return
-	if not na_bancada and espaco >= GRADE and not espaco in GRADE_2X2:
+	if espaco >= BAU and not is_instance_valid(bau_aberto):
+		return
+	if not na_bancada and espaco >= GRADE and espaco < MAO and not espaco in GRADE_2X2:
 		return
 	if rapido:
 		_mover_rapido(espaco)
@@ -195,7 +203,8 @@ func _pedido_resultado(rapido: bool) -> void:
 func _pedido_fechar() -> void:
 	if not _pedido_do_dono():
 		return
-	for i in range(GRADE, ESPACOS):
+	_fechar_bau()
+	for i in range(GRADE, MAO + 1):
 		if _ids[i] != &"":
 			var sobra := _guardar(_ids[i], _qtds[i], 0, GUARDAR)
 			if sobra > 0:
@@ -263,7 +272,12 @@ func _mover_rapido(i: int) -> void:
 		return
 	var de := 0
 	var ate := GUARDAR
-	if i < BARRA:
+	if is_instance_valid(bau_aberto) and i < GUARDAR:
+		de = BAU  # com o baú aberto, Shift manda para o baú
+		ate = BAU + BAU_N
+	elif i >= BAU:
+		pass  # do baú para a barra e a mochila
+	elif i < BARRA:
 		de = BARRA
 	elif i < GUARDAR:
 		ate = BARRA
@@ -341,26 +355,72 @@ func _trocar(a: int, b: int) -> void:
 
 
 func _enviar() -> void:
+	if is_instance_valid(bau_aberto) and multiplayer.has_multiplayer_peer() and multiplayer.is_server():
+		var c := []
+		for k in BAU_N:
+			c.append([String(_ids[BAU + k]), _qtds[BAU + k]])
+		bau_aberto.set(&"conteudo", c)
+	com_bau = is_instance_valid(bau_aberto) or (com_bau and not multiplayer.is_server())
 	mudou.emit()
 	if not multiplayer.has_multiplayer_peer():
 		return
 	var dono := get_parent().get_multiplayer_authority()
 	if dono != multiplayer.get_unique_id():
-		_receber.rpc_id(dono, _ids, _qtds, na_bancada)
+		_receber.rpc_id(dono, _ids, _qtds, na_bancada, is_instance_valid(bau_aberto))
 
 
 @rpc("any_peer", "reliable")
-func _receber(ids: Array, qtds: PackedInt32Array, bancada: bool) -> void:
+func _receber(ids: Array, qtds: PackedInt32Array, bancada: bool, bau: bool) -> void:
 	if not Net.veio_do_anfitriao():
 		return
 	for i in mini(ids.size(), ESPACOS):
 		_ids[i] = StringName(ids[i])
 	_qtds = qtds
 	na_bancada = bancada
+	com_bau = bau
 	mudou.emit()
 
 
 ## Gasta do espaço `i` (o anfitrião, ao pôr uma construção da mão).
 func gastar(i: int, quantidade: int) -> void:
 	_tirar(i, quantidade)
+	_enviar()
+
+
+# --- Baú (só o anfitrião) -------------------------------------------------------------
+## Abre o baú `b` (nó com `conteudo` = [[id, qtd], ...] e `em_uso_por`) para o dono:
+## copia o conteúdo para os espaços 46-72. Um jogador por vez. Retorna se abriu.
+func abrir_bau(b: Node) -> bool:
+	var usando = b.get(&"em_uso_por")
+	if is_instance_valid(usando) and usando != get_parent():
+		return false
+	_fechar_bau()
+	b.set(&"em_uso_por", get_parent())
+	bau_aberto = b
+	na_bancada = false
+	var c: Array = b.get(&"conteudo")
+	for k in BAU_N:
+		var e: Array = c[k] if k < c.size() else ["", 0]
+		var id := StringName(e[0])
+		_ids[BAU + k] = id if ItemData.existe(id) else &""
+		_qtds[BAU + k] = int(e[1]) if _ids[BAU + k] != &"" else 0
+	_enviar()
+	return true
+
+
+## Grava o baú de volta e solta (ao fechar a tela, sair do jogo ou o baú quebrar).
+func _fechar_bau() -> void:
+	if not is_instance_valid(bau_aberto):
+		bau_aberto = null
+		return
+	_enviar()  # grava o conteúdo atual no baú
+	bau_aberto.set(&"em_uso_por", null)
+	bau_aberto = null
+	for k in BAU_N:
+		_ids[BAU + k] = &""
+		_qtds[BAU + k] = 0
+
+
+func fechar_bau_servidor() -> void:
+	_fechar_bau()
 	_enviar()
