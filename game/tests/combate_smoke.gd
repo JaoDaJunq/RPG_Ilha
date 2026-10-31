@@ -13,11 +13,15 @@ func _ready() -> void:
 	checar(p.vida.atual < p.vida.maximo, "slime persegue e machuca no contato (vida %d de %d)" % [p.vida.atual, p.vida.maximo])
 
 	slime.set_physics_process(false)
+	var golpes := 0
 	for i in 3:
+		if not is_instance_valid(slime):
+			break
 		p.mira_forcada = slime.global_position
 		p.golpear()
+		golpes += 1
 		await esperar(0.4)
-	checar(not is_instance_valid(slime), "3 golpes derrotam o slime")
+	checar(not is_instance_valid(slime), "até 3 golpes derrotam o slime (com a espada de ferro: %d)" % golpes)
 
 	p.global_position += Vector2(40, 40)
 	p.vida.tomar_dano(500.0)

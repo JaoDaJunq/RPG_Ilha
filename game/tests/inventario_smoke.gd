@@ -10,6 +10,7 @@ func _ready() -> void:
 	var w := await criar_mundo()
 	var p := w.jogador
 	var inv := p.inventario
+	inv.definir([])  # começa vazio (sem a arma inicial da classe)
 
 	inv.adicionar(&"madeira", 70)
 	checar(inv.quantidade_de(&"madeira") == 70, "guardou 70 de madeira")

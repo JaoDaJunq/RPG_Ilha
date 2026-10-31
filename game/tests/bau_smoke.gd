@@ -8,6 +8,7 @@ func _ready() -> void:
 	var w := await criar_mundo()
 	var p := w.jogador
 	var inv := p.inventario
+	inv.definir([])  # começa vazio (sem a arma inicial da classe)
 	inv.adicionar(&"madeira", 30)
 	inv.adicionar(&"pedra", 5)
 	var bau := w.bau_acampamento

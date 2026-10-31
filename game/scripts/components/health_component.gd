@@ -47,6 +47,11 @@ func proteger(segundos: float) -> void:
 	_protecao = maxf(_protecao, segundos)
 
 
+func curar(quantidade: float) -> void:
+	atual = minf(maximo, atual + quantidade)
+	mudou.emit(atual, maximo)
+
+
 func curar_tudo() -> void:
 	atual = maximo
 	_protecao = 0.0

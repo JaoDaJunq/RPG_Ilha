@@ -259,13 +259,14 @@ func _criar_jogador(peer: int, raca: StringName, classe: StringName, id_jogador:
 	_nascimentos[peer] = p.position
 	_retornos[peer] = retorno
 	entidades.add_child(p, true)
-	if mesmo:
-		if peer == multiplayer.get_unique_id():
-			p.restaurar(reg)
+	# Personagem novo também passa por restaurar (com registro vazio): ganha a arma da classe.
+	if peer == multiplayer.get_unique_id():
+		p.restaurar(reg)
+		if mesmo:
 			Events.aviso.emit("Bem-vindo de volta! Seu %s está no nível %d." % [p.ficha.titulo(), p.nivel])
-		else:
-			# Para os outros, só depois que o jogador já existe lá (ver _pedir_nascimento).
-			_restaurar_depois[peer] = reg
+	else:
+		# Para os outros, só depois que o jogador já existe lá (ver _pedir_nascimento).
+		_restaurar_depois[peer] = reg
 
 
 @rpc("any_peer", "reliable")

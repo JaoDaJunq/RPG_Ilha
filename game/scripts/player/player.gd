@@ -149,6 +149,8 @@ func _unhandled_input(event: InputEvent) -> void:
 			barra_escolhida = (barra_escolhida + 1) % Inventory.BARRA
 		elif event.button_index == MOUSE_BUTTON_WHEEL_UP:
 			barra_escolhida = (barra_escolhida + Inventory.BARRA - 1) % Inventory.BARRA
+	if event.is_action_pressed(&"usar"):
+		_pedir_usar.rpc_id(1, barra_escolhida)
 	if event.is_action_pressed(&"atacar"):
 		if not _construir_aqui():
 			golpear()
@@ -441,6 +443,7 @@ func registro() -> Dictionary:
 		"pontos_atributo": pontos_atributo, "pontos_habilidade": pontos_habilidade,
 		"distribuidos": distribuidos.duplicate(),
 		"itens": inventario.para_salvar(),
+		"kit": true,
 		"pos": [global_position.x, global_position.y],
 		"salvo_em": Time.get_unix_time_from_system(),
 	}
@@ -460,6 +463,8 @@ func restaurar(reg: Dictionary) -> void:
 	vida.curar_tudo()
 	mana = ficha.mana_maxima()
 	inventario.definir(reg.get("itens", {}))
+	if not reg.get("kit", false):
+		dar_kit()
 	_enviar_progresso()
 
 
@@ -735,3 +740,33 @@ func _atualizar_previa() -> void:
 	_previa.texture = item.icone
 	_previa.global_position = Vector2(cel * World.T) + Vector2(World.T, World.T) / 2.0
 	_previa.modulate = Color(0.6, 1.0, 0.6, 0.75) if w.pode_construir(item.id, cel, self) else Color(1.0, 0.45, 0.45, 0.6)
+
+
+## Arma inicial de cada classe (vai para a barra, na mão): o personagem por peças não tem
+## arma desenhada, então ela é um item como os outros.
+const KIT := {&"guerreiro": &"espada_ferro", &"mago": &"cajado", &"arqueiro": &"arco"}
+
+
+## Só o anfitrião: personagem novo (ou salvo antes do kit existir) ganha a arma da classe.
+func dar_kit() -> void:
+	if KIT.has(classe) and inventario.quantidade_de(KIT[classe]) == 0:
+		inventario.adicionar(KIT[classe], 1)
+
+
+## Botão direito: usa o item da mão (por enquanto, só os que curam).
+@rpc("any_peer", "call_local", "reliable")
+func _pedir_usar(espaco: int) -> void:
+	if not multiplayer.is_server() or not _pedido_do_dono() or espaco < 0 or espaco >= Inventory.BARRA:
+		return
+	var id := inventario.item_em(espaco)
+	if not ItemData.existe(id):
+		return
+	var dados := ItemData.carregar(id)
+	if dados.cura > 0.0:
+		if vida.atual >= vida.maximo:
+			avisar("Sua vida já está cheia.")
+			return
+		inventario.gastar(espaco, 1)
+		vida.curar(dados.cura)
+		World.efeito_todos(self, &"subir_nivel", global_position)
+		avisar("+%d de vida" % int(dados.cura), &"item")

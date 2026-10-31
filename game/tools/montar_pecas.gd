@@ -1,0 +1,301 @@
+extends SceneTree
+## Personagem por peças (L19): a folha da IA tem o personagem MONTADO na célula 0 e as peças
+## soltas nas células 1-4 (cabeça, tronco, pé, mão). A IA não respeita o tamanho das peças,
+## então esta ferramenta ACHA cada peça dentro do personagem montado (compara a peça em
+## várias escalas e posições com a célula 0, em tamanho reduzido) e assim descobre a escala
+## certa e o lugar de cada uma. O pé e a mão aparecem duas vezes (frente e trás).
+## Depois transforma tudo em pixel art na densidade do Tiny Swords (como pixelizar.gd:
+## paleta do pacote, contorno #161c2e) e grava:
+##   <saida>/<nome>/cabeca.png, tronco.png, pe.png, mao.png, inteiro.png (com sombra)
+##   <saida>/<nome>/pecas.json: canto de cima à esquerda de cada peça em pixels da arte,
+##     com a origem nos pés (meio da largura, base do personagem montado).
+##
+## Uso (da raiz):
+##   godot --headless --path game --script res://tools/montar_pecas.gd -- \
+##     --entrada=../art/sprites/tiny/candidatos/pecas_humano_mago.png --nome=humano_mago \
+##     --saida=res://assets/sprites/tiny/bonecos [--altura=80] [--previa=../evidence/x.png]
+
+const CELULA := 512
+const REDUZ := 8  # a busca é feita com a imagem 8x menor
+const CONTORNO := Color("161c2e")
+const PALETA := "res://assets/tiny_swords/paleta.png"
+const PECAS := ["cabeca", "tronco", "pe", "mao"]
+
+var _args := {}
+var _paleta: Array[Color] = []
+
+
+func _init() -> void:
+	for a in OS.get_cmdline_user_args():
+		if a.begins_with("--") and a.contains("="):
+			_args[a.substr(2).get_slice("=", 0)] = a.get_slice("=", 1)
+	var folha := Image.load_from_file(_caminho(_args["entrada"]))
+	folha.convert(Image.FORMAT_RGBA8)
+	var pal := Image.load_from_file(ProjectSettings.globalize_path(PALETA))
+	pal.convert(Image.FORMAT_RGBA8)
+	for x in pal.get_width():
+		_paleta.append(pal.get_pixel(x, 0))
+	var alvo_altura := float(_args.get("altura", "80"))
+
+	var montado := _celula(folha, 0)
+	var caixa := _caixa_principal(montado)
+	var fator := alvo_altura / caixa.size.y
+	var ref := Vector2(caixa.position.x + caixa.size.x / 2.0, caixa.end.y)  # pés
+	var pequeno := _reduzir(montado.get_region(caixa))
+	var pasta := _caminho(_args["saida"]).path_join(_args["nome"])
+	DirAccess.make_dir_recursive_absolute(pasta)
+
+	var posicoes := {}
+	for i in PECAS.size():
+		var nome: String = PECAS[i]
+		var peca := _celula(folha, i + 1)
+		peca = peca.get_region(_caixa_principal(peca))
+		var achado := _achar(peca, pequeno, nome, 0.0, Vector2.INF)
+		var escala: float = achado.escala
+		var lugares: Array = [achado.pos]
+		if nome == "pe" or nome == "mao":
+			# A segunda (a de trás): mesma escala, longe da primeira.
+			var segundo := _achar(peca, pequeno, nome, escala, achado.pos)
+			lugares.append(segundo.pos if segundo.custo < 0.3 else Vector2.INF)
+		# Peça em pixel art: escala achada x fator do personagem.
+		var w := maxi(1, roundi(peca.get_width() * escala * fator))
+		var h := maxi(1, roundi(peca.get_height() * escala * fator))
+		var px := peca.duplicate() as Image
+		px.resize(w, h, Image.INTERPOLATE_LANCZOS)
+		_quantizar(px)
+		_contorno(px)
+		px.save_png(pasta.path_join(nome + ".png"))
+		var rels := []
+		for p in lugares:
+			if p == Vector2.INF:
+				rels.append(null)
+			else:
+				var no_montado: Vector2 = Vector2(caixa.position) + p * REDUZ
+				var rel := (no_montado - ref) * fator
+				rels.append([roundi(rel.x), roundi(rel.y)])
+		posicoes[nome] = rels
+		print("%s: escala %.2f, %dx%d, lugar %s (custo %.2f)" % [nome, escala, w, h, rels, achado.custo])
+
+	# Duas peças iguais: a da frente é a mais à direita (o personagem olha para a direita).
+	for nome in ["pe", "mao"]:
+		var r: Array = posicoes[nome]
+		if r[1] == null:
+			# Não achou a de trás: espelha a da frente em volta do meio do tronco.
+			var meio_tronco: float = posicoes["tronco"][0][0] + Image.load_from_file(pasta.path_join("tronco.png")).get_width() / 2.0
+			var largura := Image.load_from_file(pasta.path_join(nome + ".png")).get_width()
+			r[1] = [roundi(2.0 * meio_tronco - r[0][0] - largura), r[0][1]]
+		if r[1][0] > r[0][0]:
+			r.reverse()
+	var json := {"cabeca": posicoes["cabeca"][0], "tronco": posicoes["tronco"][0],
+		"pe_frente": posicoes["pe"][0], "pe_tras": posicoes["pe"][1],
+		"mao_frente": posicoes["mao"][0], "mao_tras": posicoes["mao"][1]}
+	var f := FileAccess.open(pasta.path_join("pecas.json"), FileAccess.WRITE)
+	f.store_string(JSON.stringify(json, "  "))
+	f.close()
+
+	# O personagem montado inteiro, em pixel art com sombra (retrato e conferência).
+	var inteiro := montado.get_region(caixa)
+	inteiro.resize(roundi(caixa.size.x * fator), roundi(caixa.size.y * fator), Image.INTERPOLATE_LANCZOS)
+	_quantizar(inteiro)
+	_contorno(inteiro)
+	var quadro := Image.create(inteiro.get_width() + 16, inteiro.get_height() + 8, false, Image.FORMAT_RGBA8)
+	quadro.blit_rect(inteiro, Rect2i(Vector2i.ZERO, inteiro.get_size()), Vector2i(8, 2))
+	SombraTiny.por(quadro, Rect2i(Vector2i(8, 2), inteiro.get_size()))
+	quadro.save_png(pasta.path_join("inteiro.png"))
+	print("Salvo: ", pasta)
+	quit()
+
+
+## A célula `c` com folga em volta (a IA às vezes passa da linha da célula): fica só o que é
+## desta célula, ou seja, as manchas cujo meio cai dentro dela. Na célula 0 (personagem
+## montado) ficam todas as manchas dela (as mãozinhas soltas são manchas separadas); nas
+## peças, só a maior.
+func _celula(folha: Image, c: int) -> Image:
+	const FOLGA := 112
+	var dentro := Rect2i((c % 3) * CELULA, (c / 3) * CELULA, CELULA, CELULA)
+	var area := dentro.grow(FOLGA).intersection(Rect2i(Vector2i.ZERO, folha.get_size()))
+	var img := folha.get_region(area)
+	var w := img.get_width()
+	var h := img.get_height()
+	var cheio := PackedByteArray()
+	cheio.resize(w * h)
+	for y in h:
+		for x in w:
+			var k := img.get_pixel(x, y)
+			if k.a < 0.5 or minf(k.r, k.b) - k.g > 0.45:
+				img.set_pixel(x, y, Color(0, 0, 0, 0))
+			else:
+				cheio[y * w + x] = 1
+	# Manchas (vizinhos de 4), com o meio de cada uma.
+	var marca := PackedInt32Array()
+	marca.resize(w * h)
+	marca.fill(-1)
+	var manchas: Array = []  # [tamanho, meio]
+	for i in w * h:
+		if cheio[i] == 0 or marca[i] >= 0:
+			continue
+		var id := manchas.size()
+		var fila := PackedInt32Array([i])
+		marca[i] = id
+		var soma := Vector2.ZERO
+		var n := 0
+		while n < fila.size():
+			var p := fila[n]
+			n += 1
+			var px := p % w
+			var py := p / w
+			soma += Vector2(px, py)
+			for v in [p - 1 if px > 0 else -1, p + 1 if px < w - 1 else -1, p - w, p + w]:
+				if v >= 0 and v < w * h and cheio[v] == 1 and marca[v] < 0:
+					marca[v] = id
+					fila.append(v)
+		manchas.append([fila.size(), soma / fila.size()])
+	var meio_dentro := Rect2(dentro.position - area.position, dentro.size)
+	var ficam := {}
+	var maior := -1
+	for id in manchas.size():
+		if manchas[id][0] < 60 or not meio_dentro.has_point(manchas[id][1]):
+			continue
+		if c == 0:
+			ficam[id] = true
+		elif maior < 0 or manchas[id][0] > manchas[maior][0]:
+			maior = id
+	if maior >= 0:
+		ficam[maior] = true
+	for i in w * h:
+		if cheio[i] == 1 and not ficam.has(marca[i]):
+			img.set_pixel(i % w, i / w, Color(0, 0, 0, 0))
+	return img
+
+
+func _reduzir(img: Image) -> Image:
+	var r := img.duplicate() as Image
+	r.resize(maxi(1, img.get_width() / REDUZ), maxi(1, img.get_height() / REDUZ), Image.INTERPOLATE_BILINEAR)
+	return r
+
+
+## Melhor (escala, posição no montado reduzido) para a peça. Custo: diferença média de cor
+## nos pixels da peça (fundo do montado conta como diferença máxima).
+func _achar(peca: Image, montado: Image, nome: String, escala_fixa := 0.0, evitar := Vector2.INF) -> Dictionary:
+	var melhor := {custo = INF, escala = 1.0, pos = Vector2.ZERO}
+	var escalas: Array = [escala_fixa] if escala_fixa > 0.0 else range(40, 165, 5).map(func(n: int) -> float: return n / 100.0)
+	var mw := montado.get_width()
+	var mh := montado.get_height()
+	var md := montado.get_data()
+	for s in escalas:
+		var tw := roundi(peca.get_width() * s / REDUZ)
+		var th := roundi(peca.get_height() * s / REDUZ)
+		if tw < 2 or th < 2 or tw > mw or th > mh:
+			continue
+		var t := peca.duplicate() as Image
+		t.resize(tw, th, Image.INTERPOLATE_BILINEAR)
+		var td := t.get_data()
+		var pontos: Array = []
+		for y in th:
+			for x in tw:
+				var k := (y * tw + x) * 4
+				if td[k + 3] > 160:
+					pontos.append([x, y, td[k], td[k + 1], td[k + 2]])
+		if pontos.size() < 3:
+			continue
+		for oy in range(0, mh - th + 1):
+			for ox in range(0, mw - tw + 1):
+				if not _lugar_possivel(nome, ox, oy, tw, th, mw, mh, evitar):
+					continue
+				var soma := 0.0
+				for p in pontos:
+					var k: int = ((oy + p[1]) * mw + ox + p[0]) * 4
+					if md[k + 3] < 128:
+						soma += 1.0
+					else:
+						soma += (absi(md[k] - p[2]) + absi(md[k + 1] - p[3]) + absi(md[k + 2] - p[4])) / 765.0
+				var custo := soma / pontos.size()
+				if custo < melhor.custo:
+					melhor = {custo = custo, escala = s, pos = Vector2(ox, oy)}
+	return melhor
+
+
+func _quantizar(img: Image) -> void:
+	for y in img.get_height():
+		for x in img.get_width():
+			var c := img.get_pixel(x, y)
+			img.set_pixel(x, y, Color(0, 0, 0, 0) if c.a < 0.5 else _mais_proxima(c))
+
+
+func _mais_proxima(c: Color) -> Color:
+	var melhor := _paleta[0]
+	var dist := 99.0
+	for p in _paleta:
+		var d := (c.r - p.r) * (c.r - p.r) * 0.3 + (c.g - p.g) * (c.g - p.g) * 0.59 + (c.b - p.b) * (c.b - p.b) * 0.11
+		if d < dist:
+			dist = d
+			melhor = p
+	return melhor
+
+
+func _contorno(img: Image) -> void:
+	var copia := img.duplicate() as Image
+	for y in img.get_height():
+		for x in img.get_width():
+			if copia.get_pixel(x, y).a == 0.0:
+				continue
+			for d in [Vector2i.LEFT, Vector2i.RIGHT, Vector2i.UP, Vector2i.DOWN]:
+				var p: Vector2i = Vector2i(x, y) + d
+				if p.x < 0 or p.y < 0 or p.x >= img.get_width() or p.y >= img.get_height() or copia.get_pixelv(p).a == 0.0:
+					img.set_pixel(x, y, CONTORNO)
+					break
+
+
+func _caminho(p: String) -> String:
+	if p.begins_with("res://"):
+		return ProjectSettings.globalize_path(p)
+	if p.is_absolute_path():
+		return p
+	return ProjectSettings.globalize_path("res://").path_join(p).simplify_path()
+
+
+## Bom senso na busca: a cabeça fica em cima, os pés embaixo; a segunda mão (ou pé) fica na
+## mesma altura da primeira, do outro lado.
+func _lugar_possivel(nome: String, ox: int, oy: int, tw: int, th: int, mw: int, mh: int, primeiro: Vector2) -> bool:
+	match nome:
+		"cabeca":
+			if oy > mh * 0.2:
+				return false
+		"tronco":
+			if oy < mh * 0.2 or oy + th < mh * 0.6:
+				return false
+		"pe":
+			if oy + th < mh - 2:
+				return false
+		"mao":
+			if oy < mh * 0.3 or oy + th > mh - 2:
+				return false
+	if primeiro != Vector2.INF:
+		if absf(oy - primeiro.y) > th * 0.6 or absf(ox - primeiro.x) < tw * 0.8:
+			return false
+	return true
+
+
+## Caixa do desenho ignorando pontinhos soltos (a IA deixa sujeira longe da peça): só conta
+## blocos de 8x8 que estão quase cheios, e depois ajusta a borda pelos pixels de verdade.
+func _caixa_principal(img: Image) -> Rect2i:
+	var r := Rect2i()
+	var primeiro := true
+	for by in range(0, img.get_height(), 8):
+		for bx in range(0, img.get_width(), 8):
+			var cheios := 0
+			for y in range(by, mini(by + 8, img.get_height())):
+				for x in range(bx, mini(bx + 8, img.get_width())):
+					if img.get_pixel(x, y).a > 0.5:
+						cheios += 1
+			if cheios >= 40:
+				var b := Rect2i(bx, by, 8, 8)
+				r = b if primeiro else r.merge(b)
+				primeiro = false
+	r = r.grow(8).intersection(Rect2i(Vector2i.ZERO, img.get_size()))
+	return _justo(img, r)
+
+
+func _justo(img: Image, r: Rect2i) -> Rect2i:
+	var u := img.get_region(r).get_used_rect()
+	return Rect2i(r.position + u.position, u.size)

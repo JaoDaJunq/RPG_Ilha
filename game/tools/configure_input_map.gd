@@ -32,6 +32,7 @@ const TECLAS := {
 
 const MOUSE := {
 	"atacar": [MOUSE_BUTTON_LEFT],
+	"usar": [MOUSE_BUTTON_RIGHT],  # comer, beber, usar o item da mão
 }
 
 
