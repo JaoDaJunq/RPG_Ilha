@@ -43,7 +43,7 @@ Fluxo de arte: o Claude escreve o pedido em `art/prompts/pedidos/` → o Codex g
 
 - **Pronto quer dizer provado.** Código: `bash game/tools/rodar_testes.sh` com tudo OK. Visual: print tirado de dentro do jogo e olhado em tamanho real. Número em relatório sai de um comando; sem comando, escrever "não medido".
 - **Arte nunca por código.** Nada de `draw_rect`/`draw_circle` para desenhar objeto, efeito ou personagem (só barrinha de interface e depuração). Se faltar a arte, pedir ao Codex ou usar um placeholder CC0 registrado.
-  - **Exceção (João, 31/10/2026): EFEITOS podem ser feitos com o Pixelbolt** (`C:Projetoserramentaspixelbolt`, MIT). As receitas ficam em `art/fx_receitas/` (gerar com `node art/fx_receitas/gerar.mjs <pasta do Pixelbolt>`), sempre com as cores do Tiny Swords. A conversão para o jogo é `game/tools/importar_pixelbolt.gd`. Personagens e objetos continuam com o Codex.
+  - **Exceção (João, 31/10/2026): EFEITOS podem ser feitos com o Pixelbolt** (`C:\Projetos\ferramentas\pixelbolt`, MIT). As receitas ficam em `art/fx_receitas/` (gerar com `node art/fx_receitas/gerar.mjs <pasta do Pixelbolt>`), sempre com as cores do Tiny Swords. A conversão para o jogo é `game/tools/importar_pixelbolt.gd`. Personagens e objetos continuam com o Codex.
 - **Só assets próprios ou CC0** (ou licença conferida e registrada). Todo asset novo entra em `assets/manifest.csv`.
 - **Todo sistema nasce pensando no multiplayer.** O estado do mundo muda por funções do servidor (o anfitrião), nunca direto pelo input do jogador.
 - Godot sempre com `--headless`, exceto no playtest e nos prints. Binário: `%LOCALAPPDATA%/Programs/Godot/4.7.2/Godot_v4.7.2-stable_win64_console.exe`.
