@@ -25,11 +25,11 @@ O que mudou por último está no `git log`; as decisões, em `design/decisoes.md
 
 ## 2. A tarefa principal agora: personagem com ARTE COMPLETA
 
-**Andamento (01/11/2026):** as 10 folhas e as peças dos 5 personagens do Humano foram geradas e integradas. A mochila veste um traje completo pelo espaço Corpo, sem chapéu visual separado. A bateria terminou com `BATERIA: tudo OK`; o print está em `evidence/novidades/customizacao.png`. O perfil do Ladino usa `--escala_tronco=0.75` para a ferramenta encontrar o tronco no tamanho certo. O pacote de aprovação está em `C:\Users\jpach\Aprovações Ilhas Vivas\L29 - personagens completos do humano (aguardando)`. **Não começar as outras raças até o João aprovar esta etapa.** As peças antigas das outras raças continuam no projeto enquanto elas ainda dependem delas.
+**Andamento (01/11/2026):** os 20 personagens completos (Humano, Ogro, Elfo e Anão; cinco classes cada) estão montados por peças. As 10 folhas do Humano e as 30 folhas das outras raças foram geradas e conferidas uma por uma. A bateria terminou com `BATERIA: tudo OK`. Prints de jogo: `evidence/novidades/customizacao.png` (Humano), `customizacao_ogro.png`, `customizacao_elfo.png` e `customizacao_anao.png`. Humano já tem pacote em `C:\Users\jpach\Aprovações Ilhas Vivas\L29 - personagens completos do humano (aguardando)`; as outras raças estão no pacote `C:\Users\jpach\Aprovações Ilhas Vivas\L29 - personagens completos das outras raças (aguardando)`. O João autorizou seguir com as três raças em 01/11. O perfil do Ladino Humano usa `--escala_tronco=0.75`; Ogro e Anão foram convertidos com `--altura=88`. Os assets antigos permanecem para a roupinha branca e compatibilidade de aparências salvas.
 
 **Decisão de 01/11:** desistimos das roupas trocáveis (as tentativas estão em `design/pesquisa_roupas.md`). Agora:
 
-- Cada combinação **raça x classe** é um personagem inteiro, nas 3 vistas: perfil olhando para a direita, frente e costas. São 4 raças x 5 classes = **20 personagens**. Comece pelos 5 do Humano e mostre ao João antes de fazer o resto.
+- Cada combinação **raça x classe** é um personagem inteiro, nas 3 vistas: perfil olhando para a direita, frente e costas. São 4 raças x 5 classes = **20 personagens**. O Humano foi apresentado primeiro; a pedido do João, as outras três raças também foram concluídas.
 - O personagem continua **montado por peças**, no estilo Forager: cabeça (já com o chapéu, elmo ou capuz), tronco (já com a roupa), um pé e uma mão, que o jogo anima.
 - A arma da classe continua sendo um item, desenhado na mão pelo jogo.
 
@@ -86,9 +86,9 @@ Ogro e anão são maiores: use `--altura=88` nas três chamadas. O padrão é 80
 
 O resultado fica em `game/assets/sprites/tiny/bonecos/<raca>_<classe>/`.
 
-### O código que precisa mudar
+### Como funciona no jogo
 
-O boneco é `game/scripts/player/boneco.gd`. Hoje `vestir(aparencia, equipado)` monta tudo em camadas: base da raça + rosto + roupa + chapéu, e as peças L27 em `<raca>/pecas/`. O novo jeito:
+O boneco é `game/scripts/player/boneco.gd`. `vestir(aparencia, equipado)` escolhe a pasta `bonecos/<raca>_<classe>/` quando há traje completo. O jeito atual:
 
 1. **Se existir `bonecos/<raca>_<classe>/`, usa o personagem inteiro.** A classe é a da roupa do corpo equipada (`roupa_<classe>`), ou a classe do jogador.
    - A cabeça, o tronco, o pé e a mão vêm dessa pasta, nas 3 vistas.
@@ -96,19 +96,14 @@ O boneco é `game/scripts/player/boneco.gd`. Hoje `vestir(aparencia, equipado)` 
    - O tom de pele continua: `_tingir()` na cabeça e nas mãos.
    - O código antigo que fazia isso (a função `configurar(raca, classe)`) está no histórico: `git show 28f9f4e^:game/scripts/player/boneco.gd`. As pastas antigas, para comparar, também: `git show 28f9f4e --stat`.
 2. **Sem roupa** (a roupinha branca): continua usando `bonecos/<raca>/base/`.
-3. **As roupas trocáveis viram uma coisa só.** Vestir a "roupa da classe" mostra o personagem inteiro daquela classe. O chapéu deixa de ser peça visual; pode virar só um item de atributo, ou sair.
-   - Mexer em `game/scripts/ui/criacao.gd` e `game/scripts/ui/mochila.gd`: a miniatura e os espaços Cabeça e Corpo.
-   - Também em `player.gd`: `ROUPAS_BASE` e `dar_kit`.
-4. **Depois de funcionar, apagar o que não se usa mais:**
-   - pastas: `bonecos/<raca>/<classe>/`, `bonecos/<raca>/pecas/`, `bonecos/<raca>/rosto_*`;
-   - ferramentas: `game/tools/separar_peca.gd`;
-   - arte: `art/sprites/tiny/gabarito/`.
-   - Registre no `assets/manifest.csv`, que deve listar todo asset novo e não listar os apagados.
+3. Cada classe veste um traje completo no espaço Corpo; a criação e a mochila mostram esse personagem. O chapéu não é uma peça visual separada. O código já está ajustado em `game/scripts/ui/criacao.gd`, `game/scripts/ui/mochila.gd` e `game/scripts/player/player.gd`.
+4. Os assets legados continuam enquanto a criação usa a roupinha branca e para compatibilidade com aparências antigas. Reavaliar a remoção só quando essas dependências também forem substituídas.
+
 
 ### Como provar que ficou bom
 
 - Testes: `bash game/tools/rodar_testes.sh` com tudo OK.
-- Print de dentro do jogo: `game/tests/print_customizacao.tscn` (precisa de janela, sem `--headless`) salva `evidence/novidades/customizacao.png`, com as combinações da lista `COMBOS` em 3 linhas: frente, perfil e costas. Abra a imagem e confira em tamanho real.
+- Print de dentro do jogo: `game/tests/print_customizacao.tscn` (precisa de janela, sem `--headless`) aceita `--raca=ogro`, `--raca=elfo` ou `--raca=anao`; sem argumento imprime o Humano. Salva um print por raça em `evidence/novidades/customizacao*.png`, com as cinco classes em três linhas: frente, perfil e costas. Abra cada imagem e confira em tamanho real.
 - Pasta de aprovações do João: `C:\Users\jpach\Aprovações Ilhas Vivas\`, com uma subpasta `L29 - <assunto> (aguardando)` com os prints e um `LEIA-ME.txt` em português simples.
 
 ## 3. O que vem depois (já aprovado pelo João)

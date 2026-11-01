@@ -12,11 +12,29 @@ const VIDA_SLIME := 20.0  # vida alta: nenhum slime morre no meio da medição
 
 func _ready() -> void:
 	_dados()
+	_personagens_completos()
 	await _ladino()
 	await _clerigo()
 	await _elfo()
 	await _anao()
 	terminar()
+
+
+## Todos os cruzamentos raça/classe precisam carregar as três vistas e as peças animáveis.
+func _personagens_completos() -> void:
+	for raca in RacaData.TODAS:
+		for classe in ClasseData.TODAS:
+			var pasta := "res://assets/sprites/tiny/bonecos/%s_%s/" % [raca, classe]
+			var arquivos := ["pecas.json", "pecas_frente.json", "pecas_costas.json", "cabeca.png", "cabeca_frente.png", "cabeca_costas.png", "tronco.png", "tronco_frente.png", "tronco_costas.png", "mao.png", "pe.png", "sombra.png"]
+			var completo := true
+			for arquivo in arquivos:
+				completo = completo and FileAccess.file_exists(pasta + arquivo)
+			checar(completo, "%s %s tem peças nas três vistas" % [raca, classe])
+			if completo:
+				var b := Boneco.new()
+				b.vestir({"raca": raca, "rosto": 0, "pele": 0}, {"corpo": StringName("roupa_" + String(classe))})
+				checar(b._vistas.size() == 3 and b._vistas.has("_frente") and b._vistas.has("_costas"), "%s %s veste como personagem completo" % [raca, classe])
+				b.free()
 
 
 # --- Ajudantes --------------------------------------------------------------------------

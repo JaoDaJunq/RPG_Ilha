@@ -11,7 +11,7 @@ extends Node2D
 ## boneco inteiro é espelhado. Mantém `animation` e `play()` como o AnimatedSprite2D de antes.
 
 const PASTA := "res://assets/sprites/tiny/bonecos/"
-## Cobertura antiga enquanto as outras raças ainda não têm personagem completo.
+## Cobertura antiga para aparências salvas ou sem traje completo disponível.
 const COBERTURA_BASE := {
 	"guerreiro": "elmo_guerreiro",
 	"mago": "chapeu_mago",
