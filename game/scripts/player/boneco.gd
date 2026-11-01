@@ -22,6 +22,8 @@ const COBERTURA_BASE := {
 ## O arco vai em pé na mão (L23): 4 quadros da corda (repouso e 3 de puxada) e a flecha.
 const ARCO := preload("res://assets/sprites/tiny/itens/arco_puxando.png")
 const FLECHA := preload("res://assets/sprites/tiny/itens/flecha_deitada.png")
+## Uma adaga por mão. O ícone do golpe furtivo já contém uma lâmina só.
+const ADAGA_MAO := preload("res://assets/sprites/tiny/icones/icone_golpe_furtivo.png")
 const QUADRO_ARCO := 64
 ## Raças que vestem as roupas de outra (mesmo corpo).
 const ROUPA_DE := {"elfo": "humano", "anao": "ogro"}
@@ -29,6 +31,8 @@ const ROUPA_DE := {"elfo": "humano", "anao": "ogro"}
 var animation: StringName = &"parado_direita"
 ## Item da mão (id), definido pelo Player a cada quadro.
 var item: StringName = &""
+## A tela de criação usa uma arma menor para ela caber junto do personagem.
+var escala_item := 1.0
 ## Quanto a corda do arco está puxada (0 a 1; -1 sem puxar), definido pelo Player.
 var carga := -1.0
 
@@ -41,6 +45,7 @@ var _dor_desvio := Vector2.ZERO
 var _base := {}  # peça -> posição de descanso (pixels da arte)
 var _pecas := {}  # peça -> Sprite2D
 var _item: Sprite2D
+var _item_tras: Sprite2D
 var _flecha: Sprite2D
 var _tempo := 0.0
 var _golpe := -1.0  # segundos desde o começo do golpe (-1 = sem golpe)
@@ -216,6 +221,7 @@ func _montar(vistas: Dictionary, pe: Texture2D, mao: Texture2D, sombra_tex: Text
 	var base: Dictionary = vistas[""].base
 	for parte in [["mao_tras", mao], ["pe_tras", pe], ["tronco", null], ["pe_frente", pe], ["roupa", null], ["cabeca", null], ["cabelo", null], ["chapeu", null]]:
 		_pecas[parte[0]] = _sprite(parte[1])
+	_item_tras = _sprite(null)
 	_item = _sprite(null)
 	_flecha = _sprite(FLECHA)
 	_flecha.visible = false
@@ -248,8 +254,16 @@ func _usar_vista(v: String) -> void:
 	var roupa := _pecas["roupa"] as Sprite2D
 	roupa.texture = d.get("roupa")
 	roupa.visible = d.get("roupa") != null
-	# De costas, o item fica atrás do corpo; nas outras vistas, na frente.
-	move_child(_item, 1 if v == "_costas" else get_child_count() - 3)
+	# A arma acompanha a mão correspondente; as duas ficam atrás do corpo de perfil/de costas.
+	if v == "":
+		move_child(_item_tras, 1)
+		move_child(_item, get_child_count() - 4)
+	elif v == "_costas":
+		move_child(_item, 1)
+		move_child(_item_tras, 2)
+	else:
+		move_child(_item_tras, get_child_count() - 4)
+		move_child(_item, get_child_count() - 3)
 	move_child(_flecha, get_child_count() - 2)
 
 
@@ -317,7 +331,7 @@ func _posar(passo: float, respira: float, golpe: float) -> void:
 	_por("pe_frente", Vector2(roundf(passo * ida), minf(0.0, roundf(-passo * 3.0))))
 	_por("pe_tras", Vector2(roundf(-passo * ida), minf(0.0, roundf(passo * 3.0))))
 	var flutua := roundf(sin(_tempo * 2.4 + 1.2) * 1.2)
-	_por("mao_tras", corpo + Vector2(roundf(-passo * 3.0), flutua))
+	var mao_tras := corpo + Vector2(roundf(-passo * 3.0), flutua)
 	var mao := corpo + Vector2(roundf(passo * 3.0), -flutua)
 	var giro := 0.0
 	if golpe >= 0.0:
@@ -330,8 +344,9 @@ func _posar(passo: float, respira: float, golpe: float) -> void:
 		# Puxando o arco: a mão da frente sobe até o ombro e estica para a frente.
 		mao = corpo + Vector2(6, -14)
 		giro = 0.0
+	_por("mao_tras", mao_tras)
 	_por("mao_frente", mao)
-	_por_item(mao, giro)
+	_por_item(mao, mao_tras, giro)
 
 
 func _por(nome: String, desvio: Vector2) -> void:
@@ -340,14 +355,34 @@ func _por(nome: String, desvio: Vector2) -> void:
 
 ## O item vai na mão da frente: o ícone é desenhado na diagonal com o cabo embaixo à
 ## esquerda; o cabo (20% da largura, 80% da altura) fica no meio da mão.
-func _por_item(mao: Vector2, giro: float) -> void:
+func _por_item(mao: Vector2, mao_tras: Vector2, giro: float) -> void:
 	var dados := ItemData.carregar(item) if ItemData.existe(item) else null
 	_item.visible = dados != null
+	_item_tras.visible = item == &"adagas" and dados != null
 	_flecha.visible = false
 	if dados == null:
 		return
 	var m := _pecas["mao_frente"] as Sprite2D
 	var centro_mao: Vector2 = _base["mao_frente"] + mao + m.texture.get_size() / 2.0
+	var mt := _pecas["mao_tras"] as Sprite2D
+	var centro_mao_tras: Vector2 = _base["mao_tras"] + mao_tras + mt.texture.get_size() / 2.0
+	_item.scale = Vector2.ONE * escala_item
+	_item_tras.scale = Vector2.ONE * escala_item
+	_flecha.scale = Vector2.ONE * escala_item
+	if item == &"adagas":
+		_item.texture = ADAGA_MAO
+		_item.region_enabled = false
+		var tam_adaga := ADAGA_MAO.get_size()
+		_item.offset = -Vector2(tam_adaga.x * 0.2, tam_adaga.y * 0.8).round()
+		_item.position = centro_mao
+		_item.rotation = giro
+		_item_tras.texture = ADAGA_MAO
+		_item_tras.region_enabled = false
+		_item_tras.flip_h = true
+		_item_tras.offset = -Vector2(tam_adaga.x * 0.8, tam_adaga.y * 0.8).round()
+		_item_tras.position = centro_mao_tras
+		_item_tras.rotation = -giro
+		return
 	if item == &"arco":
 		_por_arco(centro_mao, giro)
 		return

@@ -12,6 +12,7 @@ signal confirmado(raca: StringName, classe: StringName, aparencia: Dictionary)
 const FUNDO := "res://assets/sprites/menu_fundo.png"
 ## Quanto o boneco (escala 0,25 no jogo) cresce aqui. Inteiro: o pixel da arte continua nítido.
 const ESCALA_BONECO := 3.0
+const ESCALA_ITEM_PREVIA := 0.6
 const COR_TEXTO := Tema.COR_TEXTO
 const COR_TEXTO_2 := Tema.COR_TEXTO_2
 ## Botões por linha: 4 raças numa linha e 5 classes noutra (letra um pouco menor).
@@ -192,6 +193,7 @@ func _montar_previa() -> Control:
 	v.add_child(quadro)
 	_boneco = Boneco.new()
 	_boneco.scale = Vector2.ONE * ESCALA_BONECO
+	_boneco.escala_item = ESCALA_ITEM_PREVIA
 	_boneco.position = Vector2(125, 292)  # os pés, no meio e perto do chão do quadro
 	_boneco.play(&"parado_baixo")
 	quadro.add_child(_boneco)

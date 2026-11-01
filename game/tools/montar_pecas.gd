@@ -163,6 +163,15 @@ func _init() -> void:
 			r[1] = [roundi(2.0 * meio_tronco - r[0][0] - largura), r[0][1]]
 		if r[1][0] > r[0][0]:
 			r.reverse()
+	# Mangas compridas: encosta os punhos na borda das mangas antes de gravar as posições.
+	var aproximar_maos := maxi(0, int(_args.get("aproximar_maos", "0")))
+	if aproximar_maos > 0:
+		var mao_frente: Array = posicoes["mao"][0]
+		var mao_tras: Array = posicoes["mao"][1]
+		mao_frente[0] -= aproximar_maos
+		mao_tras[0] += aproximar_maos
+		posicoes["mao"][0] = mao_frente
+		posicoes["mao"][1] = mao_tras
 	var json := {"cabeca": posicoes["cabeca"][0], "tronco": posicoes["tronco"][0],
 		"pe_frente": posicoes["pe"][0], "pe_tras": posicoes["pe"][1],
 		"mao_frente": posicoes["mao"][0], "mao_tras": posicoes["mao"][1]}
