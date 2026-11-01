@@ -37,7 +37,7 @@ Lista oficial de tarefas. Marcar `[x]` só com prova (teste OK ou print revisado
 - [ ] T34 Tela da árvore de habilidades (ramos de cada classe) e refazer escolhas na fogueira.
 - [ ] T35 Ramos completos de Guerreiro, Mago e Arqueiro; modo "com mira".
 - [ ] T36 Clérigo, Druida, Assassino e Alquimista; Elfo, Anão e Tritão.
-- [ ] T37 Arte em camadas (corpo da raça + roupa da classe + arma) com o Codex.
+- [ ] T37 Arte COMPLETA por raça e classe (4 raças x 5 classes, 3 vistas), montada por peças; ver `design/guia_codex.md` (decisão de 01/11: desistimos das roupas trocáveis).
 
 ## Feedback do playtest do João (29/10/2026)
 

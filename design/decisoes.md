@@ -19,6 +19,8 @@
 | 30/10/2026 | **Estilo Tiny Swords.** Depois dos pilotos L08 (simples), L09 (pixel v2) e L10 (desenho HD), o João escolheu o estilo do pacote Tiny Swords (Pixel Frog) e pediu para usar os assets dele onde der e criar os nossos com base neles. Pacote gratuito baixado em `art/terceiros/tiny_swords/` (uso comercial permitido, sem redistribuir). Piloto no jogo: `tests/piloto_tiny.tscn`. Processo em `design/processo_arte.md`. |
 | 31/10/2026 | **Pixelbolt para efeitos.** O João achou o Pixelbolt (ferramenta MIT que gera pixel art e animação a partir de receitas em texto, com simulação de fogo, fumaça e líquido) e autorizou o teste. Efeitos animados (bola de fogo, lança de gelo, estouro de gelo) feitos com ele, nas cores do Tiny Swords, comparados com o pacote e postos no jogo. Exceção à regra "arte nunca por código", só para efeitos. A explosão continua a do pacote. |
 
+| 01/11/2026 | **Personagem com arte COMPLETA por raça e classe (desiste das roupas trocáveis).** Foram testados três jeitos de vestir o boneco: roupa desenhada à parte e encaixada (L24/L25), roupa recortada de um boneco vestido (L26) e peças separadas em cima de um boneco careca (L27). Nenhum ficou bom o bastante para o João. Agora cada combinação raça x classe é um personagem inteiro, desenhado pelo Codex nas 3 vistas (perfil, frente, costas), montado por peças como no L19/L21 (cabeça, tronco, pés, mãos). São mais desenhos, mas sempre ficam bonitos. A pesquisa e os testes ficam em `design/pesquisa_roupas.md`. Daqui em diante o João também usa o Codex para programar (guia: `design/guia_codex.md`). |
+
 ## Em aberto (o João decide)
 
 - **Nome do jogo.** Opções levantadas: Emberwild, Mossborne, Brasa & Musgo, Ilha Errante, Wildmere, Verdeluz.

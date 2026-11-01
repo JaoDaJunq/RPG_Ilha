@@ -19,6 +19,7 @@ Este arquivo vale para todos os agentes (Claude Code e Codex). O processo foi he
 |---|---|
 | **Claude Code** | Coordena e executa: planeja, programa em GDScript, escreve testes, integra assets, avalia as imagens contra a bíblia visual, documenta e escreve os pedidos de arte para o Codex. |
 | **Codex** (`gpt-6-luna`, esforço alto) | Gera as imagens do jogo (login do ChatGPT, sem chave de API). Segue `art/prompts/README.md` e `design/identidade.md`, anexa as referências pedidas e salva só nas pastas indicadas no pedido. |
+| **Codex, direto com o João** (desde 01/11/2026) | O João também usa o Codex para programar e tocar o projeto sem o Claude no meio. Comece por `design/guia_codex.md` (estado, tarefa atual, comandos e cuidados). |
 
 A cota do Codex é a mesma para imagens e código, então o Codex fica só com as imagens. Chamada padrão (da raiz do repositório):
 
