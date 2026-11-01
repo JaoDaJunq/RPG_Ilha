@@ -1,281 +1,309 @@
-﻿# Árvore de habilidades — proposta para validar
+﻿# Árvore de habilidades · versão 2 (para validar)
+
+*01/11/2026. Refeita a partir do pedido do João: mais habilidades, mais criatividade, nada repetido, e passivas fortes desde o começo. Ainda não está no jogo. ★ = já existe hoje.*
 
 ## Como funciona
 
-- No nível 1, cada personagem começa com duas habilidades padrão e um ponto de habilidade por nível. Os pontos podem ser guardados.
-- Nos níveis 2, 3 e 4, a pessoa escolhe mais uma habilidade inicial por nível. Ao completar as cinco, no nível 4 se gastar os pontos sem guardar, escolhe um único ramo. Sugestão: fazer essa escolha a partir do nível 5.
-- A escolha do ramo abre só aquele caminho. As cinco iniciais ficam para sempre; não é preciso esquecê-las para aprender habilidades novas. Cada ramo tem três etapas: primeira habilidade a partir do nível 6, segunda a partir do 9 e terceira a partir do 12. A passiva do ramo vem junto com a primeira etapa. Os níveis são sugestões e podem mudar no teste.
-- Os níveis 13 a 16 permitem guardar pontos, completar escolhas atrasadas ou aprofundar a árvore se novos nós forem acrescentados. Esta proposta não define custo de mana nem dano exato.
-- No Mago, os quatro ramos representam os elementos. Nas outras classes, as cinco iniciais dão uma amostra dos estilos possíveis; escolher uma delas não obriga a seguir o ramo correspondente.
-
-## Guerreiro
-
-**Papel no grupo:** fica na linha de frente, segura a pressão dos inimigos e cria espaço para os aliados.
-
-### Cinco habilidades iniciais
-
-| Habilidade | O que faz | Efeito especial | Padrão no nível 1? | Ramo que apresenta |
-|---|---|---|---|---|
-| Investida *(já existe)* | Avança e acerta os inimigos no caminho. | Empurrão | Sim | Berserker |
-| Giro *(já existe)* | Ataca todos os inimigos próximos. | Ataque em área | Sim | Berserker |
-| Bloqueio *(já existe)* | Reduz o dano recebido por alguns instantes. | Proteção | Não | Guardião |
-| Fúria *(já existe)* | Aumenta por pouco tempo a força e a velocidade. | Aumento de força e velocidade | Não | Berserker |
-| Provocação *(nova)* | Chama a atenção dos inimigos próximos para o Guerreiro. | Provocação | Não | Guardião |
-
-### Ramos
-
-#### Guardião — proteção e defesa do grupo
-
-| Ordem | Habilidade | O que faz | Efeito |
-|---|---|---|---|
-| 1 | Muralha firme | Ergue uma proteção que amortece golpes recebidos por aliados próximos. | Proteção em área |
-| 2 | Revidar | Depois de bloquear um golpe, devolve parte da pressão ao atacante. | Contra-ataque |
-| 3 | Última guarda | Por um breve momento, impede que um aliado próximo caia. | Proteção de emergência |
-
-**Passiva — Presença protetora:** aliados próximos recebem um pouco menos de dano.
-
-#### Berserker — avançar e bater com força
-
-| Ordem | Habilidade | O que faz | Efeito |
-|---|---|---|---|
-| 1 | Corte voraz | Faz um golpe forte à frente; acerta mais se o alvo já estiver ferido. | Dano maior contra alvo ferido |
-| 2 | Ruptura | Um golpe pesado interrompe a ação do inimigo. | Interrupção |
-| 3 | Avanço imparável | Avança e golpeia em sequência, atravessando o grupo de inimigos. | Avanço e ataques em sequência |
-
-**Passiva — Sede de combate:** derrotar um inimigo recupera um pouco de vigor por um curto período.
-
-#### Duelista — precisão contra um alvo
-
-| Ordem | Habilidade | O que faz | Efeito |
-|---|---|---|---|
-| 1 | Estocada certeira | Concentra o golpe em um inimigo à frente. | Acerto preciso |
-| 2 | Aparar | Um movimento no instante certo reduz o próximo golpe e abre uma resposta. | Defesa no tempo certo |
-| 3 | Desafio final | Marca um inimigo; seus golpes contra ele ficam mais fortes enquanto o duelo durar. | Marca de duelo |
-
-**Passiva — Olho do duelista:** seus ataques contra um único inimigo seguido ficam um pouco mais certeiros.
-
-## Mago
-
-**Papel no grupo:** ataca de longe e controla o campo com elementos diferentes.
-
-### Cinco habilidades iniciais
-
-| Habilidade | O que faz | Efeito especial | Padrão no nível 1? | Ramo que apresenta |
-|---|---|---|---|---|
-| Bola de fogo *(já existe)* | Dispara fogo; também pode queimar árvores, como já acontece no jogo. | Queimadura | Sim | Fogo |
-| Lança de gelo *(já existe)* | Dispara gelo. A versão atual congela; nesta proposta inicial, passa a desacelerar para reservar o congelamento aos avanços do ramo. | Lentidão; hoje congela | Sim | Gelo |
-| Raio *(já existe)* | Atinge o inimigo perto da mira e o atordoa. | Paralisia curta | Não | Raio |
-| Nova de gelo *(já existe)* | Explode em volta do Mago, causando dano e congelando. | Congelado em área | Não | Gelo |
-| Pedra instável *(nova)* | Arremessa uma pedra mágica que pode desequilibrar o alvo. | Chance de errar o ataque | Não | Terra |
-
-### Ramos
-
-#### Fogo — queimadura e explosões
-
-| Ordem | Habilidade | O que faz | Efeito |
-|---|---|---|---|
-| 1 | Tornado de fogo | Um redemoinho de fogo percorre uma área e queima quem tocar. | Queimadura em área |
-| 2 | Mini explosão | Detona uma chama no ponto mirado, atingindo uma área pequena. | Explosão curta |
-| 3 | Chuva de meteoros | Faz cair meteoros numa área marcada. | Várias explosões em área |
-
-**Passiva — Brasa viva:** queimaduras duram um pouco mais.
-
-#### Gelo — lentidão e congelamento
-
-| Ordem | Habilidade | O que faz | Efeito |
-|---|---|---|---|
-| 1 | Estilhaço cortante | Lança gelo que desacelera os inimigos atingidos. | Lentidão |
-| 2 | Prisão de gelo | Envolve um inimigo em gelo e o deixa sem se mover por um curto tempo. | Congelado |
-| 3 | Geada profunda | Congela uma área; inimigos congelados que recebem golpe físico se estilhaçam. | Congelado e estilhaço |
-
-**Passiva — Frio persistente:** inimigos atingidos por gelo mantêm a lentidão por um pouco mais de tempo.
-
-#### Raio — interrupção e saltos elétricos
-
-| Ordem | Habilidade | O que faz | Efeito |
-|---|---|---|---|
-| 1 | Faísca encadeada | O raio acerta um alvo e salta para outro próximo. | Saltos entre alvos |
-| 2 | Campo elétrico | Cria uma área que dá pequenos choques em quem atravessa. | Choques e interrupção |
-| 3 | Tempestade arcana | Invoca vários raios numa área marcada. | Paralisias curtas em área |
-
-**Passiva — Carga elétrica:** acertar com raio deixa o próximo raio um pouco mais forte.
-
-#### Terra — firmeza e desequilíbrio
-
-| Ordem | Habilidade | O que faz | Efeito |
-|---|---|---|---|
-| 1 | Espinhos de pedra | Faz pedras saltarem do chão numa linha. | Desequilíbrio |
-| 2 | Muralha de terra | Cria uma barreira que bloqueia passagem e projéteis por um tempo. | Barreira |
-| 3 | Tremor da ilha | Abala uma área e derruba inimigos próximos. | Queda e interrupção |
-
-**Passiva — Pés firmes:** efeitos de empurrão e queda duram menos no Mago.
-
-## Arqueiro
-
-**Papel no grupo:** pressiona de longe, prepara armadilhas e atinge grupos sem ficar preso à linha de frente.
-
-### Cinco habilidades iniciais
-
-| Habilidade | O que faz | Efeito especial | Padrão no nível 1? | Ramo que apresenta |
-|---|---|---|---|---|
-| Tiro carregado *(já existe)* | Segurar e soltar dispara uma flecha mais forte e rápida. | Carregamento | Sim | Precisão |
-| Armadilha *(já existe)* | Prende e machuca o inimigo que pisa nela. | Preso | Sim | Armadilheiro |
-| Chuva de flechas *(já existe)* | Marca um ponto e atinge os inimigos da área com flechas. | Ataque em área | Não | Precisão |
-| Bomba *(já existe)* | Lança uma bomba que explode e pode incendiar árvores. | Explosão e fogo | Não | Engenhoqueiro |
-| Disparo de recuo *(novo)* | Acerta um alvo e dá um salto para trás para abrir distância. | Recuo | Não | Patrulheiro |
-
-### Ramos
-
-#### Precisão — flechas fortes contra alvos importantes
-
-| Ordem | Habilidade | O que faz | Efeito |
-|---|---|---|---|
-| 1 | Flecha perfurante | A flecha atravessa o primeiro alvo e acerta quem estiver atrás. | Perfuração |
-| 2 | Marca do caçador | Marca um inimigo para que os próximos disparos contra ele sejam mais certeiros. | Marca |
-| 3 | Disparo perfeito | Um tiro muito concentrado atravessa uma linha de inimigos. | Perfuração e acerto preciso |
-
-**Passiva — Mira paciente:** ficar parado por um instante melhora um pouco o próximo disparo.
-
-#### Armadilheiro — preparar o terreno
-
-| Ordem | Habilidade | O que faz | Efeito |
-|---|---|---|---|
-| 1 | Laço reforçado | Planta um laço que segura o primeiro inimigo por mais tempo. | Preso |
-| 2 | Armadilha de espinhos | Fere e causa sangramento a quem pisa na armadilha. | Sangramento |
-| 3 | Campo de caça | Prepara várias armadilhas pequenas numa área marcada. | Armadilhas em área |
-
-**Passiva — Preparação:** armadilhas ficam escondidas por mais tempo antes de serem percebidas.
-
-#### Engenhoqueiro — bombas e truques
-
-| Ordem | Habilidade | O que faz | Efeito |
-|---|---|---|---|
-| 1 | Bomba de fumaça | Cobre uma área e atrapalha a mira dos inimigos. | Fumaça e erro |
-| 2 | Bomba pegajosa | Gruda no alvo antes de explodir. | Lentidão e explosão |
-| 3 | Mina em cadeia | Uma explosão aciona outras bombas próximas. | Explosões em sequência |
-
-**Passiva — Pólvora econômica:** bombas e armadilhas explosivas ficam prontas um pouco mais cedo.
-
-## Ladino
-
-**Papel no grupo:** entra e sai do perigo, enfraquece alvos com veneno e abre oportunidades para o grupo.
-
-### Cinco habilidades iniciais
-
-| Habilidade | O que faz | Efeito especial | Padrão no nível 1? | Ramo que apresenta |
-|---|---|---|---|---|
-| Passo furtivo *(nova)* | Fica difícil de notar por um instante se não atacar. | Furtividade | Sim | Sombra |
-| Corte de adaga *(nova)* | Dá um golpe rápido de perto. | Sangramento leve | Sim | Adagas |
-| Dardo venenoso *(novo)* | Arremessa um dardo que envenena o alvo. | Veneno | Não | Veneno |
-| Armadilha de fio *(nova)* | Arma um fio baixo que derruba o primeiro inimigo que o atravessa. | Queda | Não | Armadilhas |
-| Desaparecer *(novo)* | Some numa nuvem de fumaça e dá um passo para longe. | Furtividade e recuo | Não | Sombra |
-
-### Ramos
-
-#### Sombra — furtividade e emboscada
-
-| Ordem | Habilidade | O que faz | Efeito |
-|---|---|---|---|
-| 1 | Manto escuro | Fica oculto por mais tempo se não atacar nem receber golpe. | Furtividade |
-| 2 | Golpe pelas costas | Ao atacar um inimigo que não o viu, causa um golpe mais forte. | Bônus de emboscada |
-| 3 | Sumir da vista | Desaparece e deixa uma isca que chama a atenção dos inimigos. | Furtividade e isca |
-
-**Passiva — Passos leves:** inimigos demoram um pouco mais para notar o Ladino.
-
-#### Veneno — enfraquecer aos poucos
-
-| Ordem | Habilidade | O que faz | Efeito |
-|---|---|---|---|
-| 1 | Lâmina envenenada | Cobre as adagas com veneno por alguns golpes. | Veneno |
-| 2 | Nuvem tóxica | Espalha veneno numa pequena área. | Veneno em área |
-| 3 | Veneno paralisante | O veneno acumulado também deixa o alvo lento e pode interromper seu ataque. | Veneno e lentidão |
-
-**Passiva — Mistura paciente:** o veneno do Ladino demora mais para perder força.
-
-#### Adagas — velocidade e cortes
-
-| Ordem | Habilidade | O que faz | Efeito |
-|---|---|---|---|
-| 1 | Dança de lâminas | Faz uma sequência curta de cortes em volta. | Vários golpes |
-| 2 | Lâmina arremessada | Joga uma adaga que causa sangramento. | Sangramento à distância |
-| 3 | Tempestade de adagas | Avança entre inimigos próximos com uma série de cortes rápidos. | Avanço e sangramento |
-
-**Passiva — Mão ligeira:** trocar de alvo depois de acertar fica um pouco mais rápido.
-
-#### Armadilhas — controlar caminhos
-
-| Ordem | Habilidade | O que faz | Efeito |
-|---|---|---|---|
-| 1 | Laço oculto | Prende o inimigo que pisa no fio. | Preso |
-| 2 | Armadilha de fumaça | Ao disparar, esconde o Ladino e atrapalha os inimigos próximos. | Furtividade e erro |
-| 3 | Rede de caça | Lança uma rede numa área e prende vários inimigos por um curto tempo. | Preso em área |
-
-**Passiva — Armador cuidadoso:** armadilhas do Ladino são mais difíceis de perceber.
-
-## Clérigo
-
-**Papel no grupo:** mantém o grupo de pé com cura e proteção e afasta criaturas da noite com luz sagrada.
-
-### Cinco habilidades iniciais
-
-| Habilidade | O que faz | Efeito especial | Padrão no nível 1? | Ramo que apresenta |
-|---|---|---|---|---|
-| Cura simples *(nova)* | Recupera uma parte da vida de um aliado próximo ou de si mesmo. | Cura | Sim | Curandeiro |
-| Luz sagrada *(nova)* | Lança luz contra uma criatura da noite, causando dano maior nela. | Luz contra criaturas da noite | Sim | Luz sagrada |
-| Escudo de fé *(novo)* | Protege um aliado de parte do próximo golpe. | Escudo | Não | Protetor |
-| Sinal de esperança *(novo)* | Aumenta por pouco tempo a resistência dos aliados próximos. | Proteção em área | Não | Protetor |
-| Clarão *(novo)* | Solta um clarão que atrapalha os inimigos próximos. | Cegueira breve | Não | Luz sagrada |
-
-### Ramos
-
-#### Curandeiro — recuperar e sustentar aliados
-
-| Ordem | Habilidade | O que faz | Efeito |
-|---|---|---|---|
-| 1 | Onda restauradora | Cura um pouco os aliados numa pequena área. | Cura em área |
-| 2 | Remover aflição | Cura um aliado e remove veneno ou sangramento. | Cura e limpeza |
-| 3 | Milagre compartilhado | Cura bastante o grupo próximo, com efeito menor em cada pessoa além do primeiro alvo. | Cura forte em grupo |
-
-**Passiva — Mãos cuidadosas:** as curas do Clérigo recuperam um pouco mais de vida quando o aliado está muito ferido.
-
-#### Protetor — impedir que o grupo caia
-
-| Ordem | Habilidade | O que faz | Efeito |
-|---|---|---|---|
-| 1 | Bênção protetora | Dá a um aliado um escudo contra golpes por um curto período. | Escudo |
-| 2 | Círculo de abrigo | Cria uma área que reduz o dano recebido pelos aliados dentro dela. | Proteção em área |
-| 3 | Guardião da fé | Protege o grupo próximo de um golpe forte e empurra criaturas da noite. | Escudo e empurrão |
-
-**Passiva — Fé firme:** o Clérigo resiste melhor a paralisia e medo.
-
-#### Luz sagrada — afastar criaturas da noite
-
-| Ordem | Habilidade | O que faz | Efeito |
-|---|---|---|---|
-| 1 | Raio consagrado | Atinge uma criatura com luz; criaturas da noite recebem efeito maior. | Dano sagrado |
-| 2 | Selo de luz | Marca uma área iluminada que enfraquece criaturas da noite que entram nela. | Luz e enfraquecimento |
-| 3 | Alvorada | Uma onda de luz atinge e afasta criaturas da noite numa área ampla. | Luz em área e empurrão |
-
-**Passiva — Vigília:** o Clérigo percebe criaturas da noite um pouco antes e sua luz as mantém afastadas por mais tempo.
-
-## Efeitos especiais
-
-Os tempos são referências simples para a proposta. O balanceamento final deve ser testado; os danos ficam para uma etapa posterior.
-
-- **Queimadura:** causa um pequeno dano a cada segundo por cerca de 4 segundos. Água ou outro efeito apropriado pode apagá-la.
-- **Lentidão:** reduz a velocidade de movimento pela metade por cerca de 3 segundos.
-- **Congelado:** impede o movimento por cerca de 2 segundos. Um golpe físico quebra o gelo e dá dano extra.
-- **Paralisia ou atordoamento:** impede movimento e ataque por cerca de 1 segundo.
-- **Erro / cegueira:** por cerca de 3 segundos, o inimigo tem mais chance de errar ou perde a mira. Não tira sua capacidade de se mover.
-- **Veneno:** causa um pequeno dano a cada segundo por cerca de 5 segundos; novos acertos podem renovar o efeito, sem acumular sem limite.
-- **Sangramento:** causa dano leve quando o alvo se move ou ataca, por cerca de 4 segundos.
-- **Preso:** impede o movimento por cerca de 2 segundos, mas o alvo ainda pode atacar se tiver alguém ao alcance.
-- **Queda / desequilíbrio:** interrompe o ataque e deixa o inimigo vulnerável por cerca de 1 segundo.
-- **Empurrão:** desloca o alvo alguns passos e pode interromper uma ação.
-- **Provocação:** por cerca de 3 segundos, inimigos afetados tentam atacar quem os provocou.
-- **Marca:** fica por cerca de 5 segundos e facilita que o grupo acerte aquele alvo.
-- **Escudo / proteção:** reduz ou absorve parte do próximo golpe; não soma sem limite com outros escudos.
-- **Furtividade:** inimigos deixam de notar o personagem por alguns segundos, até ele atacar ou receber um golpe.
-- **Cura:** recupera vida na hora. Cura não ultrapassa a vida máxima.
-- **Estilhaço:** golpe físico contra inimigo congelado encerra o congelamento e causa dano extra.
-- **Criatura da noite:** inimigo que surge ou fica mais perigoso no escuro; luz sagrada causa efeito maior e pode afastá-lo.
+**Nível 1: a classe já nasce com identidade**
+- **3 passivas da classe**, sempre ligadas. Elas valem para sempre e não gastam ponto:
+  - uma de combate (ex.: o Arqueiro atira mais rápido, o Ladino bate mais forte pelas costas);
+  - uma da **mecânica própria da classe** (Fúria, Ressonância, Foco, Combo ou Fé);
+  - uma de **sobrevivência na ilha** (cortar, achar comida, enxergar à noite...).
+- **2 habilidades padrão.**
+
+**Níveis 2, 3 e 4:** 1 ponto por nível para liberar as outras 3 das **5 iniciais**. Cada inicial é um "vislumbre" de um ramo.
+
+**Nível 5: escolhe 1 ramo.** As 5 iniciais nunca se perdem. O ramo segue esta ordem:
+
+| Nível | O que ganha no ramo |
+|---|---|
+| 5 | Passiva de entrada |
+| 6 | Habilidade 1 |
+| 8 | Habilidade 2 |
+| 10 | Passiva de mestre |
+| 12 | Habilidade 3 |
+| 15 | **Suprema** (a grande, com recarga longa) |
+
+**Pontos que sobram** (níveis 7, 9, 11, 13, 14...) servem para **melhorar** uma habilidade: mais dano, mais tempo de efeito ou menos recarga. Cada habilidade tem até 3 melhorias.
+
+**Teclas:** continuam 4 de uso rápido (Q R T E). Na tela da árvore, o jogador escolhe quais habilidades ficam nelas.
+
+---
+
+## Guerreiro · a linha de frente
+
+**Mecânica própria: FÚRIA.** Uma barrinha que enche quando você bate e quando apanha. Algumas habilidades fortes gastam Fúria em vez de mana.
+
+### Passivas da classe (desde o nível 1)
+| Passiva | O que faz |
+|---|---|
+| **Pele de ferro** | 10% menos dano físico. Empurrões te movem a metade. |
+| **Fôlego de batalha** | Com a Fúria cheia, o próximo golpe atordoa por 1 s. |
+| **Braço de lenhador** *(sobrevivência)* | Corta árvores 20% mais rápido e carrega 20% mais madeira por pilha. |
+
+### As 5 iniciais
+| Habilidade | O que faz | Leva ao ramo |
+|---|---|---|
+| ★ **Investida** *(padrão)* | Avança e empurra quem estiver no caminho. | Senhor da Guerra |
+| ★ **Giro** *(padrão)* | Gira a arma e acerta todos em volta. | Berserker |
+| ★ **Bloqueio** | 60% menos dano por 3 s. | Guardião |
+| ★ **Fúria** | +50% dano e +25% velocidade por 5 s (gasta a barra de Fúria). | Berserker |
+| **Grito de guerra** *(nova)* | Os inimigos em volta sentem **Medo** por 1,5 s; os aliados ganham +10% de dano por 6 s. | Senhor da Guerra |
+
+### Ramo Guardião: o escudo do grupo
+- **Passiva de entrada · Muralha viva:** aliados atrás de você tomam 15% menos dano.
+- **Escudo arremessado:** o escudo quica em até 3 inimigos e atordoa cada um por 0,5 s.
+- **Provocar:** puxa a atenção de todos os inimigos em volta para você por 4 s.
+- **Passiva de mestre · Contra-golpe:** bloquear no instante certo devolve metade do dano ao atacante.
+- **Bastião:** finca o escudo no chão. Uma cúpula para todos os projéteis por 5 s.
+- **Suprema · Juramento:** por 8 s, metade do dano que os aliados perto receberiam vem para você, e você não cai abaixo de 1 de vida.
+
+### Ramo Berserker: bater cada vez mais forte
+- **Passiva de entrada · Sangue quente:** quanto menos vida, mais dano, até +40%.
+- **Machadada:** golpe pesado em área. **Derruba árvore e quebra pedra num golpe só.**
+- **Salto esmagador:** pula até a mira; a onda de choque derruba os inimigos em volta.
+- **Passiva de mestre · Sede:** cada inimigo derrotado cura 5% da vida.
+- **Redemoinho:** gira por 3 s enquanto anda, acertando tudo.
+- **Suprema · Fúria titânica:** por 10 s o guerreiro cresce, não pode ser empurrado e todo golpe vira golpe em área.
+
+### Ramo Senhor da Guerra: liderar o grupo
+- **Passiva de entrada · Comando:** aliados perto andam 5% mais rápido.
+- **Estandarte:** finca uma bandeira. Na área dela, os aliados dão +15% de dano e recuperam vida aos poucos.
+- **Corrente:** lança uma corrente que puxa um inimigo até você.
+- **Passiva de mestre · Veterano:** recarga 10% menor por aliado perto (até 30%).
+- **Ordem de ataque:** marca um inimigo. Todos os aliados dão +30% de dano nele.
+- **Suprema · Avançar!:** você e os aliados perto fazem uma investida juntos, atravessando os inimigos.
+
+---
+
+## Mago · os elementos
+
+**Mecânica própria: RESSONÂNCIA.** Usar um elemento **diferente** do último dá +15% de dano. Alternar fogo, gelo, raio e terra é o jeito certo de jogar.
+
+### Passivas da classe
+| Passiva | O que faz |
+|---|---|
+| **Fluxo arcano** | A mana volta 25% mais rápido. |
+| **Ressonância** | Elemento diferente do anterior: +15% de dano. |
+| **Faísca** *(sobrevivência)* | Acende fogueira e tocha sem gastar graveto; à noite, o mago brilha um pouco (luz pequena). |
+
+### As 5 iniciais
+| Habilidade | O que faz | Leva ao ramo |
+|---|---|---|
+| ★ **Bola de fogo** *(padrão)* | Projétil que causa **Queimadura** (e acende árvores). | Fogo |
+| ★ **Lança de gelo** *(padrão)* | Projétil que causa **Lentidão**; sobre a água, faz caminho de gelo. | Gelo |
+| ★ **Raio** | Cai no inimigo mais perto da mira e o **Atordoa**. | Raio |
+| **Pedra viva** *(nova)* | Uma pedra rola até a mira e deixa os atingidos em **Desequilíbrio** (erram ataques). | Terra |
+| **Piscar** *(nova)* | Teleporte curto de 4 blocos. Útil em todo ramo. | (qualquer) |
+
+*A Nova de gelo ★ vira a primeira habilidade do ramo Gelo.*
+
+### Ramo Fogo: queimar tudo
+- **Passiva de entrada · Combustão:** a Queimadura dura +2 s e passa para os inimigos colados.
+- **Rastro de chamas:** por 4 s, o chão por onde você anda pega fogo.
+- **Mini explosão:** uma brasa que explode depois de 1 s, empurrando e queimando em área.
+- **Passiva de mestre · Cinzas:** inimigo que morre queimando explode.
+- **Tornado de fogo:** um redemoinho anda até a mira puxando os inimigos para dentro.
+- **Suprema · Chuva de meteoros:** meteoros caem numa área grande por 5 s.
+
+### Ramo Gelo: parar o mundo
+- **Passiva de entrada · Frio que morde:** inimigos com Lentidão também dão 15% menos dano.
+- ★ **Nova de gelo:** congela tudo em volta.
+- **Muralha de gelo:** uma parede que fecha o caminho; sobre a água, vira ponte.
+- **Passiva de mestre · Estilhaçar:** golpe em inimigo **Congelado** dá dano em área, nele e nos vizinhos.
+- **Prisão de gelo:** congela um inimigo forte por 4 s.
+- **Suprema · Nevasca:** área grande por 6 s; quem fica dentro vai ficando lento até congelar.
+
+### Ramo Raio: velocidade e cadeia
+- **Passiva de entrada · Condução:** o raio salta para mais 1 inimigo; se o alvo estiver molhado, salta para mais 2.
+- **Corrente elétrica:** um choque que pula entre até 5 inimigos.
+- **Totem tesla:** uma torre que dá choque nos inimigos perto por 8 s.
+- **Passiva de mestre · Sobrecarga:** a cada 4 feitiços, o próximo sai sem gastar mana.
+- **Forma de relâmpago:** você vira raio e atravessa até a mira, ferindo quem estiver no caminho.
+- **Suprema · Tempestade:** por 8 s, raios caem sozinhos nos inimigos perto.
+
+### Ramo Terra: firmeza e controle
+- **Passiva de entrada · Raízes:** parado por 1 s, você toma 20% menos dano.
+- **Espinhos:** estacas saem do chão e prendem quem está em cima por 1,5 s.
+- **Golem de pedra:** invoca um golem por 15 s. Ele chama os inimigos para ele e dá socos.
+- **Passiva de mestre · Tremor:** feitiços de terra têm 20% de chance de derrubar o alvo.
+- **Fenda:** uma rachadura em linha que derruba e desequilibra.
+- **Suprema · Despertar da ilha:** a ilha treme. Por 8 s, os inimigos perto erram metade dos ataques e ficam lentos, e as pedras em volta se partem (dando recursos).
+
+---
+
+## Arqueiro · distância e preparo
+
+**Mecânica própria: FOCO.** Ficar parado mirando enche o Foco. Com o Foco cheio, o próximo tiro é crítico (dano dobrado).
+
+### Passivas da classe
+| Passiva | O que faz |
+|---|---|
+| **Mão leve** | Puxa o arco 30% mais rápido e o tiro normal sai 15% mais rápido. |
+| **Olho de águia** | +20% de alcance em todos os tiros. |
+| **Rastreador** *(sobrevivência)* | Vê pegadas de animais perto; acerta animais com dano dobrado (caça mais fácil). |
+
+### As 5 iniciais
+| Habilidade | O que faz | Leva ao ramo |
+|---|---|---|
+| ★ **Tiro carregado** *(padrão)* | Quanto mais segura, mais forte e mais longe. | Atirador |
+| ★ **Armadilha** *(padrão)* | Uma armadilha que **Prende** quem pisar. | Engenhoqueiro |
+| ★ **Chuva de flechas** | Flechas caem numa área. | Atirador |
+| ★ **Bomba** | Explode ao bater; queima árvores. | Engenhoqueiro |
+| **Assobio** *(nova)* | Chama um falcão que bica um inimigo e o deixa **Marcado** por 5 s. | Domador |
+
+### Ramo Atirador: um tiro, um alvo
+- **Passiva de entrada · Ponto fraco:** tiros a mais de 6 blocos dão +25% de dano.
+- **Flecha perfurante:** atravessa todos os inimigos em linha.
+- **Marca do caçador:** o alvo marcado toma +20% de dano de todo mundo e aparece mesmo atrás das árvores.
+- **Passiva de mestre · Sangue frio:** cada acerto crítico devolve 3 de mana.
+- **Rajada:** 3 flechas seguidas, sem precisar carregar.
+- **Suprema · Flecha do horizonte:** carga longa; uma flecha gigante atravessa a tela inteira.
+
+### Ramo Engenhoqueiro: armadilhas e bombas
+- **Passiva de entrada · Engenhoso:** armadilhas e bombas gastam 30% menos mana, e você pode ter 3 armadilhas ao mesmo tempo.
+- **Rede:** uma rede que prende o alvo por 3 s.
+- **Mina de fogo:** explode quando alguém pisa e deixa Queimadura.
+- **Passiva de mestre · Reaproveitar:** recolher uma armadilha que não disparou devolve a mana.
+- **Torre de besta:** uma torreta que atira sozinha por 12 s.
+- **Suprema · Campo minado:** espalha 6 minas em volta de você de uma vez.
+
+### Ramo Domador: o melhor amigo da ilha
+- **Passiva de entrada · Laço:** o falcão te acompanha sempre e bica quem você acertar.
+- **Domar:** um **animal da ilha** (javali, ovelha...) com pouca vida vira seu companheiro e luta ao seu lado. O javali investe, a ovelha distrai.
+- **Ataque!:** o companheiro pula no alvo e o prende por 1,5 s.
+- **Passiva de mestre · Matilha:** com o companheiro perto, você e ele ganham +15% de velocidade e de dano.
+- **Estouro da boiada:** uma manada atravessa a área derrubando tudo.
+- **Suprema · Espírito da fera:** por 10 s você corre muito mais, e cada flecha vira um ataque de garras que salta para mais um inimigo.
+
+---
+
+## Ladino · sombra e oportunidade
+
+**Mecânica própria: COMBO.** Cada golpe que acerta dá 1 ponto (até 5). Algumas habilidades **finalizam**: gastam todos os pontos e ficam mais fortes quanto mais pontos havia.
+
+### Passivas da classe
+| Passiva | O que faz |
+|---|---|
+| **Pelas costas** | Sempre +50% de dano em golpes pelas costas. |
+| **Passos de gato** | Os inimigos só te notam quando você chega 30% mais perto. |
+| **Dedos leves** *(sobrevivência)* | Animais e slimes deixam 1 item a mais; abre baús trancados (quando houver). |
+
+### As 5 iniciais
+| Habilidade | O que faz | Leva ao ramo |
+|---|---|---|
+| ★ **Golpe furtivo** *(padrão)* | Avança até o alvo; dano dobrado se ele não te via. | Sombra |
+| ★ **Leque de adagas** *(padrão)* | 3 adagas em leque. | Acrobata |
+| ★ **Lâmina envenenada** | Por 6 s, seus golpes causam **Veneno**. | Venenos |
+| ★ **Bomba de fumaça** | Por 3 s, os inimigos perdem você de vista. | Sombra |
+| **Cambalhota** *(nova)* | Dois dashes seguidos; o segundo pode mudar de direção. | Acrobata |
+
+### Ramo Sombra: o assassino
+- **Passiva de entrada · Emboscada:** o primeiro golpe depois de sair da invisibilidade é sempre crítico.
+- **Sumir:** fica invisível por 4 s enquanto anda (atacar quebra o efeito).
+- **Passo das sombras:** teleporta para as costas do alvo.
+- **Passiva de mestre · Execução:** +100% de dano em inimigo com menos de 30% de vida.
+- **Marca da morte** *(finalizador)*: depois de 4 s, a marca explode com parte de todo o dano que o alvo levou.
+- **Suprema · Mil cortes:** você fica intocável e golpeia 8 vezes todos os inimigos em volta.
+
+### Ramo Venenos: o alquimista
+- **Passiva de entrada · Toxina:** o Veneno acumula até 5 vezes.
+- **Frasco de ácido:** uma poça que corrói; quem está dentro toma +20% de dano.
+- **Nuvem tóxica:** uma nuvem verde que envenena por 6 s. **Inflamável:** se pegar fogo, explode.
+- **Passiva de mestre · Contágio:** inimigo envenenado que morre passa o veneno para os vizinhos.
+- **Veneno paralisante** *(finalizador)*: com 3 acúmulos ou mais, o alvo fica **Atordoado** por 1 s para cada acúmulo.
+- **Suprema · Praga:** todo inimigo envenenado na tela toma de uma vez o veneno que ainda faltava.
+
+### Ramo Acrobata: velocidade de lâmina
+- **Passiva de entrada · Ritmo:** cada dash deixa o próximo golpe mais rápido e dá +10% de velocidade por 2 s.
+- **Dança das lâminas:** salta entre até 4 inimigos acertando cada um.
+- **Bumerangue de adaga:** a adaga acerta na ida e na volta.
+- **Passiva de mestre · Esquiva perfeita:** esquivar no último instante recarrega o dash e dá um crítico.
+- **Leque giratório** *(finalizador)*: solta 3 adagas para cada ponto de combo, em círculo.
+- **Suprema · Tempestade de aço:** por 6 s, cada dash solta adagas em volta.
+
+---
+
+## Clérigo · luz que cura e queima
+
+**Mecânica própria: FÉ.** A cura que passaria da vida máxima vira **escudo** temporário no aliado. Curar nunca é desperdiçado.
+
+### Passivas da classe
+| Passiva | O que faz |
+|---|---|
+| **Aura serena** | Você e os aliados perto recuperam 1 de vida a cada 3 s. |
+| **Fé** | A cura que sobra vira escudo por 5 s. |
+| **Luz própria** *(sobrevivência)* | À noite, o clérigo brilha e os slimes da noite evitam chegar perto; a comida que ele dá aos aliados cura 50% a mais. |
+
+### As 5 iniciais
+| Habilidade | O que faz | Leva ao ramo |
+|---|---|---|
+| ★ **Cura** *(padrão)* | Cura você e os aliados em volta. | Curandeiro |
+| ★ **Luz sagrada** *(padrão)* | Dano de luz em volta; o triplo nos slimes da noite. | Inquisidor |
+| ★ **Escudo sagrado** | Você e os aliados perto tomam 50% menos dano por 4 s. | Protetor |
+| ★ **Bênção** | Os aliados em volta regeneram vida por 8 s. | Curandeiro |
+| **Martelo da justiça** *(nova)* | Arremessa um martelo de luz que **Atordoa** e volta para a mão. | Inquisidor |
+
+### Ramo Curandeiro: ninguém cai
+- **Passiva de entrada · Mãos que curam:** curas +25%; também tiram Veneno e Queimadura.
+- **Círculo de cura:** uma área no chão que cura por 6 s.
+- **Elo vital:** liga você a um aliado. Vocês dividem o dano, e toda cura em um vale para os dois.
+- **Passiva de mestre · Último suspiro:** o aliado que cairia fica com 1 de vida (uma vez por minuto).
+- **Levantar:** traz de volta um aliado caído.
+- **Suprema · Fonte da vida:** área grande que cura todo mundo e limpa todos os efeitos ruins por 8 s.
+
+### Ramo Protetor: a parede de luz
+- **Passiva de entrada · Égide:** seus escudos ficam 30% mais fortes.
+- **Barreira:** uma parede de luz que para os projéteis por 6 s.
+- **Santuário:** área onde os inimigos não conseguem entrar (são empurrados) por 4 s.
+- **Passiva de mestre · Vigília:** um aliado com pouca vida perto de você toma 15% menos dano.
+- **Intervenção:** um aliado fica intocável por 2 s.
+- **Suprema · Muralha da fé:** uma cúpula grande onde ninguém toma dano por 4 s.
+
+### Ramo Inquisidor: a luz que caça a noite
+- **Passiva de entrada · Fogo sagrado:** o dano de luz causa Queimadura e dá +50% contra criaturas da noite.
+- **Coluna de luz:** um raio de luz cai do céu num ponto.
+- **Martelo giratório:** o martelo gira em volta de você por 5 s.
+- **Passiva de mestre · Julgamento:** inimigos acertados pela luz tomam +15% de dano de todo mundo por 5 s.
+- **Aurora:** um cone de luz que derrete os slimes da noite e causa **Cegueira** nos outros.
+- **Suprema · Amanhecer:** por 10 s, a área em volta vira dia. Os slimes da noite derretem e os aliados se curam.
+
+---
+
+## Combinações no co-op (o grupo é mais forte junto)
+
+| Junte | Acontece |
+|---|---|
+| Mago **Gelo** + golpe pesado do **Guerreiro** | Estilhaçar: dano dobrado e em área |
+| **Nuvem tóxica** do Ladino + **fogo** (Mago, Bomba, Mina) | A nuvem explode |
+| **Muralha de gelo** sobre a água + **Raio** | Água congelada conduz: o choque salta para quem está em cima |
+| **Marca do caçador** + **Ordem de ataque** | +50% de dano no mesmo alvo |
+| **Bomba de fumaça** + **Provocar** | O guerreiro segura a atenção enquanto o ladino some e volta com crítico |
+| **Amanhecer** do Clérigo durante a noite | Abre uma "ilha de dia" para o grupo respirar |
+| **Domar** + **Estandarte** | O companheiro animal também ganha o bônus do estandarte |
+
+## Efeitos especiais (lista única)
+
+| Efeito | O que faz |
+|---|---|
+| **Queimadura** | 1 de dano por segundo por 4 s; árvores pegam fogo |
+| **Lentidão** | Anda 40% mais devagar por 3 s |
+| **Congelado** | Parado por 2 s; um golpe físico dá dano dobrado e quebra o gelo |
+| **Atordoado** | Não anda nem ataca por 1 s |
+| **Preso** | Não anda, mas ainda ataca (rede, espinhos, armadilha) |
+| **Desequilíbrio** | 30% de chance de errar cada ataque por 4 s |
+| **Medo** | Foge de você por 1,5 s |
+| **Cegueira** | Perde o alvo e anda à toa por 2 s |
+| **Veneno** | Pouco dano por segundo por 3 s; acumula (Ladino de Venenos: até 5 vezes) |
+| **Marcado** | Toma +20% de dano de todo mundo |
+| **Escudo** | Vida extra temporária que some antes da vida de verdade |
+
+## Sobre as raças (para combinar com a árvore)
+
+As raças continuam dando bônus de atributos e **uma passiva própria**, que soma com as passivas da classe:
+- **Humano · Versátil:** ganha 10% mais experiência.
+- **Ogro · Brutamontes:** carrega mais e empurra pedras grandes.
+- **Elfo · Passo leve:** anda 10% mais rápido.
+- **Anão · Mineiro:** quebra pedra 25% mais rápido.
+
+Isso faz combinações divertidas. Elfo arqueiro é o caçador mais rápido; anão guerreiro é a muralha que também minera; ogro clérigo é o curandeiro que aguenta tudo.
