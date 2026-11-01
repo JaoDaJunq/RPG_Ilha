@@ -82,3 +82,13 @@ Nos jogos em que a roupa encaixa bem, **a roupa é desenhada em cima de um bonec
 **Opção A, começando por um piloto pequeno antes de refazer tudo:** só o humano, com 2 cabelos e 2 roupas (mago e arqueiro, as que ficaram piores), nas 3 vistas. Se o piloto encaixar perfeito, aplicamos às outras raças e classes. Se o Codex não conseguir respeitar o gabarito, partimos para a C.
 
 **O que você precisa decidir:** A, B ou C; e, se for a A, se posso começar pelo piloto.
+
+## Resultado do piloto (01/11/2026, opção A)
+
+- O Codex vestiu o gabarito sem mover o boneco: deslocamento zero nas 3 vistas, nas duas roupas (`art/sprites/tiny/gabarito/`, pedido L26).
+- A ferramenta `game/tools/vestir_gabarito.gd` recorta a roupa pela diferença:
+  - a camada do corpo e a camada do chapéu (o chapéu nunca leva pele nem o rosto);
+  - a máscara da cabeça, que esconde o cabelo que sairia do chapéu, para qualquer rosto.
+- O boneco (`boneco.gd`) usa a roupa do gabarito quando existe a pasta `<classe>_g`; senão, usa a antiga.
+- Conferência: `evidence/comparacao/gabarito_mago.png` e `gabarito_arqueiro.png`. Print no jogo: `evidence/novidades/customizacao.png`.
+- **Falta:** passar as outras roupas (guerreiro, ladino, clérigo) e as outras raças pelo mesmo caminho, depois que o João aprovar o piloto.
