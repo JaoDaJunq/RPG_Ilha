@@ -25,7 +25,7 @@ func _ready() -> void:
 	checar(p.vida.protegido(), "enquanto cria, o jogador não toma dano")
 	checar(inv.quantidade_de(&"cajado") == 0 and inv.item_em(Inventory.EQUIP_CORPO) == &"", "ainda sem arma nem roupa")
 	var tela := p.tela_de_criacao()
-	checar(tela.boneco().visible and tela.roupas().corpo == &"", "passo 1: o bonequinho está de roupa branca")
+	checar(tela.boneco().visible and tela.roupas().corpo == &"roupa_" + String(tela.classe), "passo 1: o personagem aparece com a arte completa da classe marcada")
 
 	# 2. Passo 1: Ogro, rosto 3 (índice 2), pele 2 (índice 1).
 	tela.escolher_raca(&"ogro")

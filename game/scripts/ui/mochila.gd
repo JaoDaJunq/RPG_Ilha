@@ -239,7 +239,7 @@ func _montar_personagem() -> Control:
 ## Veste o boneco da mochila com a aparência e as roupas atuais do jogador.
 func _vestir_miniatura() -> void:
 	if jogador != null and _boneco != null:
-		_boneco.vestir(jogador.aparencia, jogador.equipado)
+		_boneco.vestir(jogador.aparencia_completa(), jogador.equipado)
 
 
 func _grade(colunas: int, indices: Array[int]) -> GridContainer:

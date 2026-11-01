@@ -269,7 +269,7 @@ func _reduzir(img: Image) -> Image:
 func _achar(peca: Image, montado: Image, nome: String, escala_fixa := 0.0, evitar := Vector2.INF) -> Dictionary:
 	var melhor := {custo = INF, escala = 1.0, pos = Vector2.ZERO}
 	# A cabeça sempre sai entre 80% e 105% (a busca solta às vezes acha uma cabeça pequena demais).
-	var faixa := [80, 110] if nome == "cabeca" else ([80, 125] if nome == "rosto" else [40, 165])
+	var faixa := [80, 110] if nome == "cabeca" else ([80, 125] if nome == "rosto" else ([60, 120] if nome == "tronco" else [40, 165]))
 	var escalas: Array = [escala_fixa] if escala_fixa > 0.0 else range(faixa[0], faixa[1], 5).map(func(n: int) -> float: return n / 100.0)
 	var mw := montado.get_width()
 	var mh := montado.get_height()

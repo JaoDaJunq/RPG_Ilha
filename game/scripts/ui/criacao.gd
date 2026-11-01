@@ -1,9 +1,9 @@
 class_name Criacao
 extends CanvasLayer
 ## Tela de criação do personagem, a primeira vez que o jogador entra num mundo.
-## Passo 1: raça (Humano, Ogro, Elfo ou Anão), rosto e pele. O bonequinho ao lado aparece "pelado" (só a
-## roupinha branca) e muda na hora a cada escolha. Passo 2: a classe; o boneco veste as roupas
-## base dela e pega a arma. "Entrar no mundo" manda a escolha ao anfitrião (Player).
+## Passo 1: a raça (Humano, Ogro, Elfo ou Anão). Passo 2: a classe. O personagem ao lado aparece
+## sempre inteiro, com a arte completa da raça e da classe escolhidas (decisão de 01/11: sem
+## peças trocáveis), e no passo 2 segura a arma da classe. "Entrar no mundo" manda a escolha ao anfitrião (Player).
 ## Tudo é local até confirmar: quem cria o personagem de verdade é o anfitrião.
 
 ## O jogador confirmou: raça, classe e aparência ({raca, rosto, pele}).
@@ -35,8 +35,6 @@ var _botoes_classe: Dictionary[StringName, Button] = {}
 var _texto_raca: Label
 var _texto_bonus: Label
 var _texto_raca_hab: Label
-var _valor_rosto: Label
-var _valor_pele: Label
 var _texto_classe: Label
 var _texto_atributos: Label
 var _texto_vida_mana: Label
@@ -97,13 +95,11 @@ func confirmar() -> void:
 
 
 func aparencia() -> Dictionary:
-	return {"raca": raca, "rosto": rosto, "pele": pele}
+	return {"raca": raca, "rosto": rosto, "pele": pele, "classe": classe}
 
 
-## A roupa completa da classe escolhida. Antes de escolher, usa a roupinha branca.
+## A roupa completa da classe escolhida (no passo 1, a classe que está marcada).
 func roupas() -> Dictionary:
-	if passo == 0:
-		return {&"cabeca": &"", &"corpo": &""}
 	var base: Array = Player.ROUPAS_BASE[classe]
 	return {&"cabeca": &"", &"corpo": base[0]}
 
@@ -224,34 +220,7 @@ func _montar_raca() -> Control:
 	_texto_raca_hab = _rotulo("", 17, COR_TEXTO_2)
 	_texto_raca_hab.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	v.add_child(_texto_raca_hab)
-	var espaco := Control.new()
-	espaco.custom_minimum_size = Vector2(0, 4)
-	v.add_child(espaco)
-	v.add_child(_rotulo("Aparência", 22, Tema.COR_DESTAQUE))
-	_valor_rosto = _linha_opcao(v, "Rosto", func(d: int) -> void: definir_rosto(rosto + d))
-	_valor_pele = _linha_opcao(v, "Pele", func(d: int) -> void: definir_pele(pele + d))
 	return v
-
-
-## "Rosto  ‹  2 / 3  ›": as setas chamam `mudar` com -1 ou +1. Retorna o rótulo do meio.
-func _linha_opcao(pai: Control, nome: String, mudar: Callable) -> Label:
-	var linha := HBoxContainer.new()
-	linha.add_theme_constant_override(&"separation", 8)
-	pai.add_child(linha)
-	var n := _rotulo(nome, 18)
-	n.custom_minimum_size = Vector2(90, 0)
-	linha.add_child(n)
-	var esq := _botao_seta("‹")
-	esq.pressed.connect(mudar.bind(-1))
-	linha.add_child(esq)
-	var valor := _rotulo("", 18)
-	valor.custom_minimum_size = Vector2(110, 0)
-	valor.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	linha.add_child(valor)
-	var dir := _botao_seta("›")
-	dir.pressed.connect(mudar.bind(1))
-	linha.add_child(dir)
-	return valor
 
 
 func _montar_classe() -> Control:
@@ -305,14 +274,6 @@ func _botao_escolha(texto: String, grupo: ButtonGroup, tamanho_letra := 0) -> Bu
 	return b
 
 
-func _botao_seta(texto: String) -> Button:
-	var b := Button.new()
-	b.text = texto
-	b.custom_minimum_size = Vector2(52, 44)
-	b.add_theme_font_size_override(&"font_size", 26)
-	return b
-
-
 func _rotulo(texto: String, tamanho: int, cor := COR_TEXTO) -> Label:
 	var l := Label.new()
 	l.text = texto
@@ -327,15 +288,13 @@ func _rotulo(texto: String, tamanho: int, cor := COR_TEXTO) -> Label:
 func _atualizar() -> void:
 	_pagina[0].visible = passo == 0
 	_pagina[1].visible = passo == 1
-	_titulo_passo.text = "Passo 1 de 2 · Raça e aparência" if passo == 0 else "Passo 2 de 2 · Classe"
+	_titulo_passo.text = "Passo 1 de 2 · Raça" if passo == 0 else "Passo 2 de 2 · Classe"
 	_voltar.visible = passo == 1
 	_avancar.text = "Próximo: classe" if passo == 0 else "Entrar no mundo"
 	for id in _botoes_raca:
 		_botoes_raca[id].set_pressed_no_signal(id == raca)
 	for id in _botoes_classe:
 		_botoes_classe[id].set_pressed_no_signal(id == classe)
-	_valor_rosto.text = "%d / %d" % [rosto + 1, Player.OPCOES_ROSTO]
-	_valor_pele.text = "%d / %d" % [pele + 1, Player.OPCOES_PELE]
 
 	var dados_raca := RacaData.carregar(raca)
 	_texto_raca.text = dados_raca.descricao

@@ -11,22 +11,12 @@ extends Node2D
 ## boneco inteiro é espelhado. Mantém `animation` e `play()` como o AnimatedSprite2D de antes.
 
 const PASTA := "res://assets/sprites/tiny/bonecos/"
-## Cobertura antiga para aparências salvas ou sem traje completo disponível.
-const COBERTURA_BASE := {
-	"guerreiro": "elmo_guerreiro",
-	"mago": "chapeu_mago",
-	"arqueiro": "capuz_arqueiro",
-	"ladino": "bandana_ladino",
-	"clerigo": "touca_clerigo",
-}
 ## O arco vai em pé na mão (L23): 4 quadros da corda (repouso e 3 de puxada) e a flecha.
 const ARCO := preload("res://assets/sprites/tiny/itens/arco_puxando.png")
 const FLECHA := preload("res://assets/sprites/tiny/itens/flecha_deitada.png")
 ## Uma adaga por mão. O ícone do golpe furtivo já contém uma lâmina só.
 const ADAGA_MAO := preload("res://assets/sprites/tiny/icones/icone_golpe_furtivo.png")
 const QUADRO_ARCO := 64
-## Raças que vestem as roupas de outra (mesmo corpo).
-const ROUPA_DE := {"elfo": "humano", "anao": "ogro"}
 
 var animation: StringName = &"parado_direita"
 ## Item da mão (id), definido pelo Player a cada quadro.
@@ -55,139 +45,35 @@ var _vistas := {}
 var _vista := ""
 
 
-## Aparência = {raca, rosto (0 a 2), pele (0 a 2)}. Se a roupa do corpo for roupa_<classe>
-## e existir bonecos/<raca>_<classe>/, usa o personagem completo dessa pasta. A roupa da
-## classe traz cabelo/cobertura e traje juntos; rosto e chapéu separados não entram. Sem
-## roupa, mantém a roupinha branca da pasta da raça. Raça sem base própria usa a do humano.
+## Aparência = {raca, classe, pele}. O personagem tem a arte COMPLETA de cada raça e classe
+## (decisão de 01/11/2026: sem roupas, cabelos ou chapéus trocáveis), em bonecos/<raca>_<classe>/.
+## A classe é a da roupa do corpo equipada (roupa_<classe>) ou, sem ela, a do personagem.
+## Raça ou classe sem arte: a roupinha branca da raça (bonecos/<raca>/base/), ou a do humano.
 func vestir(aparencia: Dictionary, equipado: Dictionary) -> void:
 	var raca := String(aparencia.get("raca", &"humano"))
-	var pasta := PASTA + raca + "/"
-	var corpo := String(equipado.get("corpo", &""))
-	if not FileAccess.file_exists(pasta + "base/pecas.json"):
+	if not FileAccess.file_exists(PASTA + raca + "/base/pecas.json"):
 		raca = "humano"  # raça sem arte ainda
-		pasta = PASTA + "humano/"
-	var classe_completa := _classe_da_roupa(corpo, "")
-	var pasta_completa := PASTA + raca + "_" + classe_completa + "/"
-	if classe_completa != "" and FileAccess.file_exists(pasta_completa + "pecas.json"):
-		_vestir_completo(aparencia, raca, pasta_completa)
-		return
-	var rosto := pasta + "rosto_%d/" % (int(aparencia.get("rosto", 0)) + 1)
-	# Elfo veste as roupas do humano e anão as do ogro (mesmo corpo, L25).
-	var doadora: String = ROUPA_DE.get(raca, raca)
-	var roupa := PASTA + doadora + "/" + _classe_da_roupa(corpo, "") + "/"
-	var cobertura := String(equipado.get("cabeca", &""))
-	if cobertura == "" and corpo != "":
-		cobertura = COBERTURA_BASE.get(classe_completa, "")
-	var chapeu := PASTA + doadora + "/" + _classe_da_roupa(cobertura, "") + "/"
-	var vistas := {}
-	for v in ["", "_frente", "_costas"]:
-		var pos := _ler_pecas(pasta + "base/pecas" + v + ".json")
-		if pos.is_empty():
-			continue
-		var d := {base = pos, cabeca = load(pasta + "base/cabeca" + v + ".png"), tronco = load(pasta + "base/tronco" + v + ".png"), chapeu = null, roupa = null, mascara = null, cabelo = null}
-		# Peças separadas (L27): cabeça careca + cabelo + roupa + chapéu, cada um desenhado
-		# sozinho em cima do mesmo boneco; o jogo só junta.
-		var pp := pasta + "pecas/"
-		var pcab := _ler_pecas(pp + "cabelo_%d" % (int(aparencia.get("rosto", 0)) + 1) + v + ".json")
-		var pcar := _ler_pecas(pp + "careca" + v + ".json")
-		if pcab.size() > 0 and pcar.size() > 0:
-			d.cabeca = load(pp + "careca" + v + ".png")
-			pos["cabeca"] = pcar["careca"]
-			var n := "cabelo_%d" % (int(aparencia.get("rosto", 0)) + 1)
-			d.cabelo = load(pp + n + v + ".png")
-			pos["cabelo"] = pcab[n]
-		var pd := PASTA + doadora + "/pecas/"
-		var roupa_p := "roupa_" + _classe_da_roupa(corpo, "")
-		var pro := _ler_pecas(pd + roupa_p + v + ".json") if corpo != "" else {}
-		if pro.has(roupa_p):
-			d.roupa = load(pd + roupa_p + v + ".png")
-			pos["roupa"] = pro[roupa_p]
-		var chapeu_p := cobertura
-		var pch := _ler_pecas(pd + chapeu_p + v + ".json") if chapeu_p != "" else {}
-		if pch.has(chapeu_p):
-			d.chapeu = load(pd + chapeu_p + v + ".png")
-			pos["chapeu"] = pch[chapeu_p]
-		var pr := _ler_pecas(rosto + "pecas" + v + ".json") if d.cabelo == null else {}
-		if pr.has("cabeca"):
-			d.cabeca = load(rosto + "cabeca" + v + ".png")
-			pos["cabeca"] = pr["cabeca"]
-		# Roupa pelo gabarito (L26): uma camada por cima do corpo e outra por cima da cabeça,
-		# desenhadas sobre o próprio boneco base, e a máscara do que se vê da cabeça com o chapéu.
-		var gc := _ler_pecas(roupa.trim_suffix("/") + "_g/roupa" + v + ".json") if corpo != "" and d.roupa == null else {}
-		if gc.has("corpo"):
-			d.roupa = load(roupa.trim_suffix("/") + "_g/roupa_corpo" + v + ".png")
-			pos["roupa"] = gc["corpo"]
-		var gh := _ler_pecas(chapeu.trim_suffix("/") + "_g/roupa" + v + ".json") if cobertura != "" and d.chapeu == null else {}
-		if gh.has("cabeca"):
-			d.chapeu = load(chapeu.trim_suffix("/") + "_g/roupa_cabeca" + v + ".png")
-			d.mascara = load(chapeu.trim_suffix("/") + "_g/mascara" + v + ".png")
-			pos["chapeu"] = gh["cabeca"]
-			pos["mascara"] = gh["mascara"]
-		var pt := _ler_pecas(roupa + "pecas" + v + ".json") if corpo != "" and d.roupa == null else {}
-		if pt.has("tronco"):
-			# A roupa começa no pescoço da túnica branca, centralizada nela (a roupa é desenhada
-			# em outro montado, então o lugar dela lá não vale aqui).
-			var branca: Texture2D = d.tronco
-			d.tronco = load(roupa + "tronco" + v + ".png")
-			pos["tronco"] = (pos["tronco"] + Vector2((branca.get_width() - (d.tronco as Texture2D).get_width()) / 2.0, 0)).round()
-		var pc := _ler_pecas(chapeu + "pecas" + v + ".json") if cobertura != "" and d.chapeu == null else {}
-		if pc.has("cabeca"):
-			d.chapeu = load(chapeu + "cabeca" + v + ".png")
-			# O chapéu acompanha a cabeça: guarda o lugar dele em relação à cabeça base.
-			pos["chapeu"] = pc["cabeca"]
-		if d.chapeu != null:
-			if doadora != raca:
-				# Chapéu de outra raça: vai junto com a cabeça (base) desta raça.
-				var cab_doadora := _ler_pecas(PASTA + doadora + "/base/pecas" + v + ".json")
-				var cab_esta := _ler_pecas(pasta + "base/pecas" + v + ".json")
-				if cab_doadora.has("cabeca"):
-					var delta: Vector2 = (cab_esta["cabeca"] as Vector2) - (cab_doadora["cabeca"] as Vector2)
-					pos["chapeu"] += delta
-					if pos.has("mascara"):
-						pos["mascara"] += delta
-		vistas[v] = d
-	var pele := int(aparencia.get("pele", 0))
-	for v in vistas:
-		vistas[v].cabeca = _tingir(vistas[v].cabeca, pele, StringName(raca))
-		if vistas[v].cabelo != null and vistas[v].chapeu != null:
-			vistas[v].cabelo = _recortar_cabelo(vistas[v].cabelo, vistas[v].base["cabelo"], vistas[v].chapeu, vistas[v].base["chapeu"])
-		elif vistas[v].mascara != null:
-			vistas[v].cabeca = _mascarar(vistas[v].cabeca, vistas[v].base["cabeca"], vistas[v].mascara, vistas[v].base["mascara"])
-		elif vistas[v].chapeu != null:
-			vistas[v].cabeca = _recortar_cabelo(vistas[v].cabeca, vistas[v].base["cabeca"], vistas[v].chapeu, vistas[v].base["chapeu"])
-	_montar(vistas, load(pasta + "base/pe.png"), _tingir(load(pasta + "base/mao.png"), pele, StringName(raca)), load(pasta + "base/sombra.png"))
-
-
-## Veste cabeça, tronco, mãos e pés já desenhados para uma classe completa.
-func _vestir_completo(aparencia: Dictionary, raca: String, pasta: String) -> void:
+	var classe := _classe_da_roupa(String(equipado.get("corpo", &"")), String(aparencia.get("classe", "")))
+	var pasta := PASTA + raca + "_" + classe + "/"
+	if classe == "" or not FileAccess.file_exists(pasta + "pecas.json"):
+		pasta = PASTA + raca + "/base/"
 	var vistas := {}
 	for v in ["", "_frente", "_costas"]:
 		var pos := _ler_pecas(pasta + "pecas" + v + ".json")
-		if pos.is_empty():
-			continue
-		vistas[v] = {base = pos, cabeca = load(pasta + "cabeca" + v + ".png"), tronco = load(pasta + "tronco" + v + ".png"), chapeu = null, roupa = null, mascara = null, cabelo = null}
+		if not pos.is_empty():
+			vistas[v] = {base = pos, cabeca = load(pasta + "cabeca" + v + ".png"), tronco = load(pasta + "tronco" + v + ".png")}
 	var pele := int(aparencia.get("pele", 0))
 	for v in vistas:
 		vistas[v].cabeca = _tingir(vistas[v].cabeca, pele, StringName(raca))
 	_montar(vistas, load(pasta + "pe.png"), _tingir(load(pasta + "mao.png"), pele, StringName(raca)), load(pasta + "sombra.png"))
 
 
-## Retrato para o HUD: a cabeça de perfil, com o chapéu se tiver.
+## Retrato para o HUD: a cabeça de perfil.
 static func retrato(aparencia: Dictionary, equipado: Dictionary) -> Texture2D:
 	var b := Boneco.new()
 	b.vestir(aparencia, equipado)
 	var d: Dictionary = b._vistas.get("", {})
 	var tex: Texture2D = d.get("cabeca")
-	if d.get("chapeu") != null:
-		var cab: Image = (d.cabeca as Texture2D).get_image()
-		var cha: Image = (d.chapeu as Texture2D).get_image()
-		var pc: Vector2 = d.base["cabeca"]
-		var ph: Vector2 = d.base["chapeu"]
-		var r := Rect2i(Vector2i(pc), cab.get_size()).merge(Rect2i(Vector2i(ph), cha.get_size()))
-		var img := Image.create(r.size.x, r.size.y, false, Image.FORMAT_RGBA8)
-		img.blend_rect(cab, Rect2i(Vector2i.ZERO, cab.get_size()), Vector2i(pc) - r.position)
-		img.blend_rect(cha, Rect2i(Vector2i.ZERO, cha.get_size()), Vector2i(ph) - r.position)
-		tex = ImageTexture.create_from_image(img)
 	b.free()
 	return tex
 
@@ -207,7 +93,7 @@ static func _ler_pecas(caminho: String) -> Dictionary:
 
 
 ## Monta os sprites das peças. `vistas`: "" (perfil), "_frente", "_costas" -> {base (lugar de
-## cada peça), cabeca, tronco, chapeu (ou null)}. Os pés e as mãos são os mesmos nas três.
+## cada peça), cabeca, tronco}. Os pés e as mãos são os mesmos nas três.
 func _montar(vistas: Dictionary, pe: Texture2D, mao: Texture2D, sombra_tex: Texture2D) -> void:
 	for c in get_children():
 		remove_child(c)
@@ -219,7 +105,7 @@ func _montar(vistas: Dictionary, pe: Texture2D, mao: Texture2D, sombra_tex: Text
 		sombra.position = Vector2(-sombra_tex.get_width() / 2.0, -sombra_tex.get_height() / 2.0 - 1.0)
 	# Ordem de desenho: o que fica atrás primeiro.
 	var base: Dictionary = vistas[""].base
-	for parte in [["mao_tras", mao], ["pe_tras", pe], ["tronco", null], ["pe_frente", pe], ["roupa", null], ["cabeca", null], ["cabelo", null], ["chapeu", null]]:
+	for parte in [["mao_tras", mao], ["pe_tras", pe], ["tronco", null], ["pe_frente", pe], ["cabeca", null]]:
 		_pecas[parte[0]] = _sprite(parte[1])
 	_item_tras = _sprite(null)
 	_item = _sprite(null)
@@ -245,15 +131,6 @@ func _usar_vista(v: String) -> void:
 	_base = d.base.duplicate()
 	(_pecas["cabeca"] as Sprite2D).texture = d.cabeca
 	(_pecas["tronco"] as Sprite2D).texture = d.tronco
-	var chapeu := _pecas["chapeu"] as Sprite2D
-	chapeu.texture = d.chapeu
-	chapeu.visible = d.chapeu != null
-	var cabelo := _pecas["cabelo"] as Sprite2D
-	cabelo.texture = d.get("cabelo")
-	cabelo.visible = d.get("cabelo") != null
-	var roupa := _pecas["roupa"] as Sprite2D
-	roupa.texture = d.get("roupa")
-	roupa.visible = d.get("roupa") != null
 	# A arma acompanha a mão correspondente; as duas ficam atrás do corpo de perfil/de costas.
 	if v == "":
 		move_child(_item_tras, 1)
@@ -318,14 +195,8 @@ func _process(delta: float) -> void:
 func _posar(passo: float, respira: float, golpe: float) -> void:
 	var corpo := Vector2(0, roundf(-absf(passo) * 2.0) if passo != 0.0 else roundf(respira * 0.6 - 0.4)) + _desvio_dor()
 	_por("tronco", corpo)
-	if _base.has("roupa"):
-		_por("roupa", corpo)
 	var cabeca := corpo + Vector2(0, roundf(respira * 0.5)) if passo == 0.0 else corpo
 	_por("cabeca", cabeca)
-	if _base.has("chapeu"):
-		_por("chapeu", cabeca)
-	if _base.has("cabelo"):
-		_por("cabelo", cabeca)
 	# De perfil os pés vão para a frente e para trás; de frente e de costas, só sobem e descem.
 	var ida := 0.0 if _vista != "" else 4.0
 	_por("pe_frente", Vector2(roundf(passo * ida), minf(0.0, roundf(-passo * 3.0))))
@@ -489,83 +360,4 @@ static func _eh_pele(c: Color, pele: Array) -> bool:
 	return false
 
 
-## Cabelo debaixo do chapéu (L24b): como em muitos jogos, o cabelo que ficaria para fora do
-## chapéu, do capuz ou do elmo some. Nas colunas que o chapéu cobre, some o que está ACIMA do
-## topo do chapéu; dos lados do chapéu, some o que está acima da borda de baixo da ponta dele
-## (a aba ou a gola). O rosto, que fica debaixo ou dentro do chapéu, continua.
-static var _recortadas := {}
 
-
-static func _recortar_cabelo(cab: Texture2D, pos_cab: Vector2, chapeu: Texture2D, pos_chapeu: Vector2) -> Texture2D:
-	var chave := "%d|%s|%s|%s" % [cab.get_instance_id(), chapeu.resource_path, pos_cab, pos_chapeu]
-	if _recortadas.has(chave):
-		return _recortadas[chave]
-	var img := cab.get_image()
-	if img.is_compressed():
-		img.decompress()
-	img.convert(Image.FORMAT_RGBA8)
-	var ch := chapeu.get_image()
-	if ch.is_compressed():
-		ch.decompress()
-	var d := Vector2i(pos_chapeu - pos_cab)  # canto do chapéu na cabeça
-	# Topo e base do chapéu em cada coluna dele (-1 = coluna vazia).
-	var topos: Array[int] = []
-	var bases: Array[int] = []
-	for cx in ch.get_width():
-		var t := -1
-		var b := -1
-		for cy in ch.get_height():
-			if ch.get_pixel(cx, cy).a > 0.5:
-				if t < 0:
-					t = cy
-				b = cy
-		topos.append(t)
-		bases.append(b)
-	var primeira := 0
-	while primeira < bases.size() and bases[primeira] < 0:
-		primeira += 1
-	if primeira == bases.size():
-		return cab
-	var ultima := bases.size() - 1
-	while bases[ultima] < 0:
-		ultima -= 1
-	for x in img.get_width():
-		var cx := x - d.x
-		var limite: int  # linha da cabeça acima da qual o cabelo some
-		if cx >= primeira and cx <= ultima:
-			if topos[cx] < 0:
-				continue
-			limite = topos[cx] + d.y
-		else:
-			limite = bases[primeira if cx < primeira else ultima] + d.y
-		for y in clampi(limite, 0, img.get_height()):
-			img.set_pixel(x, y, Color(0, 0, 0, 0))
-	var tex := ImageTexture.create_from_image(img)
-	_recortadas[chave] = tex
-	return tex
-
-
-
-## Cabeça com chapéu do gabarito (L26): só fica o que aparece na máscara (o contorno da cabeça
-## vestida); o resto, como o cabelo que sairia para fora do chapéu, some. Vale para qualquer
-## rosto, porque a máscara está nas coordenadas dos pés, iguais para todas as cabeças.
-static func _mascarar(cab: Texture2D, pos_cab: Vector2, mascara: Texture2D, pos_mascara: Vector2) -> Texture2D:
-	var chave := "m|%d|%s|%s|%s" % [cab.get_instance_id(), mascara.resource_path, pos_cab, pos_mascara]
-	if _recortadas.has(chave):
-		return _recortadas[chave]
-	var img := cab.get_image()
-	if img.is_compressed():
-		img.decompress()
-	img.convert(Image.FORMAT_RGBA8)
-	var m := mascara.get_image()
-	if m.is_compressed():
-		m.decompress()
-	var d := Vector2i(pos_cab - pos_mascara)
-	for y in img.get_height():
-		for x in img.get_width():
-			var p := Vector2i(x, y) + d
-			if p.x < 0 or p.y < 0 or p.x >= m.get_width() or p.y >= m.get_height() or m.get_pixelv(p).a < 0.5:
-				img.set_pixel(x, y, Color(0, 0, 0, 0))
-	var tex := ImageTexture.create_from_image(img)
-	_recortadas[chave] = tex
-	return tex

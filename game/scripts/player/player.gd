@@ -940,12 +940,20 @@ func _enviar_aspecto(para := 0) -> void:
 		_aspecto_sync.rpc_id(para, raca, classe, aparencia, equipado, criando)
 
 
+## A aparência com a raça e a classe: o boneco usa a arte completa da classe.
+func aparencia_completa() -> Dictionary:
+	var a := aparencia.duplicate()
+	a["raca"] = a.get("raca", raca)
+	a["classe"] = classe
+	return a
+
+
 ## Veste o boneco se a raça, a aparência ou as roupas mudaram desde a última vez.
 func _atualizar_visual() -> void:
-	var chave := [raca, aparencia.duplicate(), equipado.duplicate()]
+	var chave := [raca, classe, aparencia.duplicate(), equipado.duplicate()]
 	if chave != _vestido:
 		_vestido = chave
-		visual.vestir(aparencia, equipado)
+		visual.vestir(aparencia_completa(), equipado)
 
 
 @rpc("any_peer", "call_local", "reliable")

@@ -664,7 +664,7 @@ func _barra(cor: Color, altura: int, moldura := false) -> ProgressBar:
 
 ## Retrato: a cabeça do boneco, com a raça, o rosto e as roupas que ele veste agora.
 func _retrato_de(p: Player) -> Texture2D:
-	return Boneco.retrato(p.aparencia, p.equipado)
+	return Boneco.retrato(p.aparencia_completa(), p.equipado)
 
 
 func _painel() -> PanelContainer:
