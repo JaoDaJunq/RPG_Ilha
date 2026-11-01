@@ -28,12 +28,14 @@ Cada folha mede 1536 × 1024 px, com grade regular de 3 colunas × 2 linhas; cad
 
 - Ilustração 2D lisa, sem pixel art, com formas simples, cores chapadas, um tom de sombra e contorno espesso contínuo `#161c2e`.
 - Preserve o corpo e o rosto élficos da referência. Cabeça completa inclui cabelo e chapéu/capuz/touca; tronco inclui roupa e acessórios presos ao corpo.
+- As roupas do Mago, Arqueiro e Ladino são sem mangas, com cavas simples. As mãos continuam soltas como peças; não desenhe mangas nem braços.
 - Corpo sem braços, mãos fechadas soltas e pés curtos arredondados. As peças são completas e têm contorno fechado.
 - Mantenha o mesmo personagem, roupa, cores, escala e contorno nas três vistas.
 
 **NÃO FAÇA:**
 
 - Não desenhe armas, ferramentas, escudos segurados, objetos nas mãos, efeitos, cenário, chão, sombra projetada, texto, números, molduras ou grade.
+- Não faça mangas nas roupas do Mago, Arqueiro e Ladino.
 - Não desenhe braços. Na folha de perfil mostre duas mãos soltas e apenas uma peça de mão e um pé; na folha de frente/costas, duas mãos e dois pés em cada personagem montado.
 - Não ponha rosto ou cabeça na peça de tronco, nem pernas ou braços.
 - Não use rosa ou magenta no personagem. Não atravesse os limites das células.
@@ -77,9 +79,9 @@ Frente e costas são vistas diretas, sem três quartos. Mantenha idênticos a ro
 | Classe | Referência de traje a anexar | Traje e detalhes a preservar | Perfil | Frente e costas |
 |---|---|---|---|---|
 | Guerreiro | `art/sprites/tiny/bonecos/l24_humano_guerreiro_perfil_frente.png` | Elmo de ferro redondo simples com tira de couro e abertura grande para o rosto e a franja; túnica vermelho-escura apagada, cota curta cinza-esverdeada, cinto marrom com fivela e sapatilhas claras. Escudo preso às costas do tronco, só visível na vista traseira. | `art/sprites/tiny/candidatos/l29_elfo_guerreiro_perfil.png` | `art/sprites/tiny/candidatos/l29_elfo_guerreiro_frente_costas.png` |
-| Mago | `art/sprites/tiny/bonecos/l24_humano_mago_perfil_frente.png` | Chapéu pontudo azul-escuro de ponta caída para trás, faixa dourada; manto azul-escuro comprido, gola e cordão dourados. | `art/sprites/tiny/candidatos/l29_elfo_mago_perfil.png` | `art/sprites/tiny/candidatos/l29_elfo_mago_frente_costas.png` |
-| Arqueiro | `art/sprites/tiny/bonecos/l24_humano_arqueiro_perfil_frente.png` | Capuz verde-musgo que emoldura o rosto; gibão de couro marrom sobre túnica verde-musgo; cinto e alça de couro cruzada no peito; aljava presa às costas com três penas visíveis. | `art/sprites/tiny/candidatos/l29_elfo_arqueiro_perfil.png` | `art/sprites/tiny/candidatos/l29_elfo_arqueiro_frente_costas.png` |
-| Ladino | `art/sprites/tiny/bonecos/l25_humano_ladino_perfil_frente.png` | Bandana cinza-escura amarrada à cabeça, duas pontas atrás; colete preto-acinzentado sobre camisa cinza; lenço vermelho-escuro no pescoço; cinto com duas bainhas pequenas vazias para adagas. | `art/sprites/tiny/candidatos/l29_elfo_ladino_perfil.png` | `art/sprites/tiny/candidatos/l29_elfo_ladino_frente_costas.png` |
+| Mago | `art/sprites/tiny/bonecos/l24_humano_mago_perfil_frente.png` | Chapéu pontudo azul-escuro de ponta caída para trás, faixa dourada; túnica longa azul-escura sem mangas, gola e cordão dourados. | `art/sprites/tiny/candidatos/l29_elfo_mago_perfil.png` | `art/sprites/tiny/candidatos/l29_elfo_mago_frente_costas.png` |
+| Arqueiro | `art/sprites/tiny/bonecos/l24_humano_arqueiro_perfil_frente.png` | Capuz verde-musgo que emoldura o rosto; colete de couro marrom sem mangas sobre túnica verde-musgo; cinto e alça cruzada no peito; aljava presa às costas com três penas visíveis. | `art/sprites/tiny/candidatos/l29_elfo_arqueiro_perfil.png` | `art/sprites/tiny/candidatos/l29_elfo_arqueiro_frente_costas.png` |
+| Ladino | `art/sprites/tiny/bonecos/l25_humano_ladino_perfil_frente.png` | Bandana cinza-escura amarrada à cabeça, duas pontas atrás; colete preto-acinzentado sem mangas; lenço vermelho-escuro no pescoço; cinto com duas bainhas pequenas vazias para adagas. | `art/sprites/tiny/candidatos/l29_elfo_ladino_perfil.png` | `art/sprites/tiny/candidatos/l29_elfo_ladino_frente_costas.png` |
 | Clérigo | `art/sprites/tiny/bonecos/l25_humano_clerigo_perfil_frente.png` | Touca branco-pérola com borda dourada, cobrindo cabelo e orelhas e deixando o rosto visível; túnica azul-clara comprida, faixa dourada na cintura e pequeno sol dourado no peito. | `art/sprites/tiny/candidatos/l29_elfo_clerigo_perfil.png` | `art/sprites/tiny/candidatos/l29_elfo_clerigo_frente_costas.png` |
 
 ## Conferência

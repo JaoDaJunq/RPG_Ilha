@@ -29,6 +29,7 @@ Cada arquivo mede 1536 × 1024 px: grade regular de 3 colunas × 2 linhas; cada 
 - Ilustração 2D lisa, sem pixel art, no acabamento dos exemplos anexados: formas simples, cores chapadas e um tom de sombra suave; contorno espesso e contínuo `#161c2e`.
 - Proporções do Humano da referência: cabeça grande e arredondada, corpo curto, olhos simples, duas mãos fechadas e soltas sem braços, pés curtos e arredondados.
 - Faça a cabeça completa com cabelo e cobertura de cabeça da classe; faça o tronco completo com toda a roupa e acessórios presos ao corpo. Não desenhe rosto/cabeça dentro da peça de tronco, nem pernas ou braços.
+- Nas roupas de Mago, Arqueiro e Ladino, faça o tronco sem mangas: colete ou túnica com cavas simples. As mãos continuam separadas como peças, sem mangas nem braços entre elas e o tronco.
 - Desenhe as partes completas com contorno fechado. Fundo magenta aparece nos espaços vazados e fora das peças.
 - O equipamento visual é parte inseparável desta classe. Mantenha a mesma aparência nas três vistas.
 
@@ -36,6 +37,7 @@ Cada arquivo mede 1536 × 1024 px: grade regular de 3 colunas × 2 linhas; cada 
 
 - Não desenhe armas, ferramentas, escudos segurados, objetos nas mãos, efeitos, cenário, chão, sombra projetada, texto, números ou molduras.
 - Não desenhe braços; mostre apenas mãos soltas ao lado do tronco. Uma mão e um pé na folha de perfil; duas mãos e dois pés apenas no personagem montado.
+- Não faça mangas nas roupas de Mago, Arqueiro e Ladino.
 - Não use rosa nem magenta no personagem. Não deixe nada atravessar a borda da célula.
 - Não faça pixel art, textura granulada, degradê, brilho ou muitos detalhes finos.
 
@@ -80,9 +82,9 @@ Respeite os blocos FAÇA, NÃO FAÇA e NÃO SIGA acima. Frente e costas são vis
 | Classe | Referência da roupa a anexar | Traje e detalhes a preservar | Folha A (perfil) | Folha B (frente e costas) |
 |---|---|---|---|---|
 | Guerreiro | `art/sprites/tiny/bonecos/l24_humano_guerreiro_perfil_frente.png` | Elmo de ferro redondo simples com tira de couro e abertura grande para o rosto e a franja; túnica vermelha escura apagada, cota curta cinza-esverdeada, cinto marrom com fivela; sapatilhas claras. Escudo preso às costas do tronco, visível só onde couber na vista de costas. | `art/sprites/tiny/candidatos/l29_humano_guerreiro_perfil.png` | `art/sprites/tiny/candidatos/l29_humano_guerreiro_frente_costas.png` |
-| Mago | `art/sprites/tiny/bonecos/l24_humano_mago_perfil_frente.png` | Chapéu pontudo azul-escuro de ponta caída para trás, faixa dourada; manto azul-escuro comprido, gola e cordão dourados. | `art/sprites/tiny/candidatos/l29_humano_mago_perfil.png` | `art/sprites/tiny/candidatos/l29_humano_mago_frente_costas.png` |
-| Arqueiro | `art/sprites/tiny/bonecos/l24_humano_arqueiro_perfil_frente.png` | Capuz verde-musgo que emoldura o rosto; gibão de couro marrom sobre túnica verde-musgo; cinto e alça de couro cruzada no peito; aljava presa às costas com três penas visíveis. | `art/sprites/tiny/candidatos/l29_humano_arqueiro_perfil.png` | `art/sprites/tiny/candidatos/l29_humano_arqueiro_frente_costas.png` |
-| Ladino | `art/sprites/tiny/bonecos/l25_humano_ladino_perfil_frente.png` | Bandana cinza-escura amarrada na cabeça, duas pontas atrás; colete preto-acinzentado sobre camisa cinza; lenço vermelho-escuro no pescoço; cinto com duas bainhas pequenas vazias para adagas. | `art/sprites/tiny/candidatos/l29_humano_ladino_perfil.png` | `art/sprites/tiny/candidatos/l29_humano_ladino_frente_costas.png` |
+| Mago | `art/sprites/tiny/bonecos/l24_humano_mago_perfil_frente.png` | Chapéu pontudo azul-escuro de ponta caída para trás, faixa dourada; túnica longa azul-escura sem mangas, gola e cordão dourados. | `art/sprites/tiny/candidatos/l29_humano_mago_perfil.png` | `art/sprites/tiny/candidatos/l29_humano_mago_frente_costas.png` |
+| Arqueiro | `art/sprites/tiny/bonecos/l24_humano_arqueiro_perfil_frente.png` | Capuz verde-musgo que emoldura o rosto; colete de couro marrom sem mangas sobre túnica verde-musgo; cinto e alça cruzada no peito; aljava presa às costas com três penas visíveis. | `art/sprites/tiny/candidatos/l29_humano_arqueiro_perfil.png` | `art/sprites/tiny/candidatos/l29_humano_arqueiro_frente_costas.png` |
+| Ladino | `art/sprites/tiny/bonecos/l25_humano_ladino_perfil_frente.png` | Bandana cinza-escura amarrada na cabeça, duas pontas atrás; colete preto-acinzentado sem mangas; lenço vermelho-escuro no pescoço; cinto com duas bainhas pequenas vazias para adagas. | `art/sprites/tiny/candidatos/l29_humano_ladino_perfil.png` | `art/sprites/tiny/candidatos/l29_humano_ladino_frente_costas.png` |
 | Clérigo | `art/sprites/tiny/bonecos/l25_humano_clerigo_perfil_frente.png` | Touca branco-pérola com borda dourada cobrindo cabelo e orelhas e deixando o rosto visível; túnica azul-clara comprida, faixa dourada na cintura, pequeno sol dourado no peito. | `art/sprites/tiny/candidatos/l29_humano_clerigo_perfil.png` | `art/sprites/tiny/candidatos/l29_humano_clerigo_frente_costas.png` |
 
 ## Conferência e entrega

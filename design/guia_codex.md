@@ -27,6 +27,8 @@ O que mudou por último está no `git log`; as decisões, em `design/decisoes.md
 
 **Andamento (01/11/2026):** os 20 personagens completos (Humano, Ogro, Elfo e Anão; cinco classes cada) estão montados por peças. As 10 folhas do Humano e as 30 folhas das outras raças foram geradas e conferidas uma por uma. A bateria terminou com `BATERIA: tudo OK`. Prints de jogo: `evidence/novidades/customizacao.png` (Humano), `customizacao_ogro.png`, `customizacao_elfo.png` e `customizacao_anao.png`. Humano já tem pacote em `C:\Users\jpach\Aprovações Ilhas Vivas\L29 - personagens completos do humano (aguardando)`; as outras raças estão no pacote `C:\Users\jpach\Aprovações Ilhas Vivas\L29 - personagens completos das outras raças (aguardando)`. O João autorizou seguir com as três raças em 01/11. O perfil do Ladino Humano usa `--escala_tronco=0.75`; Ogro e Anão foram convertidos com `--altura=88`. Os assets antigos permanecem para a roupinha branca e compatibilidade de aparências salvas.
 
+**Refinamento visual pedido pelo João:** as roupas do Mago, Arqueiro e Ladino agora são sem mangas nas quatro raças, com cavas simples e mãos mantidas como peças separadas. Os pedidos L29 e as folhas dessas 12 combinações foram atualizados. As peças do tronco foram reconvertidas e os quatro prints foram refeitos e conferidos.
+
 **Decisão de 01/11:** desistimos das roupas trocáveis (as tentativas estão em `design/pesquisa_roupas.md`). Agora:
 
 - Cada combinação **raça x classe** é um personagem inteiro, nas 3 vistas: perfil olhando para a direita, frente e costas. São 4 raças x 5 classes = **20 personagens**. O Humano foi apresentado primeiro; a pedido do João, as outras três raças também foram concluídas.

@@ -27,12 +27,14 @@
 - Ilustração 2D lisa, sem pixel art, com formas simples, cores chapadas e um tom de sombra suave; contorno espesso contínuo #161c2e.
 - Mantenha a identidade da referência Ogro: corpo baixo e robusto, pele verde-limão, cabeça grande, orelhas pontudas largas, topete preto curto, sobrancelhas marcadas, olhos simples e duas presas brancas curtas na boca. Punhos verdes e pés pequenos calçados.
 - Cabeça já inclui o chapéu, elmo, bandana ou capuz da classe. Tronco já inclui toda roupa e acessórios presos ao corpo. Nenhuma peça de tronco pode conter cabeça, mãos, braços ou pernas.
+- As roupas do Mago, Arqueiro e Ladino são sem mangas, com cavas simples. As mãos continuam soltas como peças; não desenhe mangas nem braços.
 - Contornos das peças fechados. O fundo magenta aparece nos espaços vazados e fora das peças. Mesma roupa e escala nas vistas de perfil, frente e costas.
 
 **NÃO FAÇA:**
 
 - Não desenhe armas, ferramentas, escudos segurados, objetos nas mãos, efeitos, cenário, chão, sombra projetada, texto, números ou moldura.
 - Não desenhe braços; somente mãos soltas ao lado do tronco. Na folha de perfil há uma mão e um pé soltos; no personagem montado podem aparecer duas mãos e dois pés.
+- Não faça mangas nas roupas do Mago, Arqueiro e Ladino.
 - Não use rosa nem magenta no personagem, não deixe partes cruzarem células e não faça pixel art, textura granulada, degradê, brilho ou detalhe fino em excesso.
 
 **NÃO SIGA:**
@@ -77,9 +79,9 @@ Frente e costas são vistas diretas, sem três quartos. Mantenha as mesmas cores
 | Classe | Referência de roupa | Traje e detalhes a preservar | Folha A (perfil) | Folha B (frente e costas) |
 |---|---|---|---|---|
 | Guerreiro | `art/sprites/tiny/bonecos/l24_ogro_guerreiro_perfil_frente.png` e `l24_ogro_guerreiro_costas.png` | Elmo arredondado de ferro cinza com faixa de couro marrom e abertura para o rosto; cota curta de escamas cinza-esverdeadas, gola e barra vermelho escuro, cinto marrom com fivela dourada. Sem escudo, que não aparece nas folhas de referência. | `art/sprites/tiny/candidatos/l29_ogro_guerreiro_perfil.png` | `art/sprites/tiny/candidatos/l29_ogro_guerreiro_frente_costas.png` |
-| Mago | `art/sprites/tiny/bonecos/l24_ogro_mago_perfil_frente.png` e `l24_ogro_mago_costas.png` | Chapéu pontudo azul-escuro de ponta caída para trás, faixa dourada; manto azul-escuro com bordas douradas, gola em V e cordão dourado com nó e pontas. | `art/sprites/tiny/candidatos/l29_ogro_mago_perfil.png` | `art/sprites/tiny/candidatos/l29_ogro_mago_frente_costas.png` |
-| Arqueiro | `art/sprites/tiny/bonecos/l24_ogro_arqueiro_perfil_frente.png` e `l24_ogro_arqueiro_costas.png` | Capuz verde-musgo em volta do rosto; túnica/gibão marrom com tiras de couro cruzadas, punhos e cinto com fivela dourada; aljava marrom presa às costas, com três penas claras visíveis. | `art/sprites/tiny/candidatos/l29_ogro_arqueiro_perfil.png` | `art/sprites/tiny/candidatos/l29_ogro_arqueiro_frente_costas.png` |
-| Ladino | `art/sprites/tiny/bonecos/l25_ogro_ladino_perfil_frente.png` e `l25_ogro_ladino_costas.png` | Bandana cinza-escura amarrada atrás, com duas pontas; lenço triangular vermelho escuro; roupa cinza-escura, ombreiras simples e cinto marrom com fivela dourada e duas bainhas pequenas vazias. | `art/sprites/tiny/candidatos/l29_ogro_ladino_perfil.png` | `art/sprites/tiny/candidatos/l29_ogro_ladino_frente_costas.png` |
+| Mago | `art/sprites/tiny/bonecos/l24_ogro_mago_perfil_frente.png` e `l24_ogro_mago_costas.png` | Chapéu pontudo azul-escuro de ponta caída para trás, faixa dourada; túnica longa azul-escura sem mangas, com bordas douradas, gola em V e cordão dourado com nó e pontas. | `art/sprites/tiny/candidatos/l29_ogro_mago_perfil.png` | `art/sprites/tiny/candidatos/l29_ogro_mago_frente_costas.png` |
+| Arqueiro | `art/sprites/tiny/bonecos/l24_ogro_arqueiro_perfil_frente.png` e `l24_ogro_arqueiro_costas.png` | Capuz verde-musgo em volta do rosto; colete marrom sem mangas com tiras de couro cruzadas e cinto com fivela dourada; aljava marrom presa às costas, com três penas claras visíveis. | `art/sprites/tiny/candidatos/l29_ogro_arqueiro_perfil.png` | `art/sprites/tiny/candidatos/l29_ogro_arqueiro_frente_costas.png` |
+| Ladino | `art/sprites/tiny/bonecos/l25_ogro_ladino_perfil_frente.png` e `l25_ogro_ladino_costas.png` | Bandana cinza-escura amarrada atrás, com duas pontas; lenço triangular vermelho escuro; colete cinza-escuro sem mangas e cinto marrom com fivela dourada e duas bainhas pequenas vazias. | `art/sprites/tiny/candidatos/l29_ogro_ladino_perfil.png` | `art/sprites/tiny/candidatos/l29_ogro_ladino_frente_costas.png` |
 | Clérigo | `art/sprites/tiny/bonecos/l25_ogro_clerigo_perfil_frente.png` e `l25_ogro_clerigo_costas.png` | Capuz branco-pérola contornado de dourado deixando o rosto livre; túnica azul-clara esverdeada, faixa dourada e pequeno sol dourado no peito. | `art/sprites/tiny/candidatos/l29_ogro_clerigo_perfil.png` | `art/sprites/tiny/candidatos/l29_ogro_clerigo_frente_costas.png` |
 
 ## Conferência e entrega

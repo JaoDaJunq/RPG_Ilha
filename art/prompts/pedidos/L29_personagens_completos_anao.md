@@ -25,12 +25,14 @@ Este pedido cobre as cinco classes do Anão. São duas folhas por classe, dez no
 **FAÇA:**
 - Ilustração 2D lisa, sem pixel art: formas simples, cores chapadas, um tom de sombra suave e contorno espesso e contínuo #161c2e.
 - Preserve a identidade do Anão: corpo baixo, largo e robusto, cabeça grande, pernas e pés curtos, orelhas redondas e barba e cabelo ruivos da referência de perfil. Pele dourada clara da referência. Mantenha a mesma pessoa nas três vistas.
+- As roupas do Mago, Arqueiro e Ladino são sem mangas, com cavas simples. As mãos continuam soltas como peças; não desenhe mangas nem braços.
 - Faça a cabeça inteira com cabelo, barba e chapéu/capuz da classe. Faça o tronco com a roupa completa e acessórios presos a ela, sem cabeça, braços, mãos ou pernas. Topo reto para encaixe da cabeça.
 - Mãos fechadas e soltas, sem braços; pés curtos calçados. Uma mão e um pé na peça isolada de perfil. Todas as peças com contorno completo.
 - O equipamento visual da classe é parte inseparável desse personagem. Repita roupa, cores e detalhes nas vistas.
 
 **NÃO FAÇA:**
 - Não desenhe armas, escudos segurados, objetos nas mãos, efeitos, cenário, chão, sombra projetada, texto, números ou molduras.
+- Não faça mangas nas roupas do Mago, Arqueiro e Ladino.
 - Não desenhe braços, pernas ou cabeça na peça de tronco. Não desenhe rosto dentro do tronco.
 - Não use rosa ou magenta no personagem, não deixe peças cruzarem as células e não aproxime figuras da borda.
 - Não faça pixel art, textura granulada, degradê, brilho ou detalhe miúdo demais.
@@ -53,9 +55,9 @@ Continue exatamente o personagem da folha A. Superior esquerda: montado de frent
 | Classe | Referência da roupa | Traje a preservar | Perfil | Frente e costas |
 |---|---|---|---|---|
 | Guerreiro | `art/sprites/tiny/bonecos/l24_humano_guerreiro_perfil_frente.png` | Elmo de ferro redondo com tira de couro e abertura ampla para rosto e franja da barba; túnica vermelho-escura, cota curta cinza-esverdeada, cinto marrom com fivela e sapatilhas claras. Escudo preso atrás do tronco, só visível nas costas. | `art/sprites/tiny/candidatos/l29_anao_guerreiro_perfil.png` | `art/sprites/tiny/candidatos/l29_anao_guerreiro_frente_costas.png` |
-| Mago | `art/sprites/tiny/bonecos/l24_humano_mago_perfil_frente.png` | Chapéu pontudo azul-escuro caído para trás com faixa dourada; manto azul-escuro comprido, gola e cordão dourados. | `art/sprites/tiny/candidatos/l29_anao_mago_perfil.png` | `art/sprites/tiny/candidatos/l29_anao_mago_frente_costas.png` |
-| Arqueiro | `art/sprites/tiny/bonecos/l24_humano_arqueiro_perfil_frente.png` | Capuz verde-musgo ao redor do rosto; gibão marrom sobre túnica verde-musgo; cinto e alça cruzada; aljava nas costas com três penas visíveis. | `art/sprites/tiny/candidatos/l29_anao_arqueiro_perfil.png` | `art/sprites/tiny/candidatos/l29_anao_arqueiro_frente_costas.png` |
-| Ladino | `art/sprites/tiny/bonecos/l25_humano_ladino_perfil_frente.png` | Bandana cinza-escura amarrada com duas pontas atrás; colete preto-acinzentado sobre camisa cinza; lenço vermelho-escuro no pescoço; cinto com duas bainhas vazias. | `art/sprites/tiny/candidatos/l29_anao_ladino_perfil.png` | `art/sprites/tiny/candidatos/l29_anao_ladino_frente_costas.png` |
+| Mago | `art/sprites/tiny/bonecos/l24_humano_mago_perfil_frente.png` | Chapéu pontudo azul-escuro caído para trás com faixa dourada; túnica longa azul-escura sem mangas, gola e cordão dourados. | `art/sprites/tiny/candidatos/l29_anao_mago_perfil.png` | `art/sprites/tiny/candidatos/l29_anao_mago_frente_costas.png` |
+| Arqueiro | `art/sprites/tiny/bonecos/l24_humano_arqueiro_perfil_frente.png` | Capuz verde-musgo ao redor do rosto; colete marrom sem mangas sobre túnica verde-musgo; cinto e alça cruzada; aljava nas costas com três penas visíveis. | `art/sprites/tiny/candidatos/l29_anao_arqueiro_perfil.png` | `art/sprites/tiny/candidatos/l29_anao_arqueiro_frente_costas.png` |
+| Ladino | `art/sprites/tiny/bonecos/l25_humano_ladino_perfil_frente.png` | Bandana cinza-escura amarrada com duas pontas atrás; colete preto-acinzentado sem mangas; lenço vermelho-escuro no pescoço; cinto com duas bainhas vazias. | `art/sprites/tiny/candidatos/l29_anao_ladino_perfil.png` | `art/sprites/tiny/candidatos/l29_anao_ladino_frente_costas.png` |
 | Clérigo | `art/sprites/tiny/bonecos/l25_humano_clerigo_perfil_frente.png` | Touca branco-pérola com borda dourada; túnica azul-clara comprida, faixa dourada e pequeno sol dourado no peito. | `art/sprites/tiny/candidatos/l29_anao_clerigo_perfil.png` | `art/sprites/tiny/candidatos/l29_anao_clerigo_frente_costas.png` |
 
 Em todas as células montadas, a cabeça deve manter cabelo e barba ruivos do Anão de referência; a cobertura de classe deve ser adaptada sem esconder toda a identidade racial. Não inclua arma ou escudo segurado. Anexe a folha completa de referência de cada classe, indicada acima, e use a roupa como referência de detalhe e cor; a referência L25 determina o Anão.
