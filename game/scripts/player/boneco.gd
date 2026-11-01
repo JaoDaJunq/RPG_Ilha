@@ -65,18 +65,40 @@ func vestir(aparencia: Dictionary, equipado: Dictionary) -> void:
 		var pos := _ler_pecas(pasta + "base/pecas" + v + ".json")
 		if pos.is_empty():
 			continue
-		var d := {base = pos, cabeca = load(pasta + "base/cabeca" + v + ".png"), tronco = load(pasta + "base/tronco" + v + ".png"), chapeu = null, roupa = null, mascara = null}
-		var pr := _ler_pecas(rosto + "pecas" + v + ".json")
+		var d := {base = pos, cabeca = load(pasta + "base/cabeca" + v + ".png"), tronco = load(pasta + "base/tronco" + v + ".png"), chapeu = null, roupa = null, mascara = null, cabelo = null}
+		# Peças separadas (L27): cabeça careca + cabelo + roupa + chapéu, cada um desenhado
+		# sozinho em cima do mesmo boneco; o jogo só junta.
+		var pp := pasta + "pecas/"
+		var pcab := _ler_pecas(pp + "cabelo_%d" % (int(aparencia.get("rosto", 0)) + 1) + v + ".json")
+		var pcar := _ler_pecas(pp + "careca" + v + ".json")
+		if pcab.size() > 0 and pcar.size() > 0:
+			d.cabeca = load(pp + "careca" + v + ".png")
+			pos["cabeca"] = pcar["careca"]
+			var n := "cabelo_%d" % (int(aparencia.get("rosto", 0)) + 1)
+			d.cabelo = load(pp + n + v + ".png")
+			pos["cabelo"] = pcab[n]
+		var pd := PASTA + doadora + "/pecas/"
+		var roupa_p := "roupa_" + _classe_da_roupa(corpo, "")
+		var pro := _ler_pecas(pd + roupa_p + v + ".json") if corpo != "" else {}
+		if pro.has(roupa_p):
+			d.roupa = load(pd + roupa_p + v + ".png")
+			pos["roupa"] = pro[roupa_p]
+		var chapeu_p := String(equipado.get("cabeca", &""))
+		var pch := _ler_pecas(pd + chapeu_p + v + ".json") if chapeu_p != "" else {}
+		if pch.has(chapeu_p):
+			d.chapeu = load(pd + chapeu_p + v + ".png")
+			pos["chapeu"] = pch[chapeu_p]
+		var pr := _ler_pecas(rosto + "pecas" + v + ".json") if d.cabelo == null else {}
 		if pr.has("cabeca"):
 			d.cabeca = load(rosto + "cabeca" + v + ".png")
 			pos["cabeca"] = pr["cabeca"]
 		# Roupa pelo gabarito (L26): uma camada por cima do corpo e outra por cima da cabeça,
 		# desenhadas sobre o próprio boneco base, e a máscara do que se vê da cabeça com o chapéu.
-		var gc := _ler_pecas(roupa.trim_suffix("/") + "_g/roupa" + v + ".json") if corpo != "" else {}
+		var gc := _ler_pecas(roupa.trim_suffix("/") + "_g/roupa" + v + ".json") if corpo != "" and d.roupa == null else {}
 		if gc.has("corpo"):
 			d.roupa = load(roupa.trim_suffix("/") + "_g/roupa_corpo" + v + ".png")
 			pos["roupa"] = gc["corpo"]
-		var gh := _ler_pecas(chapeu.trim_suffix("/") + "_g/roupa" + v + ".json") if equipado.get("cabeca", &"") != &"" else {}
+		var gh := _ler_pecas(chapeu.trim_suffix("/") + "_g/roupa" + v + ".json") if equipado.get("cabeca", &"") != &"" and d.chapeu == null else {}
 		if gh.has("cabeca"):
 			d.chapeu = load(chapeu.trim_suffix("/") + "_g/roupa_cabeca" + v + ".png")
 			d.mascara = load(chapeu.trim_suffix("/") + "_g/mascara" + v + ".png")
@@ -108,7 +130,9 @@ func vestir(aparencia: Dictionary, equipado: Dictionary) -> void:
 	var pele := int(aparencia.get("pele", 0))
 	for v in vistas:
 		vistas[v].cabeca = _tingir(vistas[v].cabeca, pele, StringName(raca))
-		if vistas[v].mascara != null:
+		if vistas[v].cabelo != null and vistas[v].chapeu != null:
+			vistas[v].cabelo = _recortar_cabelo(vistas[v].cabelo, vistas[v].base["cabelo"], vistas[v].chapeu, vistas[v].base["chapeu"])
+		elif vistas[v].mascara != null:
 			vistas[v].cabeca = _mascarar(vistas[v].cabeca, vistas[v].base["cabeca"], vistas[v].mascara, vistas[v].base["mascara"])
 		elif vistas[v].chapeu != null:
 			vistas[v].cabeca = _recortar_cabelo(vistas[v].cabeca, vistas[v].base["cabeca"], vistas[v].chapeu, vistas[v].base["chapeu"])
@@ -162,7 +186,7 @@ func _montar(vistas: Dictionary, pe: Texture2D, mao: Texture2D, sombra_tex: Text
 		sombra.position = Vector2(-sombra_tex.get_width() / 2.0, -sombra_tex.get_height() / 2.0 - 1.0)
 	# Ordem de desenho: o que fica atrás primeiro.
 	var base: Dictionary = vistas[""].base
-	for parte in [["mao_tras", mao], ["pe_tras", pe], ["tronco", null], ["pe_frente", pe], ["roupa", null], ["cabeca", null], ["chapeu", null]]:
+	for parte in [["mao_tras", mao], ["pe_tras", pe], ["tronco", null], ["pe_frente", pe], ["roupa", null], ["cabeca", null], ["cabelo", null], ["chapeu", null]]:
 		_pecas[parte[0]] = _sprite(parte[1])
 	_item = _sprite(null)
 	_flecha = _sprite(FLECHA)
@@ -190,6 +214,9 @@ func _usar_vista(v: String) -> void:
 	var chapeu := _pecas["chapeu"] as Sprite2D
 	chapeu.texture = d.chapeu
 	chapeu.visible = d.chapeu != null
+	var cabelo := _pecas["cabelo"] as Sprite2D
+	cabelo.texture = d.get("cabelo")
+	cabelo.visible = d.get("cabelo") != null
 	var roupa := _pecas["roupa"] as Sprite2D
 	roupa.texture = d.get("roupa")
 	roupa.visible = d.get("roupa") != null
@@ -255,6 +282,8 @@ func _posar(passo: float, respira: float, golpe: float) -> void:
 	_por("cabeca", cabeca)
 	if _base.has("chapeu"):
 		_por("chapeu", cabeca)
+	if _base.has("cabelo"):
+		_por("cabelo", cabeca)
 	# De perfil os pés vão para a frente e para trás; de frente e de costas, só sobem e descem.
 	var ida := 0.0 if _vista != "" else 4.0
 	_por("pe_frente", Vector2(roundf(passo * ida), minf(0.0, roundf(-passo * 3.0))))

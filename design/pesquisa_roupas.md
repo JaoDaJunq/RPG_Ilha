@@ -83,12 +83,14 @@ Nos jogos em que a roupa encaixa bem, **a roupa é desenhada em cima de um bonec
 
 **O que você precisa decidir:** A, B ou C; e, se for a A, se posso começar pelo piloto.
 
-## Resultado do piloto (01/11/2026, opção A)
+## Resultado do piloto (01/11/2026)
 
-- O Codex vestiu o gabarito sem mover o boneco: deslocamento zero nas 3 vistas, nas duas roupas (`art/sprites/tiny/gabarito/`, pedido L26).
-- A ferramenta `game/tools/vestir_gabarito.gd` recorta a roupa pela diferença:
-  - a camada do corpo e a camada do chapéu (o chapéu nunca leva pele nem o rosto);
-  - a máscara da cabeça, que esconde o cabelo que sairia do chapéu, para qualquer rosto.
-- O boneco (`boneco.gd`) usa a roupa do gabarito quando existe a pasta `<classe>_g`; senão, usa a antiga.
-- Conferência: `evidence/comparacao/gabarito_mago.png` e `gabarito_arqueiro.png`. Print no jogo: `evidence/novidades/customizacao.png`.
-- **Falta:** passar as outras roupas (guerreiro, ladino, clérigo) e as outras raças pelo mesmo caminho, depois que o João aprovar o piloto.
+**1ª tentativa (L26):** o Codex vestiu o boneco e o programa recortou o boneco fora. O João viu que ficava borrado e sem sentido, porque a roupa era o que sobrava do recorte.
+
+**2ª tentativa (L27, a que vale): peças separadas, como nos jogos.**
+- Boneco padrão **careca** (o Codex tirou o cabelo do gabarito).
+- **Fantasma:** o careca em cinza-claro, só como guia.
+- Cada peça é desenhada SOZINHA em cima do fantasma: 2 cabelos, manto e chapéu do mago, gibão e capuz do arqueiro (pedido L27).
+- `game/tools/separar_peca.gd` tira o fantasma e deixa só a peça, em pixel art na escala do boneco.
+- O jogo junta tudo: careca, cabelo, roupa e chapéu. Com chapéu, o cabelo acima do topo do chapéu e dos lados acima da aba some; o resto continua.
+- Falta passar as outras roupas e raças por esse caminho, depois da aprovação do João.
