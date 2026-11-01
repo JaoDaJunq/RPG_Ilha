@@ -11,6 +11,14 @@ extends Node2D
 ## boneco inteiro é espelhado. Mantém `animation` e `play()` como o AnimatedSprite2D de antes.
 
 const PASTA := "res://assets/sprites/tiny/bonecos/"
+## Cobertura antiga enquanto as outras raças ainda não têm personagem completo.
+const COBERTURA_BASE := {
+	"guerreiro": "elmo_guerreiro",
+	"mago": "chapeu_mago",
+	"arqueiro": "capuz_arqueiro",
+	"ladino": "bandana_ladino",
+	"clerigo": "touca_clerigo",
+}
 ## O arco vai em pé na mão (L23): 4 quadros da corda (repouso e 3 de puxada) e a flecha.
 const ARCO := preload("res://assets/sprites/tiny/itens/arco_puxando.png")
 const FLECHA := preload("res://assets/sprites/tiny/itens/flecha_deitada.png")
@@ -42,12 +50,10 @@ var _vistas := {}
 var _vista := ""
 
 
-## Customização (L24): `aparencia` = {raca, rosto (0 a 2), pele (0 a 2)} e `equipado` =
-## {cabeca: id do item ou &"", corpo: id do item ou &""}. As peças ficam em
-## <PASTA>/<raca>/base/ (roupinha branca), <raca>/rosto_2/ e rosto_3/ (outras cabeças) e
-## <raca>/<classe>/ (tronco com a roupa e o chapéu ou elmo, que vai por cima da cabeça).
-## A roupa de um item é a da classe do fim do id: roupa_guerreiro, elmo_guerreiro...
-## Raça sem arte ainda: usa a do humano.
+## Aparência = {raca, rosto (0 a 2), pele (0 a 2)}. Se a roupa do corpo for roupa_<classe>
+## e existir bonecos/<raca>_<classe>/, usa o personagem completo dessa pasta. A roupa da
+## classe traz cabelo/cobertura e traje juntos; rosto e chapéu separados não entram. Sem
+## roupa, mantém a roupinha branca da pasta da raça. Raça sem base própria usa a do humano.
 func vestir(aparencia: Dictionary, equipado: Dictionary) -> void:
 	var raca := String(aparencia.get("raca", &"humano"))
 	var pasta := PASTA + raca + "/"
@@ -55,11 +61,19 @@ func vestir(aparencia: Dictionary, equipado: Dictionary) -> void:
 	if not FileAccess.file_exists(pasta + "base/pecas.json"):
 		raca = "humano"  # raça sem arte ainda
 		pasta = PASTA + "humano/"
+	var classe_completa := _classe_da_roupa(corpo, "")
+	var pasta_completa := PASTA + raca + "_" + classe_completa + "/"
+	if classe_completa != "" and FileAccess.file_exists(pasta_completa + "pecas.json"):
+		_vestir_completo(aparencia, raca, pasta_completa)
+		return
 	var rosto := pasta + "rosto_%d/" % (int(aparencia.get("rosto", 0)) + 1)
 	# Elfo veste as roupas do humano e anão as do ogro (mesmo corpo, L25).
 	var doadora: String = ROUPA_DE.get(raca, raca)
 	var roupa := PASTA + doadora + "/" + _classe_da_roupa(corpo, "") + "/"
-	var chapeu := PASTA + doadora + "/" + _classe_da_roupa(String(equipado.get("cabeca", &"")), "") + "/"
+	var cobertura := String(equipado.get("cabeca", &""))
+	if cobertura == "" and corpo != "":
+		cobertura = COBERTURA_BASE.get(classe_completa, "")
+	var chapeu := PASTA + doadora + "/" + _classe_da_roupa(cobertura, "") + "/"
 	var vistas := {}
 	for v in ["", "_frente", "_costas"]:
 		var pos := _ler_pecas(pasta + "base/pecas" + v + ".json")
@@ -83,7 +97,7 @@ func vestir(aparencia: Dictionary, equipado: Dictionary) -> void:
 		if pro.has(roupa_p):
 			d.roupa = load(pd + roupa_p + v + ".png")
 			pos["roupa"] = pro[roupa_p]
-		var chapeu_p := String(equipado.get("cabeca", &""))
+		var chapeu_p := cobertura
 		var pch := _ler_pecas(pd + chapeu_p + v + ".json") if chapeu_p != "" else {}
 		if pch.has(chapeu_p):
 			d.chapeu = load(pd + chapeu_p + v + ".png")
@@ -98,7 +112,7 @@ func vestir(aparencia: Dictionary, equipado: Dictionary) -> void:
 		if gc.has("corpo"):
 			d.roupa = load(roupa.trim_suffix("/") + "_g/roupa_corpo" + v + ".png")
 			pos["roupa"] = gc["corpo"]
-		var gh := _ler_pecas(chapeu.trim_suffix("/") + "_g/roupa" + v + ".json") if equipado.get("cabeca", &"") != &"" and d.chapeu == null else {}
+		var gh := _ler_pecas(chapeu.trim_suffix("/") + "_g/roupa" + v + ".json") if cobertura != "" and d.chapeu == null else {}
 		if gh.has("cabeca"):
 			d.chapeu = load(chapeu.trim_suffix("/") + "_g/roupa_cabeca" + v + ".png")
 			d.mascara = load(chapeu.trim_suffix("/") + "_g/mascara" + v + ".png")
@@ -111,7 +125,7 @@ func vestir(aparencia: Dictionary, equipado: Dictionary) -> void:
 			var branca: Texture2D = d.tronco
 			d.tronco = load(roupa + "tronco" + v + ".png")
 			pos["tronco"] = (pos["tronco"] + Vector2((branca.get_width() - (d.tronco as Texture2D).get_width()) / 2.0, 0)).round()
-		var pc := _ler_pecas(chapeu + "pecas" + v + ".json") if equipado.get("cabeca", &"") != &"" and d.chapeu == null else {}
+		var pc := _ler_pecas(chapeu + "pecas" + v + ".json") if cobertura != "" and d.chapeu == null else {}
 		if pc.has("cabeca"):
 			d.chapeu = load(chapeu + "cabeca" + v + ".png")
 			# O chapéu acompanha a cabeça: guarda o lugar dele em relação à cabeça base.
@@ -137,6 +151,20 @@ func vestir(aparencia: Dictionary, equipado: Dictionary) -> void:
 		elif vistas[v].chapeu != null:
 			vistas[v].cabeca = _recortar_cabelo(vistas[v].cabeca, vistas[v].base["cabeca"], vistas[v].chapeu, vistas[v].base["chapeu"])
 	_montar(vistas, load(pasta + "base/pe.png"), _tingir(load(pasta + "base/mao.png"), pele, StringName(raca)), load(pasta + "base/sombra.png"))
+
+
+## Veste cabeça, tronco, mãos e pés já desenhados para uma classe completa.
+func _vestir_completo(aparencia: Dictionary, raca: String, pasta: String) -> void:
+	var vistas := {}
+	for v in ["", "_frente", "_costas"]:
+		var pos := _ler_pecas(pasta + "pecas" + v + ".json")
+		if pos.is_empty():
+			continue
+		vistas[v] = {base = pos, cabeca = load(pasta + "cabeca" + v + ".png"), tronco = load(pasta + "tronco" + v + ".png"), chapeu = null, roupa = null, mascara = null, cabelo = null}
+	var pele := int(aparencia.get("pele", 0))
+	for v in vistas:
+		vistas[v].cabeca = _tingir(vistas[v].cabeca, pele, StringName(raca))
+	_montar(vistas, load(pasta + "pe.png"), _tingir(load(pasta + "mao.png"), pele, StringName(raca)), load(pasta + "sombra.png"))
 
 
 ## Retrato para o HUD: a cabeça de perfil, com o chapéu se tiver.

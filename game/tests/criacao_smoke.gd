@@ -1,7 +1,7 @@
 extends TesteBase
-## Criação do personagem dentro do mundo e roupas: quem entra sem personagem salvo vê a tela
-## de criação e não age até confirmar; raça, aparência e classe viram ficha, roupas base e
-## arma; as roupas saem e entram pela mochila (o boneco volta para a roupa branca); e tudo
+## Criação do personagem dentro do mundo: quem entra sem personagem salvo vê a tela e não age
+## até confirmar; raça, aparência e classe viram ficha, roupa completa e arma. A roupa sai e
+## volta pela mochila (o boneco volta para a roupa branca); e tudo
 ## isso é salvo. Usa um arquivo só de teste.
 
 const ARQUIVO := "user://teste_criacao.save"
@@ -36,7 +36,7 @@ func _ready() -> void:
 	tela.avancar()
 	checar(tela.passo == 1, "Próximo leva ao passo da classe")
 	tela.escolher_classe(&"mago")
-	checar(tela.roupas().corpo == &"roupa_mago" and tela.roupas().cabeca == &"chapeu_mago", "passo 2: o boneco veste as roupas base do mago")
+	checar(tela.roupas().corpo == &"roupa_mago" and tela.roupas().cabeca == &"", "passo 2: o boneco veste o traje completo do mago")
 	tela.voltar()
 	tela.avancar()
 	tela.confirmar()
@@ -51,8 +51,8 @@ func _ready() -> void:
 	checar(p.aparencia.get("raca") == &"ogro" and p.aparencia.get("rosto") == 2 and p.aparencia.get("pele") == 1, "aparência: ogro, rosto 2, pele 1 (%s)" % str(p.aparencia))
 	checar(p.ficha.titulo() == "Ogro Mago" and p.vida.maximo == ficha.vida_maxima() and p.mana == ficha.mana_maxima(), "ficha, vida e mana do Ogro Mago")
 	checar(w.hud._titulo_personagem.text == "Nv 1 · Ogro Mago", "HUD mostra Nv 1 · Ogro Mago (%s)" % w.hud._titulo_personagem.text)
-	checar(inv.item_em(Inventory.EQUIP_CORPO) == &"roupa_mago" and inv.item_em(Inventory.EQUIP_CABECA) == &"chapeu_mago", "manto e chapéu do mago vestidos")
-	checar(p.equipado.get("corpo") == &"roupa_mago" and p.equipado.get("cabeca") == &"chapeu_mago", "equipado (o que todos veem) tem manto e chapéu")
+	checar(inv.item_em(Inventory.EQUIP_CORPO) == &"roupa_mago" and inv.item_em(Inventory.EQUIP_CABECA) == &"", "traje completo do mago vestido num espaço só")
+	checar(p.equipado.get("corpo") == &"roupa_mago" and p.equipado.get("cabeca") == &"", "equipado (o que todos veem) tem o traje completo")
 	var no_bar := false
 	for k in Inventory.BARRA:
 		no_bar = no_bar or inv.item_em(k) == &"cajado"
@@ -63,12 +63,10 @@ func _ready() -> void:
 	inv.pedir_clique(Inventory.EQUIP_CORPO, false, true)
 	checar(p.equipado.get("corpo") == &"" and inv.item_em(Inventory.EQUIP_CORPO) == &"", "tirar o manto: equipado.corpo vazio (roupa branca)")
 	checar(inv.quantidade_de(&"roupa_mago") == 1, "o manto foi para a mochila")
-	checar(p.equipado.get("cabeca") == &"chapeu_mago", "o chapéu continua na cabeça")
-	# Só aceita roupa do lugar certo.
+	checar(p.equipado.get("cabeca") == &"", "o chapéu separado não é mais equipado")
+	# A roupa completa volta para o único espaço de roupa.
 	var espaco_chapeu := _espaco_de(inv, &"roupa_mago")
 	inv.pedir_clique(espaco_chapeu)  # pega o manto na mão
-	inv.pedir_clique(Inventory.EQUIP_CABECA)  # manto na cabeça: não pode
-	checar(inv.item_em(Inventory.EQUIP_CABECA) == &"chapeu_mago" and inv.item_em(Inventory.MAO) == &"roupa_mago", "manto não entra no espaço da cabeça")
 	inv.pedir_clique(Inventory.EQUIP_CORPO)  # no corpo: pode
 	checar(inv.item_em(Inventory.EQUIP_CORPO) == &"roupa_mago" and inv.item_em(Inventory.MAO) == &"", "arrastar o manto para o corpo veste")
 	var espaco_cajado := _espaco_de(inv, &"cajado")
@@ -76,12 +74,8 @@ func _ready() -> void:
 	inv.pedir_clique(Inventory.EQUIP_CORPO)  # cajado não é roupa
 	checar(inv.item_em(Inventory.EQUIP_CORPO) == &"roupa_mago" and inv.item_em(Inventory.MAO) == &"cajado", "item que não é roupa não entra")
 	inv.pedir_clique(espaco_cajado)  # devolve o cajado
-	# Shift + clique numa roupa da mochila veste (e troca).
-	inv.pedir_clique(Inventory.EQUIP_CABECA, false, true)
-	var espaco_roupa := _espaco_de(inv, &"chapeu_mago")
-	checar(p.equipado.get("cabeca") == &"" and espaco_roupa >= 0, "tirou o chapéu")
-	inv.pedir_clique(espaco_roupa, false, true)
-	checar(p.equipado.get("cabeca") == &"chapeu_mago" and inv.quantidade_de(&"chapeu_mago") == 0, "Shift + clique no chapéu da mochila veste")
+	# Chapéus antigos não ocupam espaço visual; o traje completo traz a cobertura da cabeça.
+	checar(not Inventory.EQUIPAMENTO.has(Inventory.EQUIP_CABECA), "não existe espaço de equipamento separado para a cabeça")
 	# Mochila aberta: o boneco da miniatura acompanha.
 	w.hud._mochila.abrir(&"mochila")
 	await esperar(0.2)
@@ -99,7 +93,7 @@ func _ready() -> void:
 	checar(not p.criando and p.tela_de_criacao() == null, "personagem salvo não passa pela criação")
 	checar(p.raca == &"ogro" and p.classe == &"mago" and p.ficha.titulo() == "Ogro Mago", "voltou Ogro Mago")
 	checar(p.aparencia.get("rosto") == 2 and p.aparencia.get("pele") == 1, "voltou com rosto 2 e pele 1 (%s)" % str(p.aparencia))
-	checar(p.equipado.get("cabeca") == &"chapeu_mago" and p.equipado.get("corpo") == &"", "voltou com o chapéu e sem o manto (roupa branca)")
+	checar(p.equipado.get("cabeca") == &"" and p.equipado.get("corpo") == &"", "voltou sem traje de classe (roupa branca)")
 	checar(inv.quantidade_de(&"roupa_mago") == 1 and inv.quantidade_de(&"cajado") == 1, "manto na mochila e cajado na barra")
 	checar(p.visual.visible, "boneco aparece")
 
@@ -108,7 +102,7 @@ func _ready() -> void:
 	antigo.erase("aparencia")
 	antigo["itens"] = []
 	p.restaurar(antigo, false)
-	checar(inv.item_em(Inventory.EQUIP_CORPO) == &"roupa_mago" and inv.item_em(Inventory.EQUIP_CABECA) == &"chapeu_mago", "personagem salvo antes das roupas ganha as da classe")
+	checar(inv.item_em(Inventory.EQUIP_CORPO) == &"roupa_mago" and inv.item_em(Inventory.EQUIP_CABECA) == &"", "personagem salvo antes dos trajes ganha o traje completo da classe")
 
 	Salvamento.apagar(ARQUIVO)
 	terminar()

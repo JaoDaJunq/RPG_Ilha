@@ -86,7 +86,7 @@ func _ready() -> void:
 		checar(cliente.raca == &"ogro" and cliente.classe == &"arqueiro", "anfitrião vê o cliente como Ogro Arqueiro")
 		# O cliente passou pela tela de criação (Ogro, rosto 2, pele 3, Arqueiro) e entrou no mundo.
 		checar(not cliente.criando and cliente.aparencia.get("rosto") == 1 and cliente.aparencia.get("pele") == 2, "anfitrião vê a aparência escolhida pelo cliente (%s)" % str(cliente.aparencia))
-		checar(cliente.equipado.get("corpo") == &"roupa_arqueiro" and cliente.equipado.get("cabeca") == &"capuz_arqueiro", "anfitrião vê as roupas base do arqueiro no cliente")
+		checar(cliente.equipado.get("corpo") == &"roupa_arqueiro" and cliente.equipado.get("cabeca") == &"", "anfitrião vê o traje completo do arqueiro no cliente")
 		checar(cliente.inventario.quantidade_de(&"arco") == 1, "o arco do arqueiro está na barra do cliente")
 	checar(relatorio.get("viu_criar", false), "o cliente viu a tela de criação ao entrar")
 	checar(relatorio.get("aparencia_anfitriao", "") == "humano" and relatorio.get("roupa_anfitriao", "") == "roupa_mago", "cliente vê o anfitrião Humano de manto de mago (%s, %s)" % [relatorio.get("aparencia_anfitriao"), relatorio.get("roupa_anfitriao")])

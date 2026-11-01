@@ -28,7 +28,7 @@ func esperar(segundos: float) -> void:
 ## Cria a ilha. Por padrão sem slimes e sem árvores/pedras geradas,
 ## para nada no caminho atrapalhar o teste.
 ## `pular_criacao`: o personagem já vem pronto (raça e classe acima), sem a tela de criação.
-func criar_mundo(slimes := 0, limpar := true, classe: StringName = &"mago", raca: StringName = &"humano", pular_criacao := true) -> World:
+func criar_mundo(slimes := 0, limpar := true, classe: StringName = &"mago", raca: StringName = &"humano", pular_criacao := true, quantidade_plantas := 110) -> World:
 	Sfx.ligado = false
 	Net.classe = classe
 	Net.raca = raca
@@ -37,6 +37,7 @@ func criar_mundo(slimes := 0, limpar := true, classe: StringName = &"mago", raca
 	w.arquivo_salvo = ""  # testes não mexem no mundo salvo do João
 	w.slimes = slimes
 	w.gerar_recursos = not limpar
+	w.plantas = quantidade_plantas
 	add_child(w)
 	await get_tree().physics_frame
 	# Machado e picareta de pedra na barra: com a mão a coleta é bem lenta (balanceamento),

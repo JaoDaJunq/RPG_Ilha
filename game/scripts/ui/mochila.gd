@@ -198,9 +198,9 @@ func _montar() -> void:
 	_cursor.add_child(_cursor_qtd)
 
 
-## O personagem em miniatura (como no Minecraft) com os dois espaços de roupa: cabeça e corpo.
-## Tirar a roupa deixa o boneco com a roupinha branca. O boneco cresce por um fator inteiro
-## (escala 0,25 no jogo), então o pixel continua nítido.
+## O personagem em miniatura (como no Minecraft) e o espaço da roupa completa da classe.
+## Tirar a roupa deixa o boneco com a roupinha branca. Chapéus e cabelos já fazem parte
+## da arte completa do traje. O boneco cresce por um fator inteiro (escala 0,25 no jogo).
 func _montar_personagem() -> Control:
 	var h := HBoxContainer.new()
 	_caixa_personagem = h
@@ -209,7 +209,7 @@ func _montar_personagem() -> Control:
 	roupas.add_theme_constant_override(&"separation", 4)
 	roupas.alignment = BoxContainer.ALIGNMENT_CENTER
 	h.add_child(roupas)
-	for par in [[Inventory.EQUIP_CABECA, "Cabeça"], [Inventory.EQUIP_CORPO, "Corpo"]]:
+	for par in [[Inventory.EQUIP_CORPO, "Roupa"]]:
 		var e := _espaco(par[0])
 		_espacos.append([par[0], e])
 		e.fundo.size_flags_horizontal = Control.SIZE_SHRINK_CENTER

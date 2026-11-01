@@ -65,7 +65,10 @@ func _init() -> void:
 	for nome in PECAS:
 		var peca := _celula(celulas[nome][0], celulas[nome][1])
 		peca = peca.get_region(_caixa_principal(peca))
-		var achado := _achar(peca, pequeno, nome, 0.0, Vector2.INF)
+		# Permite corrigir a escala de uma peça quando a busca automática encontra só uma
+		# parte parecida (ex.: um colete tem faixas de cor repetidas). Em geral deixe automático.
+		var escala_manual := float(_args.get("escala_" + nome, "0"))
+		var achado := _achar(peca, pequeno, nome, escala_manual, Vector2.INF)
 		var lugares: Array = [achado.pos]
 		if nome == "pe" or nome == "mao":
 			# A segunda (a de trás): mesma escala, longe da primeira.

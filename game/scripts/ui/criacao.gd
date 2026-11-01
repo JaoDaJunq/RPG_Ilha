@@ -99,12 +99,12 @@ func aparencia() -> Dictionary:
 	return {"raca": raca, "rosto": rosto, "pele": pele}
 
 
-## As roupas que o boneco veste agora: nenhuma (branca) até escolher a classe.
+## A roupa completa da classe escolhida. Antes de escolher, usa a roupinha branca.
 func roupas() -> Dictionary:
 	if passo == 0:
 		return {&"cabeca": &"", &"corpo": &""}
 	var base: Array = Player.ROUPAS_BASE[classe]
-	return {&"cabeca": base[0], &"corpo": base[1]}
+	return {&"cabeca": &"", &"corpo": base[0]}
 
 
 func boneco() -> Boneco:

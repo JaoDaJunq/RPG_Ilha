@@ -30,8 +30,8 @@ const SONS := {
 ## Personagem (sincronizado ao nascer).
 @export var raca: StringName = &"humano"
 @export var classe: StringName = &"guerreiro"
-## Rosto e pele ({raca, rosto 0 a 2, pele 0 a 2}) e roupas vestidas ({cabeca, corpo}: id do
-## item ou &"" = roupa branca). Quem manda é o anfitrião; todos recebem por _aspecto_sync.
+## Rosto e pele ({raca, rosto 0 a 2, pele 0 a 2}) e roupa completa vestida (corpo). Quem
+## manda é o anfitrião; todos recebem por _aspecto_sync. `cabeca` fica só por compatibilidade.
 var aparencia: Dictionary = {}
 var equipado: Dictionary = {&"cabeca": &"", &"corpo": &""}
 ## Personagem ainda sendo criado (tela de criação aberta): parado, escondido e sem tomar dano.
@@ -818,19 +818,20 @@ const KIT := {&"guerreiro": &"espada_ferro", &"mago": &"cajado", &"arqueiro": &"
 
 
 ## Só o anfitrião: personagem novo (ou salvo antes do kit existir) ganha a arma da classe.
+## O traje completo correspondente é vestido por `_vestir_base`.
 func dar_kit() -> void:
 	if KIT.has(classe) and inventario.quantidade_de(KIT[classe]) == 0:
 		inventario.adicionar(KIT[classe], 1)
 
 
 # --- Criação do personagem e roupas (L24) -----------------------------------------------
-## Roupas base de cada classe (cabeça e corpo): quem escolhe a classe já nasce vestido assim.
+## Roupa completa de cada classe: inclui cabeça e corpo numa única peça vestível.
 const ROUPAS_BASE := {
-	&"guerreiro": [&"elmo_guerreiro", &"roupa_guerreiro"],
-	&"mago": [&"chapeu_mago", &"roupa_mago"],
-	&"arqueiro": [&"capuz_arqueiro", &"roupa_arqueiro"],
-	&"ladino": [&"bandana_ladino", &"roupa_ladino"],
-	&"clerigo": [&"touca_clerigo", &"roupa_clerigo"],
+	&"guerreiro": [&"roupa_guerreiro"],
+	&"mago": [&"roupa_mago"],
+	&"arqueiro": [&"roupa_arqueiro"],
+	&"ladino": [&"roupa_ladino"],
+	&"clerigo": [&"roupa_clerigo"],
 }
 const OPCOES_ROSTO := 3
 const OPCOES_PELE := 3
@@ -918,7 +919,8 @@ func criar_personagem(raca_id: StringName, classe_id: StringName, ap: Dictionary
 ## Só o anfitrião: veste as roupas base da classe.
 func _vestir_base() -> void:
 	for id in ROUPAS_BASE.get(classe, []):
-		inventario.vestir(id)
+		if inventario.item_em(Inventory.EQUIP_CORPO) != id:
+			inventario.vestir(id)
 
 
 ## Só o anfitrião: o inventário mudou, então as roupas vestidas podem ter mudado.

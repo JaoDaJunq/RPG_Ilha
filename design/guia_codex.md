@@ -25,6 +25,8 @@ O que mudou por último está no `git log`; as decisões, em `design/decisoes.md
 
 ## 2. A tarefa principal agora: personagem com ARTE COMPLETA
 
+**Andamento (01/11/2026):** as 10 folhas e as peças dos 5 personagens do Humano foram geradas e integradas. A mochila veste um traje completo pelo espaço Corpo, sem chapéu visual separado. A bateria terminou com `BATERIA: tudo OK`; o print está em `evidence/novidades/customizacao.png`. O perfil do Ladino usa `--escala_tronco=0.75` para a ferramenta encontrar o tronco no tamanho certo. O pacote de aprovação está em `C:\Users\jpach\Aprovações Ilhas Vivas\L29 - personagens completos do humano (aguardando)`. **Não começar as outras raças até o João aprovar esta etapa.** As peças antigas das outras raças continuam no projeto enquanto elas ainda dependem delas.
+
 **Decisão de 01/11:** desistimos das roupas trocáveis (as tentativas estão em `design/pesquisa_roupas.md`). Agora:
 
 - Cada combinação **raça x classe** é um personagem inteiro, nas 3 vistas: perfil olhando para a direita, frente e costas. São 4 raças x 5 classes = **20 personagens**. Comece pelos 5 do Humano e mostre ao João antes de fazer o resto.

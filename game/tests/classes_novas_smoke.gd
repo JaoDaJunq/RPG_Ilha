@@ -91,8 +91,9 @@ func _dados() -> void:
 		checar(existe and ItemData.carregar(par[0]).equipa == par[1], "item %s existe (%s)" % [par[0], "veste na " + String(par[1]) if par[1] != &"" else "arma"])
 	checar(ItemData.carregar(&"adagas").ferramenta == &"espada" and ItemData.carregar(&"maca").ferramenta == &"espada", "adagas e maça golpeiam como espada")
 	checar(Player.KIT[&"ladino"] == &"adagas" and Player.KIT[&"clerigo"] == &"maca", "o kit do Ladino é adagas e o do Clérigo é maça")
-	checar(Player.ROUPAS_BASE[&"ladino"] == [&"bandana_ladino", &"roupa_ladino"] and Player.ROUPAS_BASE[&"clerigo"] == [&"touca_clerigo", &"roupa_clerigo"],
-			"roupas base de cada classe nova")
+	checar(Player.ROUPAS_BASE[&"ladino"] == [&"roupa_ladino"] and Player.ROUPAS_BASE[&"clerigo"] == [&"roupa_clerigo"],
+			"um traje completo por classe nova")
+	checar(not Inventory.EQUIPAMENTO.has(Inventory.EQUIP_CABECA), "chapéus antigos não têm espaço visual separado")
 	var texto := TextoHabilidade.de_habilidade(ClasseData.carregar(&"clerigo").habilidades[0], "Q", Ficha.criar(&"humano", &"clerigo"))
 	checar(texto.efeitos[0].contains("28"), "o texto da Cura mostra a cura real (%s)" % texto.efeitos[0])
 
@@ -104,7 +105,7 @@ func _ladino() -> void:
 	var p := w.jogador
 	var mult := p.ficha.multiplicador_fisico()
 	checar(p.inventario.quantidade_de(&"adagas") == 1, "o Ladino nasce com as adagas")
-	checar(p.equipado.get("corpo") == &"roupa_ladino" and p.equipado.get("cabeca") == &"bandana_ladino", "o Ladino nasce de colete e bandana")
+	checar(p.equipado.get("corpo") == &"roupa_ladino" and p.equipado.get("cabeca") == &"", "o Ladino nasce com o traje completo")
 	checar(p.habilidades().size() == 4 and p.habilidades()[0].id == &"golpe_furtivo", "o Ladino tem 4 habilidades")
 
 	# Golpe furtivo num inimigo que não persegue: dano dobrado, e o ladino avança até ele.
@@ -211,7 +212,7 @@ func _clerigo() -> void:
 	var w := await criar_mundo(0, true, &"clerigo")
 	var p := w.jogador
 	checar(p.inventario.quantidade_de(&"maca") == 1, "o Clérigo nasce com a maça")
-	checar(p.equipado.get("corpo") == &"roupa_clerigo" and p.equipado.get("cabeca") == &"touca_clerigo", "o Clérigo nasce de túnica e touca")
+	checar(p.equipado.get("corpo") == &"roupa_clerigo" and p.equipado.get("cabeca") == &"", "o Clérigo nasce com o traje completo")
 	checar(p.habilidades().size() == 4 and p.habilidades()[3].id == &"bencao", "o Clérigo tem 4 habilidades")
 	p.global_position = w.centro + Vector2(0, 80)
 	var perto := _aliado(w, "2", p.global_position + Vector2(30, 0))

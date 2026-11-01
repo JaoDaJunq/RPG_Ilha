@@ -1,23 +1,24 @@
 extends TesteBase
-## O boneco por camadas (L24) lado a lado: cada coluna é uma combinação de rosto, pele e
-## roupa; as linhas são de frente, de perfil e de costas. Precisa de janela.
-## Salva evidence/novidades/customizacao.png.
+## Os cinco personagens completos do Humano lado a lado. As linhas são de frente, perfil e
+## costas. Precisa de janela. Salva evidence/novidades/customizacao.png.
 
 const COMBOS := [
-	[{raca = &"humano", rosto = 0, pele = 0}, {}],
-	[{raca = &"humano", rosto = 0, pele = 0}, {cabeca = &"chapeu_mago", corpo = &"roupa_mago"}],
-	[{raca = &"humano", rosto = 1, pele = 1}, {cabeca = &"chapeu_mago", corpo = &"roupa_mago"}],
-	[{raca = &"humano", rosto = 0, pele = 2}, {cabeca = &"capuz_arqueiro", corpo = &"roupa_arqueiro"}],
-	[{raca = &"humano", rosto = 1, pele = 0}, {cabeca = &"capuz_arqueiro", corpo = &"roupa_arqueiro"}],
-	[{raca = &"humano", rosto = 1, pele = 0}, {corpo = &"roupa_mago"}],
-	[{raca = &"humano", rosto = 0, pele = 1}, {cabeca = &"capuz_arqueiro"}],
+	[{raca = &"humano", rosto = 0, pele = 0}, {corpo = &"roupa_guerreiro"}],
+	[{raca = &"humano", rosto = 0, pele = 0}, {corpo = &"roupa_mago"}],
+	[{raca = &"humano", rosto = 0, pele = 0}, {corpo = &"roupa_arqueiro"}],
+	[{raca = &"humano", rosto = 0, pele = 0}, {corpo = &"roupa_ladino"}],
+	[{raca = &"humano", rosto = 0, pele = 0}, {corpo = &"roupa_clerigo"}],
 ]
 
 
 func _ready() -> void:
-	var w := await criar_mundo()
+	var w := await criar_mundo(0, true, &"mago", &"humano", true, 0)
 	w.jogador.visible = false
 	w.hud.visible = false
+	# Plantas são belas no mapa, mas podem ficar na frente dos personagens nesta comparação.
+	for filho in w.entidades.get_children():
+		if filho is AnimatedSprite2D:
+			filho.visible = false
 	var base := w.centro + Vector2(-80, 80)
 	for i in COMBOS.size():
 		for k in 3:
@@ -29,7 +30,7 @@ func _ready() -> void:
 			b.play([&"parado_baixo", &"parado_direita", &"parado_cima"][k])
 	var cam := Camera2D.new()
 	cam.zoom = Vector2(5.5, 5.5)
-	cam.position = base + Vector2(96, 22)
+	cam.position = base + Vector2(52, 30)
 	w.add_child(cam)
 	cam.make_current()
 	await esperar(0.2)

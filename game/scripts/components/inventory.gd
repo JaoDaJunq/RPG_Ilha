@@ -7,7 +7,8 @@ extends Node
 ##            a 3x3 inteira só na bancada)
 ##   45       mão: o item que o mouse está segurando na tela da mochila
 ##   46 a 72  o baú aberto (cópia do conteúdo do baú; o anfitrião grava de volta no baú)
-##   73, 74   roupas vestidas: cabeça e corpo (só aceitam item com `equipa` igual)
+##   73, 74   espaço antigo de cabeça e roupa do corpo. Cabeça fica reservado para saves
+##            antigos; só o corpo aceita roupa nova.
 ## Quem manda é o anfitrião: o dono PEDE cada clique, o anfitrião aplica e manda a lista
 ## inteira de volta (pedido_clique, pedido_resultado, pedido_fechar).
 
@@ -24,7 +25,7 @@ const EQUIP_CABECA := BAU + BAU_N
 const EQUIP_CORPO := EQUIP_CABECA + 1
 const ESPACOS := EQUIP_CORPO + 1
 ## Espaço de roupa → o `equipa` que ele aceita.
-const EQUIPAMENTO := {EQUIP_CABECA: &"cabeca", EQUIP_CORPO: &"corpo"}
+const EQUIPAMENTO := {EQUIP_CORPO: &"corpo"}
 ## Na mochila, a grade 2x2 são estes espaços da 3x3.
 const GRADE_2X2: Array[int] = [GRADE, GRADE + 1, GRADE + 3, GRADE + 4]
 
@@ -128,6 +129,13 @@ func definir(salvo: Variant) -> void:
 		if salvo.size() >= MAO + 3:
 			_carregar_espaco(EQUIP_CABECA, salvo[MAO + 1])
 			_carregar_espaco(EQUIP_CORPO, salvo[MAO + 2])
+		# Chapéus antigos deixam de ser equipamento visual. Tenta devolvê-los à mochila.
+		if _ids[EQUIP_CABECA] != &"":
+			var id_antigo := _ids[EQUIP_CABECA]
+			var qtd_antiga := _qtds[EQUIP_CABECA]
+			if _guardar(id_antigo, qtd_antiga, 0, GUARDAR) == 0:
+				_ids[EQUIP_CABECA] = &""
+				_qtds[EQUIP_CABECA] = 0
 	_enviar()
 
 
@@ -547,9 +555,9 @@ func _receber(ids: Array, qtds: PackedInt32Array, bancada: bool, bau: bool, somb
 	mudou.emit()
 
 
-## O que o boneco veste: {cabeca: id, corpo: id} (&"" = roupa branca). Só leitura.
+## O que o boneco veste: {cabeca: "", corpo: id}; roupa vazia = roupinha branca. Só leitura.
 func roupas() -> Dictionary:
-	return {&"cabeca": _ids[EQUIP_CABECA], &"corpo": _ids[EQUIP_CORPO]}
+	return {&"cabeca": &"", &"corpo": _ids[EQUIP_CORPO]}
 
 
 ## Só o anfitrião: veste a roupa direto no espaço dela (a que estava vestida vai para a
