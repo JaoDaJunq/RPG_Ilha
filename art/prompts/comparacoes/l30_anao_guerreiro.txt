@@ -1,0 +1,19 @@
+pacote | ../art/terceiros/tiny_swords/Tiny Swords (Free Pack)/Units/Blue Units/Warrior/Warrior_Idle.png | 0 0 192 192 | 0.25
+nosso | res://assets/sprites/tiny/personagens/anao_guerreiro/perfil.png | 0 0 128 128 | 0.25
+nosso | res://assets/sprites/tiny/personagens/anao_guerreiro/perfil.png | 128 0 128 128 | 0.25
+nosso | res://assets/sprites/tiny/personagens/anao_guerreiro/perfil.png | 256 0 128 128 | 0.25
+nosso | res://assets/sprites/tiny/personagens/anao_guerreiro/perfil.png | 384 0 128 128 | 0.25
+nosso | res://assets/sprites/tiny/personagens/anao_guerreiro/perfil.png | 512 0 128 128 | 0.25
+nosso | res://assets/sprites/tiny/personagens/anao_guerreiro/perfil.png | 640 0 128 128 | 0.25
+nosso | res://assets/sprites/tiny/personagens/anao_guerreiro/frente.png | 0 0 128 128 | 0.25
+nosso | res://assets/sprites/tiny/personagens/anao_guerreiro/frente.png | 128 0 128 128 | 0.25
+nosso | res://assets/sprites/tiny/personagens/anao_guerreiro/frente.png | 256 0 128 128 | 0.25
+nosso | res://assets/sprites/tiny/personagens/anao_guerreiro/frente.png | 384 0 128 128 | 0.25
+nosso | res://assets/sprites/tiny/personagens/anao_guerreiro/frente.png | 512 0 128 128 | 0.25
+nosso | res://assets/sprites/tiny/personagens/anao_guerreiro/frente.png | 640 0 128 128 | 0.25
+nosso | res://assets/sprites/tiny/personagens/anao_guerreiro/costas.png | 0 0 128 128 | 0.25
+nosso | res://assets/sprites/tiny/personagens/anao_guerreiro/costas.png | 128 0 128 128 | 0.25
+nosso | res://assets/sprites/tiny/personagens/anao_guerreiro/costas.png | 256 0 128 128 | 0.25
+nosso | res://assets/sprites/tiny/personagens/anao_guerreiro/costas.png | 384 0 128 128 | 0.25
+nosso | res://assets/sprites/tiny/personagens/anao_guerreiro/costas.png | 512 0 128 128 | 0.25
+nosso | res://assets/sprites/tiny/personagens/anao_guerreiro/costas.png | 640 0 128 128 | 0.25

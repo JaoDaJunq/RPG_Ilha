@@ -1,0 +1,10 @@
+pacote | ../art/terceiros/tiny_swords/Tiny Swords (Free Pack)/Units/Blue Units/Warrior/Warrior_Idle.png | 0 0 192 192 | 0.25
+pacote | res://assets/tiny_swords/unidades/azul/trabalhador_parado.png | 0 0 192 192 | 0.25
+nosso | res://assets/sprites/tiny/personagens/humano_guerreiro/frente.png | 0 0 128 128 | 0.25
+nosso | res://assets/sprites/tiny/personagens/ogro_guerreiro/frente.png | 0 0 128 128 | 0.25
+nosso | res://assets/sprites/tiny/personagens/elfo_guerreiro/frente.png | 0 0 128 128 | 0.25
+nosso | res://assets/sprites/tiny/personagens/anao_guerreiro/frente.png | 0 0 128 128 | 0.25
+nosso | res://assets/sprites/tiny/personagens/humano_guerreiro/perfil.png | 640 0 128 128 | 0.25
+nosso | res://assets/sprites/tiny/personagens/ogro_guerreiro/perfil.png | 640 0 128 128 | 0.25
+nosso | res://assets/sprites/tiny/personagens/elfo_guerreiro/perfil.png | 640 0 128 128 | 0.25
+nosso | res://assets/sprites/tiny/personagens/anao_guerreiro/perfil.png | 640 0 128 128 | 0.25

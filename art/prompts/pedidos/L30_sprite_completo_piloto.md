@@ -55,3 +55,10 @@ NÃO SIGA:
 ## Depois de gerar
 
 Salvar só nos 3 caminhos acima. Não mexer em `game/` nem em nenhum outro arquivo. Responder com os caminhos e o tamanho de cada imagem.
+
+## Outras raças na forma guerreira (12/11/2026, em paralelo ao humano)
+
+O João pediu para fazer junto o Ogro, o Elfo e o Anão Guerreiro. Mesmo texto e mesmas regras, trocando só isto:
+- **Imagens 1:** `art/sprites/tiny/candidatos/l29_<raca>_guerreiro_perfil.png` e `l29_<raca>_guerreiro_frente_costas.png` (o rosto, o cabelo, a pele e a roupa de guerreiro DAQUELA raça).
+- No texto, "o Humano Guerreiro" vira "o <Raça> Guerreiro". O corpo segue a raça das imagens 1 (o ogro é mais largo e verde, com presas; o elfo tem orelhas pontudas; o anão é baixo, largo e barbudo). A altura de ~380 px continua sendo do humano: o anão fica um pouco mais baixo e o ogro um pouco mais largo, com os pés na mesma linha.
+- **Saída:** `art/sprites/tiny/candidatos/l30_<raca>_guerreiro_<vista>.png` (raca = ogro, elfo, anao).
