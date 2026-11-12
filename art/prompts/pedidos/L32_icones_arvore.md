@@ -207,3 +207,13 @@ Célula marcada "vazia": só o fundo magenta.
 6. vazia
 
 Salvar só nos caminhos acima. Não mexer em `game/` nem em nenhum outro arquivo.
+
+## Folha 22 (pedido extra: o Piscar usava o mesmo ícone da Cambalhota)
+
+**Folha 22**
+1. `piscar`: silhueta azul-clara de pessoa se desfazendo em faíscas de um lado e reaparecendo do outro, com uma seta curta entre as duas.
+2. vazia
+3. vazia
+4. vazia
+5. vazia
+6. vazia

@@ -147,7 +147,12 @@ static func _no(linha: Array, tipo: NoArvore.Tipo, ramo: StringName, etapa: int)
 	if tipo == NoArvore.Tipo.ATIVA and not n.pendente and ResourceLoader.exists(PASTA_HABILIDADES % n.id):
 		n.habilidade = load(PASTA_HABILIDADES % n.id) as HabilidadeData
 	var icone: String = linha[3]
-	if icone == "" and n.habilidade and n.habilidade.icone:
+	# Ícone próprio do nó (L32: icone_<id>.png) vale para a árvore e para as teclas.
+	if ResourceLoader.exists(PASTA_ICONES % n.id):
+		n.icone = load(PASTA_ICONES % n.id) as Texture2D
+		if n.habilidade:
+			n.habilidade.icone = n.icone
+	elif icone == "" and n.habilidade and n.habilidade.icone:
 		n.icone = n.habilidade.icone
 	else:
 		n.icone = load(PASTA_ICONES % (icone if icone != "" else ICONE_NEUTRO)) as Texture2D
