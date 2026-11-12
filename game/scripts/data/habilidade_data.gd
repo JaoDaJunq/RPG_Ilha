@@ -21,5 +21,12 @@ enum Modo {
 @export var dano := 1.0
 ## Distância máxima (para mira no chão, como a armadilha).
 @export var alcance := 0.0
-## Nome da lógica em Logicas (ex.: &"Investida").
+## Nome da lógica: uma classe interna de Logicas ou de logicas_<classe>.gd (ex.: &"Investida").
 @export var logica: StringName
+## Animação do boneco ao lançar (prefixo, sem a direção): &"golpe" (padrão) ou &"parado"
+## (sem animação). Vazio usa &"golpe".
+@export var animacao: StringName
+## Quanto tempo (s) a animação fica na tela. 0 usa o padrão (0,2 s).
+@export var duracao_animacao := 0.0
+## Som ao lançar (nome em Sfx). Vazio usa a tabela antiga Player.SONS (e depois &"ataque").
+@export var som: StringName
