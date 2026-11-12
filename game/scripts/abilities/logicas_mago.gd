@@ -77,6 +77,12 @@ class PedraViva extends HabilidadeLogica:
 	const RAIO := 12.0
 	const PASSO := 0.1
 
+	func efeitos(hab: HabilidadeData) -> Array[String]:
+		return [
+			"Rola até a mira: até %s" % TextoHabilidade.blocos(hab.alcance),
+			"Desequilíbrio: 30% de chance de errar por 4 s",
+		]
+
 	func executar(quem: Player, hab: HabilidadeData, dir: Vector2, alvo: Vector2, _carga: float) -> void:
 		var ate := LogicasMago.ponto_mira(quem, alvo, hab.alcance)
 		if ate.distance_to(quem.global_position) < 16.0:
@@ -106,6 +112,12 @@ class RastroDeChamas extends HabilidadeLogica:
 	const BRASA_INTERVALO := 0.5
 	const DISTANCIA_ENTRE := 10.0  # parado, não acende outra brasa no mesmo lugar
 
+	func efeitos(_hab: HabilidadeData) -> Array[String]:
+		return [
+			"Dura %s s; cada brasa fica %s s" % [TextoHabilidade.numero(DURACAO), TextoHabilidade.numero(BRASA_SEGUNDOS)],
+			"Brasa: dano a cada 0,5 s e Queimadura",
+		]
+
 	func executar(quem: Player, hab: HabilidadeData, _dir: Vector2, _alvo: Vector2, _carga: float) -> void:
 		var dano := dano_de(quem, hab)
 		var dps := LogicasMago.queima_dps(quem)
@@ -123,8 +135,8 @@ class RastroDeChamas extends HabilidadeLogica:
 			b.estado = EfeitosEstado.QUEIMADURA
 			b.estado_segundos = LogicasMago.QUEIMA_SEGUNDOS
 			b.estado_forca = dps
-			b.efeito_visual = &"explosao"
-			b.escala_visual = 0.25
+			b.efeito_visual = &"fogo"
+			b.escala_visual = 2.0
 			b.add_to_group(&"brasas")
 			b.iniciar(zona.get_parent())
 		guia.iniciar()
@@ -135,6 +147,13 @@ class MiniExplosao extends HabilidadeLogica:
 	const TEMPO := 1.0
 	const RAIO := 32.0
 	const EMPURRAO := 24.0
+
+	func efeitos(_hab: HabilidadeData) -> Array[String]:
+		return [
+			"Explode ao bater ou após %s s" % TextoHabilidade.numero(TEMPO),
+			"Área: raio de %s; empurra" % TextoHabilidade.blocos(RAIO),
+			"Queimadura por 4 s",
+		]
 
 	func executar(quem: Player, hab: HabilidadeData, dir: Vector2, _alvo: Vector2, _carga: float) -> void:
 		var dano := dano_de(quem, hab)
@@ -162,14 +181,22 @@ class TornadoDeFogo extends HabilidadeLogica:
 	const RAIO_PUXAO := 44.0
 	const PUXAO := 8.0
 
+	func efeitos(hab: HabilidadeData) -> Array[String]:
+		return [
+			"Anda até a mira (até %s) por %s s" % [TextoHabilidade.blocos(hab.alcance), TextoHabilidade.numero(DURACAO)],
+			"Puxa quem está a até %s" % TextoHabilidade.blocos(RAIO_PUXAO),
+			"Dano a cada 0,25 s no meio, com Queimadura",
+		]
+
 	func executar(quem: Player, hab: HabilidadeData, _dir: Vector2, alvo: Vector2, _carga: float) -> void:
 		var ate := LogicasMago.ponto_mira(quem, alvo, hab.alcance)
 		var dano := dano_de(quem, hab)
 		var dps := LogicasMago.queima_dps(quem)
 		var z := Zona.criar(quem, quem.global_position, RAIO, DURACAO, INTERVALO)
-		z.efeito_tique = &"giro"
+		z.efeito_tique = &"fogo"
 		z.ao_tique = func(zona: Zona, inimigos: Array[Node2D], _j: Array[Player]) -> void:
 			var centro: Vector2 = zona.global_position
+			World.efeito_todos(zona, &"giro", centro + Vector2(0, -8))
 			for e in Golpes.inimigos_em_volta(zona, centro, RAIO_PUXAO):
 				if not e in inimigos:
 					Golpes.puxar(e, centro, PUXAO, 0.15)
@@ -186,6 +213,13 @@ class ChuvaDeMeteoros extends HabilidadeLogica:
 	const INTERVALO := 0.4
 	const RAIO := 48.0
 	const RAIO_METEORO := 16.0
+
+	func efeitos(_hab: HabilidadeData) -> Array[String]:
+		return [
+			"Área: raio de %s, por %s s" % [TextoHabilidade.blocos(RAIO), TextoHabilidade.numero(DURACAO)],
+			"Um meteoro a cada %s s em cada inimigo dentro" % TextoHabilidade.numero(INTERVALO),
+			"Queimadura por 4 s",
+		]
 
 	func executar(quem: Player, hab: HabilidadeData, _dir: Vector2, alvo: Vector2, _carga: float) -> void:
 		var ponto := LogicasMago.ponto_mira(quem, alvo, hab.alcance)
@@ -214,6 +248,13 @@ class MuralhaDeGelo extends HabilidadeLogica:
 	const RAIO_BLOCO := 10.0
 	const EMPURRAO := 12.0
 	const PONTE := 96.0
+
+	func efeitos(_hab: HabilidadeData) -> Array[String]:
+		return [
+			"%d blocos de gelo por %s s" % [BLOCOS, TextoHabilidade.numero(DURACAO)],
+			"Empurra de volta quem encosta",
+			"Na água: vira ponte",
+		]
 
 	func executar(quem: Player, hab: HabilidadeData, dir: Vector2, alvo: Vector2, _carga: float) -> void:
 		var centro := LogicasMago.ponto_mira(quem, alvo, hab.alcance)
@@ -247,6 +288,12 @@ class PrisaoDeGelo extends HabilidadeLogica:
 	const SEGUNDOS := 4.0
 	const RAIO_MIRA := 32.0
 
+	func efeitos(hab: HabilidadeData) -> Array[String]:
+		return [
+			"Congela por %s s" % TextoHabilidade.numero(SEGUNDOS),
+			"Alcance: %s" % TextoHabilidade.blocos(hab.alcance),
+		]
+
 	func executar(quem: Player, hab: HabilidadeData, _dir: Vector2, alvo: Vector2, _carga: float) -> void:
 		var e := Logicas.inimigo_na_mira(quem, alvo, hab.alcance, RAIO_MIRA)
 		if e == null:
@@ -263,6 +310,13 @@ class Nevasca extends HabilidadeLogica:
 	const TIQUES_PARA_CONGELAR := 3
 	const CONGELA := 2.0
 
+	func efeitos(_hab: HabilidadeData) -> Array[String]:
+		return [
+			"Área: raio de %s, por %s s" % [TextoHabilidade.blocos(RAIO), TextoHabilidade.numero(DURACAO)],
+			"A cada segundo dentro: mais lento",
+			"No terceiro segundo: congela por %s s" % TextoHabilidade.numero(CONGELA),
+		]
+
 	func executar(quem: Player, hab: HabilidadeData, _dir: Vector2, alvo: Vector2, _carga: float) -> void:
 		var ponto := LogicasMago.ponto_mira(quem, alvo, hab.alcance)
 		var dano := dano_de(quem, hab)
@@ -270,6 +324,7 @@ class Nevasca extends HabilidadeLogica:
 		var z := Zona.criar(quem, ponto, RAIO, DURACAO)
 		z.efeito_visual = &"nova_gelo"
 		z.escala_visual = 2.5
+		z.efeito_tique = &"nova_gelo"
 		z.ao_tique = func(zona: Zona, inimigos: Array[Node2D], _j: Array[Player]) -> void:
 			for e in inimigos:
 				var n: int = conta.get(e.get_instance_id(), 0) + 1
@@ -292,6 +347,13 @@ class CorrenteEletrica extends HabilidadeLogica:
 	const RAIO_MIRA := 40.0
 	const ATORDOA := 0.3
 
+	func efeitos(hab: HabilidadeData) -> Array[String]:
+		return [
+			"Pula entre até %d inimigos" % ALVOS,
+			"Atordoa por %s s" % TextoHabilidade.numero(ATORDOA),
+			"Alcance: %s" % TextoHabilidade.blocos(hab.alcance),
+		]
+
 	func executar(quem: Player, hab: HabilidadeData, _dir: Vector2, alvo: Vector2, _carga: float) -> void:
 		var primeiro := Logicas.inimigo_na_mira(quem, alvo, hab.alcance, RAIO_MIRA)
 		if primeiro == null:
@@ -304,6 +366,12 @@ class CorrenteEletrica extends HabilidadeLogica:
 ## Totem tesla: uma torre na mira que dá choque nos inimigos perto por 8 s.
 class TotemTesla extends HabilidadeLogica:
 	const ARTE := "res://assets/sprites/tiny/construcao/tocha.png"  # placeholder: pedir arte ao Codex
+
+	func efeitos(_hab: HabilidadeData) -> Array[String]:
+		return [
+			"Torre por 8 s",
+			"Choque a cada 0,8 s até 3,5 blocos",
+		]
 
 	func executar(quem: Player, hab: HabilidadeData, _dir: Vector2, alvo: Vector2, _carga: float) -> void:
 		var t := Invocacao.criar(quem, LogicasMago.ponto_mira(quem, alvo, hab.alcance))
@@ -333,6 +401,12 @@ class FormaDeRelampago extends HabilidadeLogica:
 	const LARGURA := 14.0
 	const ATORDOA := 0.5
 
+	func efeitos(hab: HabilidadeData) -> Array[String]:
+		return [
+			"Atravessa até %s" % TextoHabilidade.blocos(hab.alcance),
+			"Atordoa por %s s quem estiver no caminho" % TextoHabilidade.numero(ATORDOA),
+		]
+
 	func executar(quem: Player, hab: HabilidadeData, _dir: Vector2, alvo: Vector2, _carga: float) -> void:
 		World.efeito_todos(quem, &"raio", quem.global_position)
 		for e in Golpes.avancar(quem, alvo, hab.alcance, dano_de(quem, hab), &"raio", LARGURA, true, EfeitosEstado.ATORDOADO, ATORDOA):
@@ -346,6 +420,13 @@ class Tempestade extends HabilidadeLogica:
 	const RAIO := 96.0
 	const POR_TIQUE := 2
 	const ATORDOA := 0.5
+
+	func efeitos(_hab: HabilidadeData) -> Array[String]:
+		return [
+			"Dura %s s" % TextoHabilidade.numero(DURACAO),
+			"Raio em até %d inimigos por segundo, até %s" % [POR_TIQUE, TextoHabilidade.blocos(RAIO)],
+			"Atordoa por %s s" % TextoHabilidade.numero(ATORDOA),
+		]
 
 	func executar(quem: Player, hab: HabilidadeData, _dir: Vector2, _alvo: Vector2, _carga: float) -> void:
 		var dano := dano_de(quem, hab)
@@ -367,6 +448,12 @@ class Espinhos extends HabilidadeLogica:
 	const RAIO := 22.0
 	const PRENDE := 1.5
 
+	func efeitos(_hab: HabilidadeData) -> Array[String]:
+		return [
+			"Área: raio de %s" % TextoHabilidade.blocos(RAIO),
+			"Prende por %s s" % TextoHabilidade.numero(PRENDE),
+		]
+
 	func executar(quem: Player, hab: HabilidadeData, _dir: Vector2, alvo: Vector2, _carga: float) -> void:
 		var ponto := LogicasMago.ponto_mira(quem, alvo, hab.alcance)
 		var dano := dano_de(quem, hab)
@@ -378,6 +465,12 @@ class Espinhos extends HabilidadeLogica:
 
 ## Golem de pedra: invoca um golem por 15 s que chama os inimigos e dá socos.
 class GolemDePedra extends HabilidadeLogica:
+	func efeitos(_hab: HabilidadeData) -> Array[String]:
+		return [
+			"Golem por 15 s (40 de vida)",
+			"Chama os inimigos perto e dá socos",
+		]
+
 	func executar(quem: Player, hab: HabilidadeData, _dir: Vector2, alvo: Vector2, _carga: float) -> void:
 		var g := Invocacao.criar(quem, LogicasMago.ponto_mira(quem, alvo, hab.alcance))
 		g.textura_caminho = "res://assets/sprites/tiny/pedras_slime.png"  # placeholder: pedir arte ao Codex
@@ -400,6 +493,13 @@ class GolemDePedra extends HabilidadeLogica:
 class Fenda extends HabilidadeLogica:
 	const LARGURA := 12.0
 	const DERRUBA := 1.0
+
+	func efeitos(hab: HabilidadeData) -> Array[String]:
+		return [
+			"Linha de %s" % TextoHabilidade.blocos(hab.alcance),
+			"Derruba por %s s" % TextoHabilidade.numero(DERRUBA),
+			"Desequilíbrio: 30% de chance de errar por 4 s",
+		]
 
 	func executar(quem: Player, hab: HabilidadeData, dir: Vector2, _alvo: Vector2, _carga: float) -> void:
 		var de := quem.global_position
@@ -424,6 +524,13 @@ class DespertarDaIlha extends HabilidadeLogica:
 	const RAIO := 112.0
 	const ERRA := 0.5
 	const LENTO := 0.4
+
+	func efeitos(_hab: HabilidadeData) -> Array[String]:
+		return [
+			"Dura %s s, até %s de você" % [TextoHabilidade.numero(DURACAO), TextoHabilidade.blocos(RAIO)],
+			"Inimigos erram metade dos ataques",
+			"Inimigos 40% mais lentos",
+		]
 
 	func executar(quem: Player, _hab: HabilidadeData, _dir: Vector2, _alvo: Vector2, _carga: float) -> void:
 		var z := Zona.criar(quem, quem.global_position, RAIO, DURACAO)
