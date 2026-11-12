@@ -1,0 +1,20 @@
+[gd_resource type="Resource" script_class="HabilidadeData" load_steps=3 format=3]
+
+[ext_resource type="Script" path="res://scripts/data/habilidade_data.gd" id="1_script"]
+[ext_resource type="Texture2D" path="res://assets/sprites/tiny/icones/icone_experiencia.png" id="2_icone"]
+
+[resource]
+script = ExtResource("1_script")
+id = &"martelo_giratorio"
+nome = "Martelo giratório"
+descricao = "Um martelo de luz gira em volta de você por 5 s e acerta quem chegar perto a cada meio segundo."
+icone = ExtResource("2_icone")
+modo = 1
+custo_mana = 14.0
+recarga = 14.0
+elemento = &"luz"
+dano = 0.8
+alcance = 0.0
+logica = &"MarteloGiratorio"
+animacao = &"golpe"
+som = &"giro"

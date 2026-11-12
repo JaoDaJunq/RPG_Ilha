@@ -1,0 +1,20 @@
+[gd_resource type="Resource" script_class="HabilidadeData" load_steps=3 format=3]
+
+[ext_resource type="Script" path="res://scripts/data/habilidade_data.gd" id="1_script"]
+[ext_resource type="Texture2D" path="res://assets/sprites/tiny/icones/icone_experiencia.png" id="2_icone"]
+
+[resource]
+script = ExtResource("1_script")
+id = &"circulo_de_cura"
+nome = "Círculo de cura"
+descricao = "Uma área no chão, onde o mouse estiver, que cura quem está dentro a cada segundo por 6 s: 3 de vida mais 0,5 por ponto de Espírito."
+icone = ExtResource("2_icone")
+modo = 1
+custo_mana = 14.0
+recarga = 12.0
+elemento = &"luz"
+dano = 0.0
+alcance = 96.0
+logica = &"CirculoDeCura"
+animacao = &"golpe"
+som = &"subir_nivel"

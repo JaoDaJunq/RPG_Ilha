@@ -17,5 +17,5 @@ y_sort_enabled = true
 script = ExtResource("2_hud")
 
 [node name="Spawner" type="MultiplayerSpawner" parent="."]
-_spawnable_scenes = PackedStringArray("res://scenes/player/player.tscn", "res://scenes/enemies/slime.tscn", "res://scenes/animals/animal.tscn", "res://scenes/world/item_chao.tscn", "res://scenes/abilities/fireball.tscn", "res://scenes/abilities/lanca_gelo.tscn", "res://scenes/abilities/flecha.tscn", "res://scenes/abilities/armadilha.tscn", "res://scenes/abilities/bomba.tscn", "res://scenes/abilities/adaga.tscn", "res://scenes/abilities/invocacao.tscn", "res://scenes/abilities/companheiro.tscn")
+_spawnable_scenes = PackedStringArray("res://scenes/player/player.tscn", "res://scenes/enemies/slime.tscn", "res://scenes/animals/animal.tscn", "res://scenes/world/item_chao.tscn", "res://scenes/abilities/fireball.tscn", "res://scenes/abilities/lanca_gelo.tscn", "res://scenes/abilities/flecha.tscn", "res://scenes/abilities/armadilha.tscn", "res://scenes/abilities/bomba.tscn", "res://scenes/abilities/adaga.tscn", "res://scenes/abilities/invocacao.tscn", "res://scenes/abilities/companheiro.tscn", "res://scenes/abilities/martelo.tscn")
 spawn_path = NodePath("../Entidades")

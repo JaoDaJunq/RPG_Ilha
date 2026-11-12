@@ -1,0 +1,20 @@
+[gd_resource type="Resource" script_class="HabilidadeData" load_steps=3 format=3]
+
+[ext_resource type="Script" path="res://scripts/data/habilidade_data.gd" id="1_script"]
+[ext_resource type="Texture2D" path="res://assets/sprites/tiny/icones/icone_experiencia.png" id="2_icone"]
+
+[resource]
+script = ExtResource("1_script")
+id = &"coluna_de_luz"
+nome = "Coluna de luz"
+descricao = "Um raio de luz cai do céu no ponto do mouse, num instante, e machuca tudo ali."
+icone = ExtResource("2_icone")
+modo = 1
+custo_mana = 12.0
+recarga = 8.0
+elemento = &"luz"
+dano = 3.0
+alcance = 120.0
+logica = &"ColunaDeLuz"
+animacao = &"golpe"
+som = &"bola_de_fogo"
