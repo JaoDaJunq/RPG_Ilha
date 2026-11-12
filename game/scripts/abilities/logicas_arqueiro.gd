@@ -125,6 +125,10 @@ class Assobio extends HabilidadeLogica:
 	const MARCA := 5.0
 	const DURACAO_FALCAO := 6.0
 
+	## Linhas da janelinha do HUD (TextoHabilidade).
+	func efeitos(hab: HabilidadeData, _ficha: Ficha) -> Array[String]:
+		return ["Alvo: o inimigo perto da mira (alcance: %s)" % TextoHabilidade.blocos(hab.alcance), "Marcado por %s s: +20%% de dano de todos" % TextoHabilidade.numero(MARCA), "Sem inimigo perto: a mana volta"]
+
 	func executar(quem: Player, hab: HabilidadeData, _dir: Vector2, alvo: Vector2, _carga: float) -> void:
 		var inimigo := LogicasArqueiro.alvo_da_mira(quem, alvo, hab.alcance * Passivas.alcance(quem))
 		if inimigo == null:
@@ -140,6 +144,10 @@ class Assobio extends HabilidadeLogica:
 
 ## Atirador: a flecha atravessa todos os inimigos em linha.
 class FlechaPerfurante extends HabilidadeLogica:
+	## Linhas da janelinha do HUD (TextoHabilidade).
+	func efeitos(_hab: HabilidadeData, _ficha: Ficha) -> Array[String]:
+		return ["Atravessa todos os inimigos em linha", "Acerta cada um uma vez"]
+
 	func executar(quem: Player, hab: HabilidadeData, dir: Vector2, _alvo: Vector2, _carga: float) -> void:
 		var p := Logicas.lancar(Logicas.FLECHA, quem, dir, dano_de(quem, hab), 1.2)
 		p.duracao /= 1.2  # mais rápida, mesma distância
@@ -150,6 +158,10 @@ class FlechaPerfurante extends HabilidadeLogica:
 class MarcaDoCacador extends HabilidadeLogica:
 	const SEGUNDOS := 8.0
 	const FORCA := 0.2
+
+	## Linhas da janelinha do HUD (TextoHabilidade).
+	func efeitos(_hab: HabilidadeData, _ficha: Ficha) -> Array[String]:
+		return ["Marcado por %s s" % TextoHabilidade.numero(SEGUNDOS), "O alvo toma +%s%% de dano de todos" % TextoHabilidade.numero(FORCA * 100.0)]
 
 	func executar(quem: Player, hab: HabilidadeData, dir: Vector2, _alvo: Vector2, _carga: float) -> void:
 		var p := Logicas.lancar(Logicas.FLECHA, quem, dir, dano_de(quem, hab))
@@ -162,6 +174,10 @@ class MarcaDoCacador extends HabilidadeLogica:
 class Rajada extends HabilidadeLogica:
 	const FLECHAS := 3
 	const INTERVALO := 0.2  # mais que a proteção de 0,15 s do alvo depois de um acerto
+
+	## Linhas da janelinha do HUD (TextoHabilidade).
+	func efeitos(_hab: HabilidadeData, _ficha: Ficha) -> Array[String]:
+		return ["%d flechas, uma a cada %s s" % [FLECHAS, TextoHabilidade.numero(INTERVALO)], "Não precisa carregar"]
 
 	func executar(quem: Player, hab: HabilidadeData, dir: Vector2, _alvo: Vector2, _carga: float) -> void:
 		var dano := dano_de(quem, hab)
@@ -178,6 +194,10 @@ class FlechaDoHorizonte extends HabilidadeLogica:
 	const DISTANCIA := 480.0
 	const VELOCIDADE := 360.0
 
+	## Linhas da janelinha do HUD (TextoHabilidade).
+	func efeitos(_hab: HabilidadeData, _ficha: Ficha) -> Array[String]:
+		return ["Atravessa tudo por %s" % TextoHabilidade.blocos(DISTANCIA), "Flecha %dx maior" % roundi(TAMANHO)]
+
 	func executar(quem: Player, hab: HabilidadeData, dir: Vector2, _alvo: Vector2, _carga: float) -> void:
 		var p := Logicas.lancar(Logicas.FLECHA, quem, dir, dano_de(quem, hab))
 		p.velocidade = VELOCIDADE
@@ -190,6 +210,10 @@ class FlechaDoHorizonte extends HabilidadeLogica:
 ## Engenhoqueiro: uma rede que prende o alvo por 3 s (não anda).
 class Rede extends HabilidadeLogica:
 	const PRESO := 3.0
+
+	## Linhas da janelinha do HUD (TextoHabilidade).
+	func efeitos(_hab: HabilidadeData, _ficha: Ficha) -> Array[String]:
+		return ["Prende (não anda) por %s s" % TextoHabilidade.numero(PRESO)]
 
 	func executar(quem: Player, hab: HabilidadeData, dir: Vector2, _alvo: Vector2, _carga: float) -> void:
 		var p := Logicas.lancar(Logicas.FLECHA, quem, dir, dano_de(quem, hab), 0.8)
@@ -205,6 +229,10 @@ class MinaDeFogo extends HabilidadeLogica:
 	const RAIO := 28.0
 	const QUEIMADURA_SEGUNDOS := 3.0
 	const QUEIMADURA_DPS := 1.0
+
+	## Linhas da janelinha do HUD (TextoHabilidade).
+	func efeitos(hab: HabilidadeData, _ficha: Ficha) -> Array[String]:
+		return ["Alcance: %s" % TextoHabilidade.blocos(hab.alcance), "Explode ao pisar: área de raio %s" % TextoHabilidade.blocos(RAIO), "Queimadura: %s por segundo por %s s" % [TextoHabilidade.numero(QUEIMADURA_DPS), TextoHabilidade.numero(QUEIMADURA_SEGUNDOS)], "A mina dura %s s" % TextoHabilidade.numero(DURACAO)]
 
 	func executar(quem: Player, hab: HabilidadeData, _dir: Vector2, alvo: Vector2, _carga: float) -> void:
 		LogicasArqueiro.criar_mina(quem, LogicasArqueiro.ponto_no_chao(quem, hab, alvo), dano_de(quem, hab), quem.custo_de(hab))
@@ -225,6 +253,10 @@ class MinaDeFogo extends HabilidadeLogica:
 ## Engenhoqueiro: torreta (besta) que atira sozinha no inimigo mais perto por 12 s.
 class TorreDeBesta extends HabilidadeLogica:
 	const DURACAO := 12.0
+
+	## Linhas da janelinha do HUD (TextoHabilidade).
+	func efeitos(hab: HabilidadeData, _ficha: Ficha) -> Array[String]:
+		return ["Alcance: %s" % TextoHabilidade.blocos(hab.alcance), "Atira sozinha por %s s" % TextoHabilidade.numero(DURACAO), "Uma torre por vez"]
 
 	func executar(quem: Player, hab: HabilidadeData, _dir: Vector2, alvo: Vector2, _carga: float) -> void:
 		for n in quem.get_tree().get_nodes_in_group(&"torres_besta"):
@@ -252,6 +284,10 @@ class CampoMinado extends HabilidadeLogica:
 	const MINAS := 6
 	const RAIO := 30.0
 
+	## Linhas da janelinha do HUD (TextoHabilidade).
+	func efeitos(_hab: HabilidadeData, _ficha: Ficha) -> Array[String]:
+		return ["%d minas de fogo num raio de %s" % [MINAS, TextoHabilidade.blocos(RAIO)], "Cada mina explode ao pisar e deixa Queimadura"]
+
 	func executar(quem: Player, hab: HabilidadeData, _dir: Vector2, _alvo: Vector2, _carga: float) -> void:
 		var dano := dano_de(quem, hab)
 		var custo := quem.custo_de(hab) / MINAS
@@ -264,6 +300,10 @@ class CampoMinado extends HabilidadeLogica:
 ## Domador: um animal da ilha com metade da vida ou menos vira seu companheiro (um por vez).
 class Domar extends HabilidadeLogica:
 	const VIDA := 0.5
+
+	## Linhas da janelinha do HUD (TextoHabilidade).
+	func efeitos(hab: HabilidadeData, _ficha: Ficha) -> Array[String]:
+		return ["Alcance: %s" % TextoHabilidade.blocos(hab.alcance), "O animal precisa ter %s%% da vida ou menos" % TextoHabilidade.numero(VIDA * 100.0), "Um companheiro por vez"]
 
 	func executar(quem: Player, hab: HabilidadeData, _dir: Vector2, alvo: Vector2, _carga: float) -> void:
 		var melhor: Animal = null
@@ -310,6 +350,10 @@ class Domar extends HabilidadeLogica:
 class Ataque extends HabilidadeLogica:
 	const PRESO := 1.5
 
+	## Linhas da janelinha do HUD (TextoHabilidade).
+	func efeitos(hab: HabilidadeData, _ficha: Ficha) -> Array[String]:
+		return ["Alcance: %s" % TextoHabilidade.blocos(hab.alcance), "Prende por %s s" % TextoHabilidade.numero(PRESO), "Precisa de um companheiro (Domar ou falcão)"]
+
 	func executar(quem: Player, hab: HabilidadeData, _dir: Vector2, alvo: Vector2, _carga: float) -> void:
 		var bichos := Companheiro.de(quem)
 		if bichos.is_empty():
@@ -336,6 +380,10 @@ class EstouroDaBoiada extends HabilidadeLogica:
 	const DURACAO := 0.8
 	const PASSOS := 8
 	const DERRUBADO := 1.5
+
+	## Linhas da janelinha do HUD (TextoHabilidade).
+	func efeitos(_hab: HabilidadeData, _ficha: Ficha) -> Array[String]:
+		return ["Atravessa %s na direção da mira" % TextoHabilidade.blocos(COMPRIMENTO), "Derruba por %s s" % TextoHabilidade.numero(DERRUBADO)]
 
 	func executar(quem: Player, hab: HabilidadeData, dir: Vector2, _alvo: Vector2, _carga: float) -> void:
 		var de := quem.global_position
@@ -374,6 +422,10 @@ class EstouroDaBoiada extends HabilidadeLogica:
 class EspiritoDaFera extends HabilidadeLogica:
 	const SEGUNDOS := 10.0
 	const VELOCIDADE := 0.5
+
+	## Linhas da janelinha do HUD (TextoHabilidade).
+	func efeitos(_hab: HabilidadeData, _ficha: Ficha) -> Array[String]:
+		return ["Velocidade: +%s%% por %s s" % [TextoHabilidade.numero(VELOCIDADE * 100.0), TextoHabilidade.numero(SEGUNDOS)], "Cada flecha salta para mais um inimigo"]
 
 	func executar(quem: Player, _hab: HabilidadeData, _dir: Vector2, _alvo: Vector2, _carga: float) -> void:
 		quem.buffs.dar(Buffs.VELOCIDADE, VELOCIDADE, SEGUNDOS, quem)

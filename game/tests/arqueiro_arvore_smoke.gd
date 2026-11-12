@@ -86,9 +86,10 @@ func _tabela() -> void:
 	var sem: Array[String] = []
 	for id in ATIVAS:
 		var n := ArvoreData.no(&"arqueiro", id)
-		if not n.usavel() or n.rank_maximo() != 4 or n.habilidade.logica == &"" or Logicas.classe_da_logica(n.habilidade.logica) == null:
+		if not n.usavel() or n.rank_maximo() != 4 or n.habilidade.logica == &"" or Logicas.classe_da_logica(n.habilidade.logica) == null \
+				or TextoHabilidade.efeitos(n.habilidade, p.ficha).is_empty():
 			sem.append(String(id))
-	checar(sem.is_empty(), "as 13 ativas novas têm .tres, lógica registrada e aceitam 3 melhorias (%s)" % ", ".join(sem))
+	checar(sem.is_empty(), "as 13 ativas novas têm .tres, lógica registrada e aceitam 3 melhorias, com os efeitos na janelinha (%s)" % ", ".join(sem))
 
 
 func _vai_para_as_teclas() -> void:
