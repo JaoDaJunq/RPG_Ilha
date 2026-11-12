@@ -1,0 +1,20 @@
+[gd_resource type="Resource" script_class="HabilidadeData" load_steps=3 format=3]
+
+[ext_resource type="Script" path="res://scripts/data/habilidade_data.gd" id="1_script"]
+[ext_resource type="Texture2D" path="res://assets/sprites/tiny/icones/icone_experiencia.png" id="2_icone"]
+
+[resource]
+script = ExtResource("1_script")
+id = &"aurora"
+nome = "Aurora"
+descricao = "Um cone de luz na sua frente: derrete os slimes da noite e Cega os outros por 3 s."
+icone = ExtResource("2_icone")
+modo = 1
+custo_mana = 14.0
+recarga = 12.0
+elemento = &"luz"
+dano = 1.5
+alcance = 0.0
+logica = &"Aurora"
+animacao = &"golpe"
+som = &"bola_de_fogo"
