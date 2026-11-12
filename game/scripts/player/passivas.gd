@@ -95,7 +95,31 @@ static func dano_causado(p: Player, quantidade: float, tipo: StringName, alvo: N
 			_estilhacar(p, a, quantidade * m)
 	if p.consumir_emboscada():
 		m *= EMBOSCADA
+	m *= p.buffs.mult(&"dano")
+	m *= PassivasGuerreiro.dano_causado(p, quantidade, tipo, alvo) * PassivasMago.dano_causado(p, quantidade, tipo, alvo) \
+			* PassivasArqueiro.dano_causado(p, quantidade, tipo, alvo) * PassivasLadino.dano_causado(p, quantidade, tipo, alvo) \
+			* PassivasClerigo.dano_causado(p, quantidade, tipo, alvo)
 	return quantidade * m
+
+
+## Depois que um golpe ou habilidade do jogador acertou `alvo` (Hurtbox; anfitrião).
+static func acertou(p: Player, alvo: Node, quantidade: float, tipo: StringName) -> void:
+	p.recursos.ao_acertar(alvo, quantidade, tipo)
+	PassivasGuerreiro.acertou(p, alvo, quantidade, tipo)
+	PassivasMago.acertou(p, alvo, quantidade, tipo)
+	PassivasArqueiro.acertou(p, alvo, quantidade, tipo)
+	PassivasLadino.acertou(p, alvo, quantidade, tipo)
+	PassivasClerigo.acertou(p, alvo, quantidade, tipo)
+
+
+## Dano de um inimigo ou animal (`atacante`) em `alvo` (anfitrião): os estados do atacante e
+## as passivas que mexem nisso (ex.: Frio que morde).
+static func ataque_inimigo(atacante: Node, alvo: Node, dano: float) -> float:
+	var m := World.mult_dificuldade(atacante, &"dano_inimigo")
+	m *= PassivasGuerreiro.ataque_inimigo(atacante, alvo, dano) * PassivasMago.ataque_inimigo(atacante, alvo, dano) \
+			* PassivasArqueiro.ataque_inimigo(atacante, alvo, dano) * PassivasLadino.ataque_inimigo(atacante, alvo, dano) \
+			* PassivasClerigo.ataque_inimigo(atacante, alvo, dano)
+	return dano * m
 
 
 ## Julgamento: o alvo marcado toma mais dano de qualquer um.
@@ -151,6 +175,11 @@ static func derrotou(p: Player, alvo: Node) -> void:
 			extra = Animal.ESPECIES[(a as Animal).especie].saque[0][0]
 		if extra != &"":
 			World.soltar_itens(p, a.global_position, [[extra, 1]])
+	PassivasGuerreiro.derrotou(p, a)
+	PassivasMago.derrotou(p, a)
+	PassivasArqueiro.derrotou(p, a)
+	PassivasLadino.derrotou(p, a)
+	PassivasClerigo.derrotou(p, a)
 
 
 static func inimigos_perto(p: Player, centro: Vector2, raio: float) -> Array[Node2D]:
@@ -181,6 +210,10 @@ static func dano_recebido(p: Player, quantidade: float, tipo: StringName) -> flo
 		if not vigilia and o.tem(&"vigilia") and p.vida.atual < p.vida.maximo * VIGILIA_VIDA:
 			vigilia = true
 			m *= VIGILIA
+	m *= 1.0 - clampf(p.buffs.valor(&"reducao"), 0.0, 1.0)
+	m *= PassivasGuerreiro.dano_recebido(p, quantidade, tipo) * PassivasMago.dano_recebido(p, quantidade, tipo) \
+			* PassivasArqueiro.dano_recebido(p, quantidade, tipo) * PassivasLadino.dano_recebido(p, quantidade, tipo) \
+			* PassivasClerigo.dano_recebido(p, quantidade, tipo)
 	quantidade *= m
 	# Último suspiro: quem cairia fica com 1 de vida (um Clérigo perto, uma vez por minuto).
 	if quantidade - p.vida.escudo >= p.vida.atual:
@@ -216,6 +249,9 @@ static func velocidade(p: Player) -> float:
 		if o.tem(&"comando"):
 			m *= COMANDO
 			break
+	m *= p.buffs.mult(&"velocidade") * p.efeitos.mult_velocidade()
+	m *= PassivasGuerreiro.velocidade(p) * PassivasMago.velocidade(p) * PassivasArqueiro.velocidade(p) \
+			* PassivasLadino.velocidade(p) * PassivasClerigo.velocidade(p)
 	return m
 
 
@@ -224,13 +260,26 @@ static func recarga(p: Player, hab: HabilidadeData) -> float:
 	var r := hab.recarga * (1.0 - NoArvore.RECARGA_POR_MELHORIA * p.melhorias(hab.id))
 	if p.tem(&"veterano"):
 		r *= 1.0 - VETERANO_POR_ALIADO * mini(VETERANO_MAXIMO, outros_jogadores(p, RAIO_ALIADOS).size())
+	r *= PassivasGuerreiro.recarga(p, hab) * PassivasMago.recarga(p, hab) * PassivasArqueiro.recarga(p, hab) \
+			* PassivasLadino.recarga(p, hab) * PassivasClerigo.recarga(p, hab)
 	return r
 
 
 static func custo_mana(p: Player, hab: HabilidadeData) -> float:
+	var c := hab.custo_mana
 	if p.tem(&"engenhoso") and hab.id in HABILIDADES_ENGENHOSO:
-		return hab.custo_mana * ENGENHOSO_MANA
-	return hab.custo_mana
+		c *= ENGENHOSO_MANA
+	return c * PassivasGuerreiro.custo_mana(p, hab) * PassivasMago.custo_mana(p, hab) * PassivasArqueiro.custo_mana(p, hab) \
+			* PassivasLadino.custo_mana(p, hab) * PassivasClerigo.custo_mana(p, hab)
+
+
+## Todo quadro, no anfitrião: as passivas das classes que precisam de relógio ou aura.
+static func processar(p: Player, delta: float) -> void:
+	PassivasGuerreiro.processar(p, delta)
+	PassivasMago.processar(p, delta)
+	PassivasArqueiro.processar(p, delta)
+	PassivasLadino.processar(p, delta)
+	PassivasClerigo.processar(p, delta)
 
 
 static func alcance(p: Player) -> float:

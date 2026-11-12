@@ -82,6 +82,12 @@ var _mana_enviada := -1.0
 @onready var hurtbox: Hurtbox = $Hurtbox
 @onready var camera: Camera2D = $Camera2D
 @onready var luz: PointLight2D = $Luz
+## Estados (Lentidão, Invisível...), buffs de aliados e Fúria/combo (criados no _ready).
+var efeitos: EfeitosEstado
+var buffs: Buffs
+var recursos: RecursosClasse
+## O último inimigo ou animal que este jogador acertou (anfitrião; o companheiro ataca ele).
+var ultimo_alvo: Node2D
 
 
 func _enter_tree() -> void:
@@ -90,6 +96,10 @@ func _enter_tree() -> void:
 
 func _ready() -> void:
 	add_to_group(&"jogadores")
+	# Componentes das habilidades (mesmo nome em todas as máquinas, para os RPCs deles).
+	efeitos = _componente(EfeitosEstado.new(), "EfeitosEstado")
+	buffs = _componente(Buffs.new(), "Buffs")
+	recursos = _componente(RecursosClasse.new(), "Recursos")
 	if eh_local() and not multiplayer.is_server():
 		# O jogador controlado aqui não recebe as propriedades de nascimento.
 		raca = Net.raca
@@ -117,6 +127,13 @@ func _ready() -> void:
 		vida.ajuste_dano = func(qtd: float, tipo: StringName) -> float: return Passivas.dano_recebido(self, qtd, tipo)
 	if eh_local():
 		get_tree().call_group(&"mundo", &"registrar_jogador_local", self)
+
+
+func _componente(n: Node, nome: String) -> Node:
+	n.name = nome
+	add_child(n)
+	n.set_multiplayer_authority(get_multiplayer_authority())
+	return n
 
 
 ## Este jogador é o controlado nesta máquina?
@@ -274,6 +291,7 @@ func golpear() -> void:
 	_recarga_golpe = recarga_golpe * (0.5 if _golpe_rapido else 1.0)  # Ritmo: golpe depois do dash
 	_golpe_rapido = false
 	_atacando = 0.25
+	_animacao_hab = &"golpe"
 	var dir := direcao_mira()
 	_direcao = SpriteSheets.direcao_de(dir)
 	Sfx.tocar(&"ataque", -12.0)
@@ -324,10 +342,12 @@ func usar_habilidade(i: int, carga: float) -> void:
 	if i >= hab.size() or float(_recargas.get(hab[i].id, 0.0)) > 0.0:
 		return
 	_recargas[hab[i].id] = recarga_de(hab[i])
-	_atacando = 0.2
+	# Animação e som: do .tres; a tabela SONS fica de reserva para as antigas.
+	_animacao_hab = hab[i].animacao if hab[i].animacao != &"" else &"golpe"
+	_atacando = hab[i].duracao_animacao if hab[i].duracao_animacao > 0.0 else 0.2
 	var dir := direcao_mira()
 	_direcao = SpriteSheets.direcao_de(dir)
-	Sfx.tocar(SONS.get(hab[i].id, &"ataque"), -10.0)
+	Sfx.tocar(hab[i].som if hab[i].som != &"" else SONS.get(hab[i].id, &"ataque"), -10.0)
 	_pedir_habilidade.rpc_id(1, hab[i].id, dir, posicao_mira(), carga)
 
 
@@ -780,7 +800,7 @@ func _animar(entrada: Vector2) -> void:
 	if _atacando > 0.0 or _carregando >= 0:
 		if _carregando >= 0:
 			_direcao = SpriteSheets.direcao_de(direcao_mira())
-		tipo = &"golpe"
+		tipo = &"golpe" if _carregando >= 0 or _animacao_hab == &"" else _animacao_hab
 	elif entrada != Vector2.ZERO:
 		_direcao = SpriteSheets.direcao_de(entrada)
 		tipo = &"andar"
@@ -792,6 +812,7 @@ func _animar(entrada: Vector2) -> void:
 
 
 var _lado: StringName = &"direita"
+var _animacao_hab: StringName = &""  # animação da habilidade lançada (HabilidadeData.animacao)
 
 
 # --- Barra de itens e item na mão --------------------------------------------------
@@ -829,8 +850,10 @@ var carga_arco := -1.0
 func _process(delta: float) -> void:
 	_atualizar_previa()
 	var alfa := ALFA_ESCONDIDO if escondido() else 1.0  # Bomba de fumaça: meio transparente
-	if not is_equal_approx(modulate.a, alfa):
-		modulate.a = alfa
+	var tom := efeitos.cor() if efeitos else Color.WHITE  # estados (Lentidão, Veneno...)
+	tom.a = alfa
+	if not modulate.is_equal_approx(tom):
+		modulate = tom
 	if eh_local():
 		carga_arco = carga_atual()
 		_tremer(delta)
@@ -1149,7 +1172,7 @@ func envenenar_atingido(area: Hurtbox) -> void:
 		return
 	var alvo := area.get_parent()
 	if alvo and alvo.has_method(&"envenenar"):
-		alvo.envenenar(TEMPO_VENENO, _veneno_dano)
+		alvo.envenenar(TEMPO_VENENO, _veneno_dano, self)
 
 
 ## Só o anfitrião chama (Bomba de fumaça): os inimigos perdem este jogador de vista.
@@ -1159,8 +1182,9 @@ func esconder(segundos: float) -> void:
 	_fumaca_sync.rpc(segundos)
 
 
+## Os inimigos não veem este jogador (Bomba de fumaça ou o estado Invisível).
 func escondido() -> bool:
-	return Time.get_ticks_msec() < _fumaca_ate_ms
+	return Time.get_ticks_msec() < _fumaca_ate_ms or (efeitos != null and efeitos.invisivel())
 
 
 @rpc("any_peer", "call_local", "reliable")
@@ -1471,6 +1495,7 @@ func _processar_passivas(delta: float) -> void:
 	if _pos_parado == Vector2.INF or global_position.distance_to(_pos_parado) > 1.0:
 		_pos_parado = global_position
 		_parado_desde_ms = Time.get_ticks_msec()
+	Passivas.processar(self, delta)
 	if tem(&"aura_serena"):
 		_aura += delta
 		if _aura >= Passivas.AURA_INTERVALO:
