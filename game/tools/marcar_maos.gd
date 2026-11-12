@@ -167,7 +167,7 @@ func _mao_perto(img: Image, q: int, pele: Array[Color], alvo: Vector2i) -> Vecto
 					if not visto.has(b) and _eh_pele(img.get_pixelv(b), pele):
 						visto[b] = true
 						fila.append(b)
-			if n < AREA_MIN or n > 260:
+			if n < 20 or n > 260:  # mão tem pelo menos ~20 pixels (pedacinhos do cinto não)
 				continue
 			var c := soma / n - Vector2(q * QUADRO, 0)
 			if c.distance_to(Vector2(alvo)) < dist:
