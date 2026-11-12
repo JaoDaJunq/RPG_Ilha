@@ -1,0 +1,21 @@
+[gd_resource type="Resource" script_class="HabilidadeData" load_steps=3 format=3]
+
+[ext_resource type="Script" path="res://scripts/data/habilidade_data.gd" id="1_script"]
+[ext_resource type="Texture2D" path="res://assets/sprites/tiny/icones/icone_experiencia.png" id="2_icone"]
+
+[resource]
+script = ExtResource("1_script")
+id = &"marca_da_morte"
+nome = "Marca da morte"
+descricao = "Finalizador. Marca o inimigo perto do mouse por 4 s (ele toma +20% de dano). No fim, a marca explode: 2 de dano mais 20% de todo o dano que ele levou, +10% por ponto de combo gasto."
+icone = ExtResource("2_icone")
+modo = 0
+custo_mana = 10.0
+recarga = 12.0
+elemento = &"sombra"
+dano = 2.0
+alcance = 96.0
+logica = &"MarcaDaMorte"
+animacao = &"golpe"
+duracao_animacao = 0.25
+som = &"giro"

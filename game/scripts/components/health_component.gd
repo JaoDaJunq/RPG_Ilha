@@ -70,6 +70,12 @@ func proteger(segundos: float) -> void:
 	_protecao = maxf(_protecao, segundos)
 
 
+## Tira a proteção de depois do último golpe (golpes em série de uma habilidade, como o
+## Mil cortes do Ladino: cada corte conta, mesmo chegando antes dela acabar).
+func tirar_protecao() -> void:
+	_protecao = 0.0
+
+
 ## Toma menos dano por alguns segundos (Bloqueio): `fracao` 0,6 = 60% a menos.
 ## Uma redução mais fraca não derruba a mais forte que ainda está valendo (Bloqueio + Escudo).
 func reduzir_dano(fracao: float, segundos: float) -> void:

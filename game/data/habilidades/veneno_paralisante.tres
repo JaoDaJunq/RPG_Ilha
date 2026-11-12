@@ -1,0 +1,21 @@
+[gd_resource type="Resource" script_class="HabilidadeData" load_steps=3 format=3]
+
+[ext_resource type="Script" path="res://scripts/data/habilidade_data.gd" id="1_script"]
+[ext_resource type="Texture2D" path="res://assets/sprites/tiny/icones/icone_experiencia.png" id="2_icone"]
+
+[resource]
+script = ExtResource("1_script")
+id = &"veneno_paralisante"
+nome = "Veneno paralisante"
+descricao = "Finalizador. Golpe no inimigo perto do mouse (até 4 blocos): 1,5 de dano químico, +50% por ponto de combo gasto. Se ele estiver envenenado, fica Atordoado por 1 s por acúmulo de Veneno."
+icone = ExtResource("2_icone")
+modo = 0
+custo_mana = 8.0
+recarga = 10.0
+elemento = &"quimico"
+dano = 1.5
+alcance = 64.0
+logica = &"VenenoParalisante"
+animacao = &"golpe"
+duracao_animacao = 0.25
+som = &"giro"

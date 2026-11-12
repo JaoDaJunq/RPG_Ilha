@@ -1,0 +1,21 @@
+[gd_resource type="Resource" script_class="HabilidadeData" load_steps=3 format=3]
+
+[ext_resource type="Script" path="res://scripts/data/habilidade_data.gd" id="1_script"]
+[ext_resource type="Texture2D" path="res://assets/sprites/tiny/icones/icone_experiencia.png" id="2_icone"]
+
+[resource]
+script = ExtResource("1_script")
+id = &"frasco_de_acido"
+nome = "Frasco de ácido"
+descricao = "Joga um frasco onde está o mouse (até 5 blocos): uma poça de ácido por 5 s. Quem está dentro perde 0,8 de vida por segundo e toma +20% de dano de todo mundo."
+icone = ExtResource("2_icone")
+modo = 0
+custo_mana = 9.0
+recarga = 12.0
+elemento = &"quimico"
+dano = 0.8
+alcance = 80.0
+logica = &"FrascoDeAcido"
+animacao = &"golpe"
+duracao_animacao = 0.2
+som = &"golpe_coleta"

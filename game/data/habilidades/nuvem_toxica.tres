@@ -1,0 +1,21 @@
+[gd_resource type="Resource" script_class="HabilidadeData" load_steps=3 format=3]
+
+[ext_resource type="Script" path="res://scripts/data/habilidade_data.gd" id="1_script"]
+[ext_resource type="Texture2D" path="res://assets/sprites/tiny/icones/icone_experiencia.png" id="2_icone"]
+
+[resource]
+script = ExtResource("1_script")
+id = &"nuvem_toxica"
+nome = "Nuvem tóxica"
+descricao = "Uma nuvem venenosa onde está o mouse (até 5 blocos) por 6 s: quem está dentro fica envenenado (0,8 por segundo). Inflamável: se fogo chegar nela, explode com 3,2 de dano de fogo em volta."
+icone = ExtResource("2_icone")
+modo = 0
+custo_mana = 10.0
+recarga = 14.0
+elemento = &"quimico"
+dano = 0.8
+alcance = 80.0
+logica = &"NuvemToxica"
+animacao = &"golpe"
+duracao_animacao = 0.2
+som = &"golpe_coleta"

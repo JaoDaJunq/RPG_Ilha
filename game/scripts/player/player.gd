@@ -450,6 +450,7 @@ func _pedir_esquiva() -> void:
 		return
 	vida.proteger(DURACAO_ESQUIVA + 0.1)
 	World.efeito_todos(self, &"poeira", global_position)
+	PassivasLadino.esquivou(self)  # Esquiva perfeita e Tempestade de aço
 
 
 @rpc("any_peer", "call_local", "reliable")

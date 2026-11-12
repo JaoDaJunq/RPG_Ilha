@@ -84,6 +84,9 @@ func aplicar(tipo: StringName, segundos: float, forca := 0.0, origem: Node = nul
 		e = {t = 0.0, f = 0.0, n = 0, o = null, k = 0, e = 1.0}
 	e.t = maxf(e.t, segundos)
 	e.f = maxf(e.f, forca)
+	if tipo == VENENO:
+		# Toxina: acumula até 5 (e outro envenenador não derruba os acúmulos que já tem).
+		max_acumulos = maxi(maxi(max_acumulos, PassivasLadino.acumulos_veneno(origem)), int(e.n))
 	e.n = mini(int(e.n) + 1, maxi(1, max_acumulos))
 	if origem:
 		e.o = origem
