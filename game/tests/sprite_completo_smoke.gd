@@ -1,5 +1,5 @@
 extends TesteBase
-## Sprite completo (L30): os guerreiros das 4 raças usam a tira de 6 quadros nas 3 vistas,
+## Sprite completo (L30/L31): os personagens das 4 raças usam a tira de 6 quadros nas 3 vistas,
 ## trocam de quadro andando e no golpe, e o item fica na mão marcada em maos.json.
 
 
@@ -36,10 +36,14 @@ func _ready() -> void:
 		checar(golpe.has(4) and golpe.has(5), "%s no golpe passa pela preparação e pelo ataque" % raca)
 		checar(Boneco.retrato({"raca": raca, "classe": &"guerreiro"}, {}) != null, "%s tem retrato" % raca)
 		b.queue_free()
-	# Classe sem arte completa ainda: continua com as peças.
-	var m := Boneco.new()
-	add_child(m)
-	m.vestir({"raca": &"humano", "pele": 0, "classe": &"mago"}, {})
-	checar(m._completo == null and not m._pecas.is_empty(), "mago (sem arte completa) continua com as peças")
-	m.queue_free()
+	# Todas as 20 combinações de raça e classe usam o sprite completo, com 6 mãos por vista.
+	for raca in RacaData.TODAS:
+		for classe in ClasseData.TODAS:
+			var m := Boneco.new()
+			m.vestir({"raca": raca, "pele": 0, "classe": classe}, {})
+			var ok := m._completo != null
+			for v in ["", "_frente", "_costas"]:
+				ok = ok and m._maos.get(v, []).size() == 6
+			checar(ok, "%s %s usa o sprite completo nas 3 vistas" % [raca, classe])
+			m.free()
 	terminar()
