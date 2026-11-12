@@ -11,6 +11,15 @@ extends Node2D
 ## boneco inteiro é espelhado. Mantém `animation` e `play()` como o AnimatedSprite2D de antes.
 
 const PASTA := "res://assets/sprites/tiny/bonecos/"
+## Sprite completo (L30): personagens/<raca>_<classe>/{perfil,frente,costas}.png, tiras de 6
+## quadros de 128 (parado, respirando, passo A, passo B, golpe preparação, golpe ataque), os
+## pés em (64, 120) e a mão da frente marcada em maos.json (game/tools/marcar_maos.gd).
+const PASTA_COMPLETO := "res://assets/sprites/tiny/personagens/"
+const QUADRO_COMPLETO := 128
+const PES_COMPLETO := Vector2(64, 120)
+const PASSO_ANDAR := 0.13  # segundos por quadro andando (passo A, parado, passo B, parado)
+const TEMPO_RESPIRA := 0.55
+const TEMPO_GOLPE := 0.32
 ## O arco vai em pé na mão (L23): 4 quadros da corda (repouso e 3 de puxada) e a flecha.
 const ARCO := preload("res://assets/sprites/tiny/itens/arco_puxando.png")
 const FLECHA := preload("res://assets/sprites/tiny/itens/flecha_deitada.png")
@@ -54,6 +63,13 @@ func vestir(aparencia: Dictionary, equipado: Dictionary) -> void:
 	if not FileAccess.file_exists(PASTA + raca + "/base/pecas.json"):
 		raca = "humano"  # raça sem arte ainda
 	var classe := _classe_da_roupa(String(equipado.get("corpo", &"")), String(aparencia.get("classe", "")))
+	# Sprite completo (L30): raça e classe desenhadas inteiras em cada quadro. Quem ainda não
+	# tem essa arte continua com as peças.
+	var completo := PASTA_COMPLETO + raca + "_" + classe + "/"
+	if classe != "" and ResourceLoader.exists(completo + "perfil.png") and FileAccess.file_exists(completo + "maos.json"):
+		_montar_completo(completo)
+		return
+	_completo = null
 	var pasta := PASTA + raca + "_" + classe + "/"
 	if classe == "" or not FileAccess.file_exists(pasta + "pecas.json"):
 		pasta = PASTA + raca + "/base/"
@@ -72,6 +88,15 @@ func vestir(aparencia: Dictionary, equipado: Dictionary) -> void:
 static func retrato(aparencia: Dictionary, equipado: Dictionary) -> Texture2D:
 	var b := Boneco.new()
 	b.vestir(aparencia, equipado)
+	if b._completo != null:
+		# A cabeça do 1º quadro de perfil (a parte de cima do desenho).
+		var tex: Texture2D = b._tiras[""]
+		var usado := tex.get_image().get_region(Rect2i(0, 0, QUADRO_COMPLETO, QUADRO_COMPLETO)).get_used_rect()
+		var cabeca := AtlasTexture.new()
+		cabeca.atlas = tex
+		cabeca.region = Rect2(usado.position.x, usado.position.y, usado.size.x, roundf(usado.size.y * 0.55))
+		b.free()
+		return cabeca
 	var d: Dictionary = b._vistas.get("", {})
 	var tex: Texture2D = d.get("cabeca")
 	b.free()
@@ -144,6 +169,77 @@ func _usar_vista(v: String) -> void:
 	move_child(_flecha, get_child_count() - 2)
 
 
+## --- Sprite completo (L30) -------------------------------------------------------------
+var _completo: Sprite2D
+var _tiras := {}  # vista ("", "_frente", "_costas") -> textura da tira de 6 quadros
+var _maos := {}  # vista -> Array de Vector2 (mão da frente em cada quadro)
+var _quadro := 0
+
+
+func _montar_completo(pasta: String) -> void:
+	for c in get_children():
+		remove_child(c)
+		c.queue_free()
+	_pecas.clear()
+	_vistas.clear()
+	var j: Dictionary = JSON.parse_string(FileAccess.get_file_as_string(pasta + "maos.json"))
+	for par in [["", "perfil"], ["_frente", "frente"], ["_costas", "costas"]]:
+		_tiras[par[0]] = load(pasta + par[1] + ".png")
+		var pontos: Array[Vector2] = []
+		for p in j[par[1]]:
+			pontos.append(Vector2(p[0], p[1]))
+		_maos[par[0]] = pontos
+	_item_tras = _sprite(null)
+	_completo = _sprite(_tiras[""])
+	_completo.region_enabled = true
+	_completo.offset = -PES_COMPLETO
+	_item = _sprite(null)
+	_flecha = _sprite(FLECHA)
+	_flecha.visible = false
+	_vista = "?"
+	_quadro = 0
+	_animar_completo(0.0)
+
+
+## Escolhe a vista e o quadro pela animação pedida e põe o item na mão marcada.
+func _animar_completo(delta: float) -> void:
+	_tempo += delta
+	var nome := String(animation)
+	var v := "_frente" if nome.ends_with("baixo") else ("_costas" if nome.ends_with("cima") else "")
+	if v != _vista:
+		_vista = v
+		_completo.texture = _tiras[v]
+		# De costas, a arma fica atrás do corpo; nas outras vistas, na frente.
+		move_child(_item, 0 if v == "_costas" else get_child_count() - 2)
+	scale.x = -absf(scale.x) if nome.ends_with("esquerda") else absf(scale.x)
+	_dor = maxf(0.0, _dor - delta)
+	var giro := 0.0
+	if _golpe >= 0.0:
+		_golpe += delta
+		if _golpe > TEMPO_GOLPE:
+			_golpe = -1.0
+	if _golpe >= 0.0:
+		var t := _golpe / TEMPO_GOLPE
+		_quadro = 4 if t < 0.45 else 5
+		giro = -1.1 if _quadro == 4 else lerpf(0.6, 1.4, clampf((t - 0.45) / 0.3, 0.0, 1.0))
+	elif nome.begins_with("andar"):
+		_quadro = [2, 0, 3, 0][int(_tempo / PASSO_ANDAR) % 4]
+	else:
+		_quadro = 1 if int(_tempo / TEMPO_RESPIRA) % 2 == 1 else 0
+	if item == &"arco" and carga >= 0.0:
+		_quadro = 0
+	_completo.region_rect = Rect2(_quadro * QUADRO_COMPLETO, 0, QUADRO_COMPLETO, QUADRO_COMPLETO)
+	var desvio := _desvio_dor()
+	_completo.position = desvio
+	var mao: Vector2 = _maos[_vista][_quadro] - PES_COMPLETO + desvio
+	_por_item_em(mao, mao, giro)
+
+
+## Quadro mostrado agora (0 a 5) no sprite completo; -1 com o boneco por peças. Para os testes.
+func quadro_atual() -> int:
+	return _quadro if _completo != null else -1
+
+
 ## O personagem apanhou: `dir` é para onde o golpe empurra (mundo). Encolhe o corpo para longe dele.
 func dor(dir: Vector2) -> void:
 	_dor = TEMPO_DOR
@@ -174,6 +270,9 @@ func _sprite(tex: Texture2D) -> Sprite2D:
 
 
 func _process(delta: float) -> void:
+	if _completo != null:
+		_animar_completo(delta)
+		return
 	if _pecas.is_empty():
 		return
 	_tempo += delta
@@ -227,16 +326,21 @@ func _por(nome: String, desvio: Vector2) -> void:
 ## O item vai na mão da frente: o ícone é desenhado na diagonal com o cabo embaixo à
 ## esquerda; o cabo (20% da largura, 80% da altura) fica no meio da mão.
 func _por_item(mao: Vector2, mao_tras: Vector2, giro: float) -> void:
+	var m := _pecas["mao_frente"] as Sprite2D
+	var centro_mao: Vector2 = _base["mao_frente"] + mao + m.texture.get_size() / 2.0
+	var mt := _pecas["mao_tras"] as Sprite2D
+	var centro_mao_tras: Vector2 = _base["mao_tras"] + mao_tras + mt.texture.get_size() / 2.0
+	_por_item_em(centro_mao, centro_mao_tras, giro)
+
+
+## O item com o meio da mão da frente (e da de trás, para a 2ª adaga) já calculado.
+func _por_item_em(centro_mao: Vector2, centro_mao_tras: Vector2, giro: float) -> void:
 	var dados := ItemData.carregar(item) if ItemData.existe(item) else null
 	_item.visible = dados != null
 	_item_tras.visible = item == &"adagas" and dados != null
 	_flecha.visible = false
 	if dados == null:
 		return
-	var m := _pecas["mao_frente"] as Sprite2D
-	var centro_mao: Vector2 = _base["mao_frente"] + mao + m.texture.get_size() / 2.0
-	var mt := _pecas["mao_tras"] as Sprite2D
-	var centro_mao_tras: Vector2 = _base["mao_tras"] + mao_tras + mt.texture.get_size() / 2.0
 	_item.scale = Vector2.ONE * escala_item
 	_item_tras.scale = Vector2.ONE * escala_item
 	_flecha.scale = Vector2.ONE * escala_item
@@ -287,6 +391,8 @@ func _por_arco(centro_mao: Vector2, giro: float) -> void:
 	_flecha.visible = true
 	_flecha.offset = -Vector2(f.position.x, f.position.y + f.size.y / 2.0).round()
 	_flecha.position = corda
+	if _completo != null:
+		return  # a mão de trás é do desenho
 	var mt := _pecas["mao_tras"] as Sprite2D
 	mt.position = (corda - mt.texture.get_size() / 2.0).round()
 

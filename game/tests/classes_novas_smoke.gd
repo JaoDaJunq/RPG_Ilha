@@ -33,7 +33,7 @@ func _personagens_completos() -> void:
 			if completo:
 				var b := Boneco.new()
 				b.vestir({"raca": raca, "rosto": 0, "pele": 0}, {"corpo": StringName("roupa_" + String(classe))})
-				checar(b._vistas.size() == 3 and b._vistas.has("_frente") and b._vistas.has("_costas"), "%s %s veste como personagem completo" % [raca, classe])
+				checar(b._completo != null or (b._vistas.size() == 3 and b._vistas.has("_frente") and b._vistas.has("_costas")), "%s %s veste como personagem completo" % [raca, classe])
 				b.free()
 
 
