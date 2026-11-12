@@ -2,14 +2,18 @@ extends TesteBase
 ## Print da tela da árvore de habilidades (precisa de janela). Um Mago de nível 9 que liberou
 ## o Raio e o Piscar e entrou no ramo Raio (Condução e Corrente elétrica), com 2 pontos
 ## sobrando; a Condução fica selecionada. Salva evidence/novidades/arvore_habilidades.png.
-## Com `-- --classe=<id>` usa outra classe (só as habilidades padrão, nível 5).
+## Com `-- --classe=<id>` usa outra classe (só as habilidades padrão, nível 5); com
+## `-- --nome=<arquivo>` salva com outro nome (ex.: arvore_linhas).
 
 
 func _ready() -> void:
 	var classe := &"mago"
+	var nome := ""
 	for a in OS.get_cmdline_user_args():
 		if a.begins_with("--classe="):
 			classe = StringName(a.get_slice("=", 1))
+		elif a.begins_with("--nome="):
+			nome = a.get_slice("=", 1)
 	var w := await criar_mundo(0, true, classe, &"elfo")
 	var p := w.jogador
 	if classe == &"mago":
@@ -27,5 +31,7 @@ func _ready() -> void:
 	w.hud.arvore().abrir()
 	await esperar(0.4)
 	var sufixo := "" if classe == &"mago" else "_" + String(classe)
-	await salvar_print("novidades/arvore_habilidades%s.png" % sufixo)
+	if nome == "":
+		nome = "arvore_habilidades%s" % sufixo
+	await salvar_print("novidades/%s.png" % nome)
 	terminar()

@@ -136,7 +136,7 @@ func _tela(w: World, p: Player) -> void:
 	var hud := w.hud
 	var tela := hud.arvore()
 	checar(not tela.aberta(), "a tela da árvore começa fechada")
-	checar(hud._ficha_botao_arvore.text.contains("Árvore de habilidades") and not hud._rodape_ficha().contains("em breve"), "a ficha tem o botão da árvore (%s)" % hud._ficha_botao_arvore.text)
+	checar(hud.ficha().botao_arvore().text.begins_with("Abrir árvore"), "a ficha tem o botão da árvore (%s)" % hud.ficha().botao_arvore().text)
 	var k := InputEventAction.new()
 	k.action = &"arvore"
 	k.pressed = true
@@ -148,6 +148,17 @@ func _tela(w: World, p: Player) -> void:
 	checar(tela.texto_pontos() == "Pontos: %d" % p.pontos_habilidade, "o contador mostra os pontos (%s)" % tela.texto_pontos())
 	checar(tela.estado_de(&"ponto_fraco") == &"aprendido" and tela.estado_de(&"marca_do_cacador") == &"bloqueado" and tela.estado_de(&"flecha_perfurante") == &"disponivel",
 		"estados: aprendido, bloqueado e disponível")
+	# Caminhos: cada passo liga ao anterior (3 ramos x 5) e a entrada de cada ramo às
+	# iniciais que o abrem (2 + 2 + 1).
+	var caminhos := tela.caminhos()
+	checar(caminhos.size() == 20, "a árvore desenha os 20 caminhos do Arqueiro (%d)" % caminhos.size())
+	var retos := caminhos.filter(func(c: Dictionary) -> bool: return c.pontos.size() == 2)
+	checar(retos.size() == 15 and retos.all(func(c: Dictionary) -> bool: return c.pontos[1].y - c.pontos[0].y >= 8.0 and is_equal_approx(c.pontos[0].x, c.pontos[1].x)),
+		"os caminhos entre passos descem retos, do nome até o nó de baixo")
+	checar(tela.estado_caminho(&"tiro_carregado", &"ponto_fraco") == &"aprendido", "caminho entre dois aprendidos: dourado")
+	checar(tela.estado_caminho(&"ponto_fraco", &"flecha_perfurante") == &"disponivel", "de um aprendido para um que dá para aprender: verde")
+	checar(tela.estado_caminho(&"flecha_perfurante", &"marca_do_cacador") == &"bloqueado" and tela.estado_caminho(&"armadilha", &"engenhoso") == &"bloqueado", "bloqueado: cinza")
+	checar(ArvoreTela.cor_caminho(&"aprendido") == Tema.COR_DESTAQUE and ArvoreTela.cor_caminho(&"disponivel") == ArvoreTela.COR_DISPONIVEL and ArvoreTela.cor_caminho(&"bloqueado") == ArvoreTela.COR_LINHA_APAGADA, "as cores: dourado, verde e cinza")
 	tela.selecionar(&"flecha_perfurante")
 	checar(not tela.botao_aprender().disabled, "nó disponível: o botão Aprender fica ligado")
 	var pontos := p.pontos_habilidade
@@ -155,13 +166,14 @@ func _tela(w: World, p: Player) -> void:
 	await get_tree().physics_frame
 	checar(p.tem(&"flecha_perfurante") and p.pontos_habilidade == pontos - 1 and tela.texto_pontos() == "Pontos: %d" % p.pontos_habilidade, "o botão Aprender aprende e o contador acompanha")
 	checar(not &"flecha_perfurante" in p.ids_nas_teclas(), "habilidade com efeito pendente não vai para as teclas")
+	checar(tela.estado_caminho(&"ponto_fraco", &"flecha_perfurante") == &"aprendido", "aprendeu: o caminho até ele fica dourado")
 	tela.selecionar(&"rede")
 	checar(tela.botao_aprender().disabled, "nó de outro ramo: o botão fica desligado")
 	Input.parse_input_event(k)
 	await get_tree().process_frame
 	await get_tree().process_frame
 	checar(not tela.aberta() and not p.menu_aberto, "K de novo fecha a árvore")
-	hud._ficha_botao_arvore.pressed.emit()
+	hud.ficha().botao_arvore().pressed.emit()
 	await get_tree().process_frame
 	checar(tela.aberta(), "o botão da ficha abre a árvore")
 	tela.fechar()

@@ -12,7 +12,17 @@ const LARGURA_DETALHES := 300
 const COR_APRENDIDO := Tema.COR_DESTAQUE
 const COR_DISPONIVEL := Color("7ed36a")
 const COR_BLOQUEADO := Color(0.55, 0.55, 0.6)
-const COR_LINHA_APAGADA := Color(0.32, 0.3, 0.28, 0.9)
+## Caminhos entre os nós: dourado (os dois aprendidos), verde (o de cima aprendido e o de
+## baixo dá para aprender) e cinza apagado (bloqueado). Contorno escuro, como o resto da
+## interface do pacote.
+const COR_LINHA_APAGADA := Color(0.42, 0.42, 0.46)
+const COR_CONTORNO_LINHA := Color(0.09, 0.09, 0.13, 0.9)
+const LARGURA_LINHA := 4.0
+## Vão entre um passo do ramo e o seguinte (o caminho passa nele).
+const SEPARACAO_PASSOS := 16
+## Pistas dos caminhos que saem das iniciais para a entrada de cada ramo: uma por ramo,
+## no corredor ao lado das iniciais e na faixa em cima da primeira fileira.
+const PISTA := 8
 const TECLAS_NOMES: Array[String] = ["Q", "R", "T", "E"]
 
 var jogador: Player
@@ -28,6 +38,9 @@ var _fechar: Button
 var _dica_ramo: Label
 var _colunas: HBoxContainer
 var _ligacoes: Control
+var _corredor: Control  # vão entre as iniciais e o primeiro ramo (pistas verticais)
+var _faixas: Dictionary = {}  # ramo → faixa em cima da 1ª fileira (pistas horizontais)
+var _legenda: RichTextLabel
 var _det_icone: TextureRect
 var _det_nome: Label
 var _det_tipo: Label
@@ -115,6 +128,29 @@ func botao_aprender() -> Button:
 	return _botao_aprender
 
 
+## Caminhos desenhados agora (para os testes): [{de, para, estado, pontos}], com o estado
+## "aprendido", "disponivel" ou "bloqueado" (dourado, verde ou cinza).
+func caminhos() -> Array[Dictionary]:
+	return _calcular_caminhos()
+
+
+## Estado do caminho de `de` até `para` (&"" se esse caminho não existe).
+func estado_caminho(de: StringName, para: StringName) -> StringName:
+	for c in _calcular_caminhos():
+		if c.de == de and c.para == para:
+			return c.estado
+	return &""
+
+
+static func cor_caminho(estado: StringName) -> Color:
+	match estado:
+		&"aprendido":
+			return COR_APRENDIDO
+		&"disponivel":
+			return COR_DISPONIVEL
+	return COR_LINHA_APAGADA
+
+
 func _unhandled_input(event: InputEvent) -> void:
 	if visible and event.is_action_pressed(&"ui_cancel"):
 		fechar()
@@ -177,21 +213,11 @@ func _montar() -> void:
 	area.add_child(_colunas)
 	_colunas.resized.connect(func() -> void:
 		area.custom_minimum_size = _colunas.size
-		_ligacoes.size = _colunas.size)
+		_ligacoes.size = _colunas.size
+		_ligacoes.queue_redraw())
+	_colunas.sort_children.connect(_ligacoes.queue_redraw)
 
 	corpo.add_child(_montar_detalhes())
-
-	var legenda := RichTextLabel.new()
-	legenda.bbcode_enabled = true
-	legenda.fit_content = true
-	legenda.scroll_active = false
-	legenda.autowrap_mode = TextServer.AUTOWRAP_OFF
-	legenda.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	legenda.add_theme_font_size_override(&"normal_font_size", 14)
-	legenda.add_theme_color_override(&"default_color", Tema.COR_TEXTO_2)
-	legenda.text = "[color=#%s]Dourado: aprendido[/color]   [color=#%s]Verde: dá para aprender[/color]   Apagado: bloqueado   ·   Redondo: passiva   Quadrado: habilidade   ·   [color=#%s]![/color] efeito ainda pendente" % [
-		COR_APRENDIDO.to_html(false), COR_DISPONIVEL.to_html(false), Tema.COR_AVISO.to_html(false)]
-	v.add_child(legenda)
 
 
 func _montar_detalhes() -> Control:
@@ -256,6 +282,19 @@ func _montar_detalhes() -> Control:
 	var folga := Control.new()
 	folga.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	d.add_child(folga)
+	# Legenda curta no pé dos detalhes (a árvore precisa da altura toda).
+	_legenda = RichTextLabel.new()
+	_legenda.bbcode_enabled = true
+	_legenda.fit_content = true
+	_legenda.scroll_active = false
+	_legenda.custom_minimum_size = Vector2(LARGURA_DETALHES - 24, 0)
+	_legenda.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_legenda.add_theme_font_size_override(&"normal_font_size", 13)
+	_legenda.add_theme_color_override(&"default_color", Tema.COR_TEXTO_2)
+	_legenda.text = "[color=#%s]Dourado: aprendido[/color] · Cinza: bloqueado\n[color=#%s]Verde: dá para aprender agora[/color]\nRedondo: passiva · Quadrado: habilidade\n[color=#%s]![/color] efeito ainda pendente" % [
+		COR_APRENDIDO.to_html(false), COR_DISPONIVEL.to_html(false), Tema.COR_AVISO.to_html(false)]
+	d.add_child(_legenda)
+	d.add_child(HSeparator.new())
 	_teclas_atuais = _rotulo("", 14, Tema.COR_TEXTO_2)
 	_teclas_atuais.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	_teclas_atuais.custom_minimum_size = Vector2(LARGURA_DETALHES - 24, 0)
@@ -268,22 +307,38 @@ func _montar_colunas() -> void:
 	for c in _colunas.get_children():
 		c.free()
 	_espacos.clear()
+	_faixas.clear()
 	_classe_montada = jogador.classe
+	var ramos := ArvoreData.ramos(jogador.classe)
 	var ordem: Array[StringName] = [NoArvore.RAMO_CLASSE, NoArvore.RAMO_INICIAIS]
-	for r in ArvoreData.ramos(jogador.classe):
+	for r in ramos:
 		ordem.append(r[0])
+	# Faixa em cima da 1ª fileira, com uma pista por ramo (em todas as colunas, para as
+	# fileiras ficarem alinhadas).
+	var altura_faixa := PISTA * ramos.size() + 6
 	for ramo in ordem:
 		var col := VBoxContainer.new()
-		col.add_theme_constant_override(&"separation", 10)  # espaço para a linha entre os passos
+		col.add_theme_constant_override(&"separation", 0)
 		col.custom_minimum_size = Vector2(LARGURA_COLUNA, 0)
 		var cab := _rotulo(ArvoreData.nome_ramo(jogador.classe, ramo), 16)
 		cab.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 		cab.set_meta(&"ramo", ramo)
 		col.add_child(cab)
+		_faixas[ramo] = _vao(altura_faixa)
+		col.add_child(_faixas[ramo])
+		var primeiro := true
 		for n in ArvoreData.nos(jogador.classe):
 			if n.ramo == ramo:
+				if not primeiro:
+					col.add_child(_vao(SEPARACAO_PASSOS))  # o caminho entre os passos passa aqui
 				col.add_child(_espaco_do_no(n))
+				primeiro = false
 		_colunas.add_child(col)
+		if ramo == NoArvore.RAMO_INICIAIS:
+			_corredor = Control.new()
+			_corredor.custom_minimum_size = Vector2(PISTA * ramos.size() + 4, 0)
+			_corredor.mouse_filter = Control.MOUSE_FILTER_IGNORE
+			_colunas.add_child(_corredor)
 	if _selecionado == &"" or ArvoreData.no(jogador.classe, _selecionado) == null:
 		_selecionado = ArvoreData.nos(jogador.classe)[0].id
 
@@ -374,6 +429,8 @@ func _atualizar() -> void:
 	else:
 		_dica_ramo.text = "Nível %d · Níveis 2 a 4: libere as iniciais. No nível 5, escolha UM ramo. Clique num nó para ver os detalhes." % jogador.nivel
 	for col in _colunas.get_children():
+		if col == _corredor:
+			continue
 		var cab := col.get_child(0) as Label
 		var ramo: StringName = cab.get_meta(&"ramo")
 		var outro_ramo := escolhido != &"" and ramo != escolhido and ramo != NoArvore.RAMO_CLASSE and ramo != NoArvore.RAMO_INICIAIS
@@ -470,27 +527,82 @@ func _mostrar_detalhes() -> void:
 	_teclas_atuais.text = "Nas teclas: " + " · ".join(partes)
 
 
-## Linhas entre um passo do ramo e o seguinte (interface, não arte do jogo).
-func _desenhar_ligacoes() -> void:
-	if jogador == null:
-		return
+func _vao(altura: int) -> Control:
+	var c := Control.new()
+	c.custom_minimum_size = Vector2(0, altura)
+	c.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	return c
+
+
+## Os caminhos: cada passo do ramo liga ao anterior (reto, do pé do nome até a borda de cima
+## do nó), e a entrada de cada ramo liga às iniciais que o abrem, pelo corredor ao lado das
+## iniciais e pela faixa em cima da 1ª fileira (uma pista por ramo).
+func _calcular_caminhos() -> Array[Dictionary]:
+	var l: Array[Dictionary] = []
+	if jogador == null or _espacos.is_empty() or _corredor == null:
+		return l
 	var inverso := _ligacoes.get_global_transform().affine_inverse()
+	var ramos := ArvoreData.ramos(jogador.classe)
+	var corredor: Rect2 = inverso * _corredor.get_global_rect()
 	for id in _espacos:
 		var n: NoArvore = _espacos[id].no
+		var para: Rect2 = inverso * (_espacos[id].fundo as Control).get_global_rect()
+		var topo := Vector2(para.get_center().x, para.position.y - 3.0)  # a borda sai 3 px
 		for req in n.requisitos:
 			if not _espacos.has(req):
 				continue
-			var de: Rect2 = _espacos[req].fundo.get_global_rect()
-			var para: Rect2 = _espacos[id].fundo.get_global_rect()
-			var embaixo: float = _espacos[req].nome.get_global_rect().end.y  # depois do nome
-			var a := inverso * Vector2(de.get_center().x, embaixo)
-			var b := inverso * Vector2(para.get_center().x, para.position.y - 2.0)
-			var cor := COR_LINHA_APAGADA
-			if jogador.tem(id):
-				cor = COR_APRENDIDO
-			elif jogador.tem(req):
-				cor = COR_DISPONIVEL if estado_de(id) == &"disponivel" else Color(0.6, 0.58, 0.5)
-			_ligacoes.draw_line(a, b, cor, 4.0)
+			var nome: Label = _espacos[req].nome
+			var embaixo: float = (inverso * nome.get_global_rect()).end.y - 2.0
+			l.append(_caminho(req, id, PackedVector2Array([Vector2(topo.x, embaixo), topo])))
+		if n.algum_de.is_empty():
+			continue
+		var k := 0
+		for r in ramos.size():
+			if ramos[r][0] == n.ramo:
+				k = r
+		# O ramo mais perto fica com a pista mais à direita no corredor e a mais baixa na
+		# faixa: assim os caminhos não se cruzam na faixa.
+		var x_pista := corredor.end.x - 4.0 - PISTA * k
+		var faixa: Rect2 = inverso * (_faixas[n.ramo] as Control).get_global_rect()
+		var y_pista := faixa.end.y - 6.0 - PISTA * k
+		for ini in n.algum_de:
+			if not _espacos.has(ini):
+				continue
+			var de: Rect2 = inverso * (_espacos[ini].fundo as Control).get_global_rect()
+			var saida := Vector2(de.end.x + 3.0, de.get_center().y)
+			l.append(_caminho(ini, id, PackedVector2Array([
+				saida, Vector2(x_pista, saida.y), Vector2(x_pista, y_pista),
+				Vector2(topo.x, y_pista), topo])))
+	return l
+
+
+func _caminho(de: StringName, para: StringName, pontos: PackedVector2Array) -> Dictionary:
+	var estado := &"bloqueado"
+	if jogador.tem(de) and jogador.tem(para):
+		estado = &"aprendido"
+	elif jogador.tem(de) and estado_de(para) == &"disponivel":
+		estado = &"disponivel"
+	return {de = de, para = para, estado = estado, pontos = pontos}
+
+
+## Linhas de interface (não é arte do jogo): trechos retos com contorno escuro; os cinzas
+## primeiro e os dourados por cima, porque as pistas dividem trechos.
+func _desenhar_ligacoes() -> void:
+	var todos := _calcular_caminhos()
+	for camada: StringName in [&"bloqueado", &"disponivel", &"aprendido"]:
+		var desses := todos.filter(func(c: Dictionary) -> bool: return c.estado == camada)
+		for c in desses:
+			_tracar(c.pontos, LARGURA_LINHA + 4.0, COR_CONTORNO_LINHA)
+		for c in desses:
+			_tracar(c.pontos, LARGURA_LINHA, cor_caminho(camada))
+
+
+## Trechos retos (horizontais ou verticais) com pontas quadradas, para as curvas fecharem
+## sem falha.
+func _tracar(pontos: PackedVector2Array, largura: float, cor: Color) -> void:
+	for i in pontos.size() - 1:
+		var r := Rect2(pontos[i].round(), Vector2.ZERO).expand(pontos[i + 1].round()).grow(largura / 2.0)
+		_ligacoes.draw_rect(r, cor)
 
 
 func _rotulo(texto: String, tamanho: int, cor := Tema.COR_TEXTO) -> Label:
