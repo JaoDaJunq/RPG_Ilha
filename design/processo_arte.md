@@ -161,3 +161,25 @@ O Pixelbolt (`C:\Projetos\ferramentas\pixelbolt`, licença MIT, sem dependência
   - `inteiro.png`;
   - `pecas.json`, com o lugar de cada peça.
 - **Conferência:** `game/tools/previa_bonecos.gd` põe o boneco montado pelas peças ao lado do personagem inteiro (`evidence/comparacao/bonecos.png`). Tem de ficar igual.
+
+## Sprite completo por raça e classe (12/11/2026, substitui as peças)
+
+Com o personagem reduzido a raça + classe, não há mais o que trocar. Por isso, cada um dos 20 personagens volta a ser **desenhado inteiro em cada quadro**, como no L15, que já tinha dado certo para o perfil. Agora são as 3 vistas e sem a arma na mão.
+
+**3 folhas por personagem** (uma por vista: perfil, frente, costas), cada uma com 6 quadros:
+- parado, respirando;
+- passo A, passo B;
+- golpe preparação, golpe ataque.
+
+**Desenho:**
+- Ilustração lisa, contorno #161c2e grosso, cel shading de um tom.
+- Proporções do Tiny Swords, roupa sem mangas compridas.
+- Mão da frente fechada e vazia.
+
+**Conversão:** `game/tools/pixelizar.gd --animacao` (escala do 1º quadro e pés na mesma linha). O resultado vai para `game/assets/sprites/tiny/personagens/<raca>_<classe>/<vista>.png`, uma tira de 6 quadros.
+
+**No jogo:**
+- O jogo troca o quadro conforme a ação (parado, andando, golpe) e a vista.
+- Um arquivo de pontos marca onde fica a mão da frente em cada quadro. O item da barra é desenhado ali e gira no golpe.
+
+**Pedidos:** L30 é o piloto (Humano Guerreiro). Depois que o João aprovar, vêm os outros 19.

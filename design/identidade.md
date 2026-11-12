@@ -1,5 +1,23 @@
 # Identidade visual (bíblia)
 
+> **Personagens (12/11/2026): SPRITE COMPLETO por raça e classe.** Cada um dos 20 personagens (Humano, Ogro, Elfo, Anão x Guerreiro, Mago, Arqueiro, Ladino, Clérigo) é desenhado inteiro em cada quadro, como as unidades do Tiny Swords. Regras:
+> - **Corpo inteiro:** corpo, roupa da classe, rosto e cabelo da raça desenhados juntos, com bracinhos de verdade. Saem as mãozinhas soltas e as peças montadas.
+> - **Proporções do Tiny Swords:** cabeça grande e redonda, corpo curto e roliço, pernas curtas.
+> - **Roupas sem mangas compridas:** colete ou túnica com cavas, como o João pediu.
+> - **3 vistas:** perfil olhando para a direita (a esquerda é o espelho), frente e costas.
+> - **Animações em cada vista:**
+>   1. parado;
+>   2. respirando;
+>   3. passo A;
+>   4. passo B;
+>   5. golpe (preparação);
+>   6. golpe (ataque).
+> - **Mão da frente fechada e vazia:** o item da barra (arma da classe, machado, picareta, tocha...) é desenhado pelo jogo nessa mão, num ponto marcado em cada quadro (`design/armas_na_mao.md`, jeito 2).
+> - **Mesmo processo do L15:** o Codex faz ilustração lisa; `game/tools/pixelizar.gd --animacao` transforma em pixel art, na densidade, na paleta e com o contorno do pacote, sempre com a mesma escala e os pés na mesma linha.
+> - **Entrada no jogo:** escala 0,25, como as unidades do pacote.
+>
+> Isso substitui o "personagem montado por peças" (L19, L21, L29). Piloto: Humano Guerreiro (pedido L30).
+
 > **Direção atual (30/10/2026): estilo Tiny Swords.** O João escolheu o estilo do pacote Tiny Swords (Pixel Frog): terreno, árvores, pedras, arbustos, animais, efeitos e interface vêm do pacote; os nossos personagens e o que faltar (areia, ogro, classes próprias) são feitos pelo Codex com as unidades do pacote anexadas como régua. Escala: arte de 64 px por tile, entra no jogo com escala 0,25 e câmera em zoom 4 (1 pixel da arte = 1 pixel da tela). Ver `design/processo_arte.md`. A direção C02 abaixo fica como histórico.
 >
 > **Direção anterior (histórico) — C02, aprovada pelo João em 29/10/2026:** **pixel art mais fina**, conforme `art/conceitos/estilo/estilo_pixel_fino_v1.png`. O João acrescentou **Forager** e **Moonlighter (o primeiro, em 2D)** como referências. A alternativa de desenho liso não foi escolhida.
