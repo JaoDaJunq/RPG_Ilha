@@ -1,0 +1,21 @@
+[gd_resource type="Resource" script_class="HabilidadeData" load_steps=3 format=3]
+
+[ext_resource type="Script" path="res://scripts/data/habilidade_data.gd" id="1_script"]
+[ext_resource type="Texture2D" path="res://assets/sprites/tiny/icones/icone_experiencia.png" id="2_icone"]
+
+[resource]
+script = ExtResource("1_script")
+id = &"totem_tesla"
+nome = "Totem tesla"
+descricao = "Põe na mira uma torre que, por 8 s, dá choque a cada 0,8 s no inimigo mais perto (até 3,5 blocos)."
+icone = ExtResource("2_icone")
+modo = 0
+custo_mana = 16.0
+recarga = 16.0
+elemento = &"raio"
+dano = 0.5
+alcance = 64.0
+logica = &"TotemTesla"
+animacao = &"golpe"
+duracao_animacao = 0.25
+som = &"golpe_coleta"

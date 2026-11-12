@@ -1,0 +1,21 @@
+[gd_resource type="Resource" script_class="HabilidadeData" load_steps=3 format=3]
+
+[ext_resource type="Script" path="res://scripts/data/habilidade_data.gd" id="1_script"]
+[ext_resource type="Texture2D" path="res://assets/sprites/tiny/icones/icone_experiencia.png" id="2_icone"]
+
+[resource]
+script = ExtResource("1_script")
+id = &"espinhos"
+nome = "Espinhos"
+descricao = "Estacas saem do chão na mira: machucam e prendem por 1,5 s quem estiver em cima."
+icone = ExtResource("2_icone")
+modo = 0
+custo_mana = 10.0
+recarga = 6.0
+elemento = &"terra"
+dano = 0.8
+alcance = 96.0
+logica = &"Espinhos"
+animacao = &"golpe"
+duracao_animacao = 0.2
+som = &"golpe_coleta"
