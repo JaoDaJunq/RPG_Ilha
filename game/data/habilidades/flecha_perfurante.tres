@@ -1,0 +1,20 @@
+[gd_resource type="Resource" script_class="HabilidadeData" load_steps=3 format=3]
+
+[ext_resource type="Script" path="res://scripts/data/habilidade_data.gd" id="1_script"]
+[ext_resource type="Texture2D" path="res://assets/sprites/tiny/icones/icone_experiencia.png" id="2_icone"]
+
+[resource]
+script = ExtResource("1_script")
+id = &"flecha_perfurante"
+nome = "Flecha perfurante"
+descricao = "Uma flecha rápida que atravessa todos os inimigos em linha (acerta cada um uma vez)."
+icone = ExtResource("2_icone")
+modo = 0
+custo_mana = 6.0
+recarga = 4.0
+elemento = &"fisico"
+dano = 1.5
+alcance = 0.0
+logica = &"FlechaPerfurante"
+animacao = &"golpe"
+som = &"flecha"
