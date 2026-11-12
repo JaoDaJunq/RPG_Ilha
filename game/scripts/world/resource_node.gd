@@ -194,6 +194,7 @@ const XP_COLETA := 2
 
 
 func _entregar(quem: Player, item: StringName, qtd: int) -> void:
+	qtd = PassivasGuerreiro.coleta(quem, item, qtd)  # Braço de lenhador
 	quem.inventario.adicionar(item, qtd)
 	quem.ganhar_xp(XP_COLETA)
 	quem.avisar("+%d %s" % [qtd, ItemData.carregar(item).nome.to_lower()], &"item")

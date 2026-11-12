@@ -1,0 +1,21 @@
+[gd_resource type="Resource" script_class="HabilidadeData" load_steps=3 format=3]
+
+[ext_resource type="Script" path="res://scripts/data/habilidade_data.gd" id="1_script"]
+[ext_resource type="Texture2D" path="res://assets/sprites/tiny/icones/icone_experiencia.png" id="2_icone"]
+
+[resource]
+script = ExtResource("1_script")
+id = &"grito_de_guerra"
+nome = "Grito de guerra"
+descricao = "Os inimigos a até 3 blocos fogem com Medo por 1,5 s; você e os aliados a até 5 blocos dão 10% mais dano por 6 s."
+icone = ExtResource("2_icone")
+modo = 1
+custo_mana = 8.0
+recarga = 10.0
+elemento = &"fisico"
+dano = 0.0
+alcance = 0.0
+logica = &"GritoDeGuerra"
+animacao = &"golpe"
+duracao_animacao = 0.3
+som = &"giro"

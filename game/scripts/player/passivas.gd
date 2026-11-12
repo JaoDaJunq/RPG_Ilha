@@ -299,7 +299,7 @@ static func coleta(p: Player, minerando: bool) -> float:
 
 
 static func empurrao(p: Player) -> float:
-	return PELE_EMPURRAO if p.tem(&"pele_de_ferro") else 1.0
+	return (PELE_EMPURRAO if p.tem(&"pele_de_ferro") else 1.0) * PassivasGuerreiro.empurrao(p)
 
 
 static func visao_inimiga(p: Player) -> float:

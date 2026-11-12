@@ -1146,6 +1146,32 @@ func _furia_sync(segundos: float) -> void:
 		_furia_ate_ms = Time.get_ticks_msec() + int(segundos * 1000.0)
 
 
+## Só o anfitrião chama (Fúria titânica): o desenho fica `fator` vezes maior por `segundos`,
+## em todas as máquinas.
+func crescer(fator: float, segundos: float) -> void:
+	_crescer.rpc(fator, segundos)
+
+
+var _crescer_ate_ms := 0
+
+
+@rpc("any_peer", "call_local", "reliable")
+func _crescer(fator: float, segundos: float) -> void:
+	if not Net.veio_do_anfitriao():
+		return
+	_crescer_ate_ms = Time.get_ticks_msec() + int(segundos * 1000.0)
+	_escalar_visual(fator)
+	get_tree().create_timer(segundos, false).timeout.connect(func() -> void:
+		if is_instance_valid(self) and Time.get_ticks_msec() >= _crescer_ate_ms - 10:
+			_escalar_visual(1.0))
+
+
+## O boneco vira o lado pelo sinal de scale.x: muda só o tamanho (escala da cena: 0,25).
+func _escalar_visual(fator: float) -> void:
+	var s := 0.25 * fator
+	visual.scale = Vector2(s * (-1.0 if visual.scale.x < 0.0 else 1.0), s)
+
+
 # --- Buffs do Ladino e do Clérigo ------------------------------------------------------
 ## Quem manda é o anfitrião (as habilidades rodam lá). A fumaça também vai a todos, para
 ## verem o jogador meio transparente; os inimigos olham `escondido()` no anfitrião.

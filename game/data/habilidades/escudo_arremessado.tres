@@ -1,0 +1,21 @@
+[gd_resource type="Resource" script_class="HabilidadeData" load_steps=3 format=3]
+
+[ext_resource type="Script" path="res://scripts/data/habilidade_data.gd" id="1_script"]
+[ext_resource type="Texture2D" path="res://assets/sprites/tiny/icones/icone_experiencia.png" id="2_icone"]
+
+[resource]
+script = ExtResource("1_script")
+id = &"escudo_arremessado"
+nome = "Escudo arremessado"
+descricao = "Arremessa o escudo na direção do mouse: ele quica em até 3 inimigos e atordoa cada um por 0,5 s."
+icone = ExtResource("2_icone")
+modo = 0
+custo_mana = 6.0
+recarga = 5.0
+elemento = &"fisico"
+dano = 1.2
+alcance = 0.0
+logica = &"EscudoArremessado"
+animacao = &"golpe"
+duracao_animacao = 0.2
+som = &"flecha"
