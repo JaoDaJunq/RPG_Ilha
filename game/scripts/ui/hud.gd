@@ -26,6 +26,9 @@ var _titulo_personagem: Label
 var _retrato: TextureRect
 var _barra_vida: ProgressBar
 var _barra_mana: ProgressBar
+## Escudo da Fé (e da Égide): aparece embaixo da vida só enquanto houver escudo.
+var _barra_escudo: ProgressBar
+var _linha_escudo: Control
 var _barra_xp: ProgressBar
 ## Recurso da classe: Fúria (Guerreiro) ou pontos de combo (Ladino).
 const ICONE_FURIA := preload("res://assets/sprites/tiny/icones/icone_furia.png")
@@ -177,6 +180,8 @@ func _process(delta: float) -> void:
 		return
 	_atualizar_vinheta(delta)
 	_barra_mana.value = jogador.mana / jogador.ficha.mana_maxima() * 100.0
+	_linha_escudo.visible = jogador.vida.escudo > 0.0
+	_barra_escudo.value = jogador.vida.escudo / maxf(jogador.vida.maximo, 1.0) * 100.0
 	_atualizar_recurso()
 	var carga := jogador.carga_atual()
 	for i in _slots.size():
@@ -404,6 +409,10 @@ func _montar() -> void:
 	_barra_vida = _barra(Color("d0564a"), 22, true)
 	_barra_vida.value = 100.0
 	pv.add_child(_linha_com_icone(ICONES_ATRIBUTO[&"vitalidade"], _barra_vida))
+	_barra_escudo = _barra(Color("f2e6a8"), 14, true)
+	_linha_escudo = _linha_com_icone(preload("res://assets/sprites/tiny/icones/icone_escudo_sagrado.png"), _barra_escudo)
+	_linha_escudo.visible = false
+	pv.add_child(_linha_escudo)
 	_barra_mana = _barra(Color("4a86d0"), 20, true)
 	_barra_mana.value = 100.0
 	pv.add_child(_linha_com_icone(ICONES_ATRIBUTO[&"espirito"], _barra_mana))

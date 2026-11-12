@@ -166,6 +166,7 @@ func _physics_process(delta: float) -> void:
 		_regenerar_mana(delta)
 		_processar_bencao()
 		_processar_passivas(delta)
+		_enviar_escudo()
 		if criando:
 			vida.proteger(1.0)  # criando o personagem, ninguém o machuca
 	if not eh_local():
@@ -1093,9 +1094,10 @@ func _pedir_usar(espaco: int) -> void:
 			avisar("Sua vida já está cheia.")
 			return
 		inventario.gastar(espaco, 1)
-		vida.curar(dados.cura)
+		var cura := dados.cura * PassivasClerigo.comida(self)  # Luz própria: +50% perto do Clérigo
+		vida.curar(cura)
 		World.efeito_todos(self, &"subir_nivel", global_position)
-		avisar("+%d de vida" % int(dados.cura), &"item")
+		avisar("+%d de vida" % int(cura), &"item")
 
 
 ## O clique esquerdo foi apertado no mundo (não na mochila) e continua apertado.
@@ -1228,6 +1230,63 @@ func receber_cura(de: Player, quantidade: float) -> void:
 	var sobra := vida.curar(quantidade)
 	if de and de.tem(&"fe") and sobra > 0.0:
 		vida.dar_escudo(sobra * Passivas.escudos(de), Passivas.FE_SEGUNDOS)
+	PassivasClerigo.curou(de, self, quantidade)  # Mãos que curam (limpa), Elo vital (divide)
+
+
+## Só o anfitrião (Levantar do Clérigo): põe o jogador em `pos`. Quem anda é o dono.
+func teleportar(pos: Vector2) -> void:
+	global_position = pos
+	if not eh_local() and multiplayer.get_peers().has(id_rede()):
+		_teleportar.rpc_id(id_rede(), pos)
+
+
+@rpc("any_peer", "reliable")
+func _teleportar(pos: Vector2) -> void:
+	if Net.veio_do_anfitriao():
+		global_position = pos
+		camera.reset_smoothing()
+
+
+## Só o anfitrião (Amanhecer do Clérigo): a luz deste jogador fica grande e forte por
+## `segundos` em todas as máquinas (é a mesma luz da noite, só maior).
+func clarear(segundos: float, raio: float) -> void:
+	_clarear.rpc(segundos, raio)
+
+
+@rpc("any_peer", "call_local", "reliable")
+func _clarear(segundos: float, raio: float) -> void:
+	if not Net.veio_do_anfitriao():
+		return
+	var escala := luz.texture_scale
+	var energia := luz.energy
+	luz.texture_scale = escala * raio / 24.0
+	luz.energy = 1.0
+	luz.enabled = true
+	get_tree().create_timer(segundos, false).timeout.connect(func() -> void:
+		if not is_instance_valid(self):
+			return
+		luz.texture_scale = escala
+		luz.energy = energia
+		var mundo: World = get_tree().get_first_node_in_group(&"mundo")
+		luz.enabled = mundo != null and mundo.noite)
+
+
+## Fé: o escudo fica só na vida do anfitrião; o dono recebe o valor para o HUD mostrar.
+var _escudo_enviado := 0.0
+
+
+func _enviar_escudo() -> void:
+	if is_equal_approx(vida.escudo, _escudo_enviado):
+		return
+	_escudo_enviado = vida.escudo
+	if not eh_local() and multiplayer.get_peers().has(id_rede()):
+		_escudo_sync.rpc_id(id_rede(), vida.escudo)
+
+
+@rpc("any_peer", "reliable")
+func _escudo_sync(valor: float) -> void:
+	if Net.veio_do_anfitriao():
+		vida.escudo = valor
 
 
 # --- Árvore de habilidades ----------------------------------------------------------------
