@@ -54,6 +54,11 @@ static func derreter(quem: Player, e: Node2D) -> void:
 
 ## Martelo da justiça: um martelo de luz que Atordoa e volta para a mão (acerta na ida e na volta).
 class MarteloDaJustica extends HabilidadeLogica:
+	## Linhas de efeito da janelinha da habilidade (TextoHabilidade).
+	func textos(hab: HabilidadeData, ficha: Ficha) -> Array[String]:
+		var l: Array[String] = ["Atordoa por %s s" % TextoHabilidade.numero(ATORDOAR), "Volta para a mão e acerta de novo na volta"]
+		return l
+
 	const ATORDOAR := 1.0
 
 	func executar(quem: Player, hab: HabilidadeData, dir: Vector2, _alvo: Vector2, _carga: float) -> void:
@@ -67,6 +72,11 @@ class MarteloDaJustica extends HabilidadeLogica:
 
 ## Círculo de cura: uma área no ponto da mira que cura os jogadores dentro por 6 s.
 class CirculoDeCura extends HabilidadeLogica:
+	## Linhas de efeito da janelinha da habilidade (TextoHabilidade).
+	func textos(hab: HabilidadeData, ficha: Ficha) -> Array[String]:
+		var l: Array[String] = ["Cura %s por segundo (%s + %s por ponto de Espírito)" % [TextoHabilidade.numero(BASE + POR_ESPIRITO * (ficha.valor(&"espirito") if ficha else 5)), TextoHabilidade.numero(BASE), TextoHabilidade.numero(POR_ESPIRITO)], "Dura %s s" % TextoHabilidade.numero(DURACAO), "Área: raio de %s, até %s de você" % [TextoHabilidade.blocos(RAIO), TextoHabilidade.blocos(hab.alcance)]]
+		return l
+
 	const RAIO := 36.0
 	const DURACAO := 6.0
 	const BASE := 3.0
@@ -86,6 +96,11 @@ class CirculoDeCura extends HabilidadeLogica:
 ## Elo vital: liga o Clérigo ao aliado na mira; os dois dividem o dano e toda cura vale
 ## para os dois (PassivasClerigo.dano_recebido e .curou).
 class EloVital extends HabilidadeLogica:
+	## Linhas de efeito da janelinha da habilidade (TextoHabilidade).
+	func textos(hab: HabilidadeData, ficha: Ficha) -> Array[String]:
+		var l: Array[String] = ["Cada um toma %s%% do dano" % TextoHabilidade.numero(PassivasClerigo.ELO_FRACAO * 100.0), "A cura de um vale para os dois", "Dura %s s; aliado a até %s" % [TextoHabilidade.numero(DURACAO), TextoHabilidade.blocos(LogicasClerigo.ALCANCE_ALIADO)]]
+		return l
+
 	const DURACAO := 12.0
 
 	func executar(quem: Player, hab: HabilidadeData, _dir: Vector2, alvo: Vector2, _carga: float) -> void:
@@ -102,6 +117,11 @@ class EloVital extends HabilidadeLogica:
 ## Levantar: traz para o lado do Clérigo o aliado que desmaiou no último minuto (quem
 ## desmaia acorda no acampamento com a vida cheia; o Levantar o põe de volta na luta).
 class Levantar extends HabilidadeLogica:
+	## Linhas de efeito da janelinha da habilidade (TextoHabilidade).
+	func textos(hab: HabilidadeData, ficha: Ficha) -> Array[String]:
+		var l: Array[String] = ["Vale para quem desmaiou há até %d s" % (PassivasClerigo.LEVANTAR_MS / 1000), "Chega protegido por %s s" % TextoHabilidade.numero(PROTECAO)]
+		return l
+
 	const PROTECAO := 2.0
 
 	func executar(quem: Player, hab: HabilidadeData, _dir: Vector2, _alvo: Vector2, _carga: float) -> void:
@@ -120,6 +140,11 @@ class Levantar extends HabilidadeLogica:
 ## Fonte da vida (suprema): área grande em volta do Clérigo que cura todos e limpa os
 ## efeitos ruins a cada segundo, por 8 s.
 class FonteDaVida extends HabilidadeLogica:
+	## Linhas de efeito da janelinha da habilidade (TextoHabilidade).
+	func textos(hab: HabilidadeData, ficha: Ficha) -> Array[String]:
+		var l: Array[String] = ["Cura %s por segundo (%s + %s por ponto de Espírito)" % [TextoHabilidade.numero(BASE + POR_ESPIRITO * (ficha.valor(&"espirito") if ficha else 5)), TextoHabilidade.numero(BASE), TextoHabilidade.numero(POR_ESPIRITO)], "Limpa os efeitos ruins", "Dura %s s; raio de %s" % [TextoHabilidade.numero(DURACAO), TextoHabilidade.blocos(RAIO)]]
+		return l
+
 	const RAIO := 72.0
 	const DURACAO := 8.0
 	const BASE := 5.0
@@ -145,6 +170,11 @@ class FonteDaVida extends HabilidadeLogica:
 ## inimigos não passam (são empurrados para o lado de onde vieram) e os projéteis que não
 ## são de jogadores somem nela.
 class Barreira extends HabilidadeLogica:
+	## Linhas de efeito da janelinha da habilidade (TextoHabilidade).
+	func textos(hab: HabilidadeData, ficha: Ficha) -> Array[String]:
+		var l: Array[String] = ["Parede de %s na sua frente" % TextoHabilidade.blocos(COMPRIMENTO), "Inimigos e projéteis inimigos não passam", "Dura %s s" % TextoHabilidade.numero(DURACAO)]
+		return l
+
 	const DURACAO := 6.0
 	const DISTANCIA := 28.0  # da parede até o Clérigo
 	const COMPRIMENTO := 64.0
@@ -181,6 +211,11 @@ class Barreira extends HabilidadeLogica:
 ## Santuário: área em volta do Clérigo onde os inimigos não conseguem entrar por 4 s (quem
 ## está dentro é empurrado para a borda).
 class Santuario extends HabilidadeLogica:
+	## Linhas de efeito da janelinha da habilidade (TextoHabilidade).
+	func textos(hab: HabilidadeData, ficha: Ficha) -> Array[String]:
+		var l: Array[String] = ["Inimigos não entram num raio de %s" % TextoHabilidade.blocos(RAIO), "Dura %s s" % TextoHabilidade.numero(DURACAO)]
+		return l
+
 	const RAIO := 48.0
 	const DURACAO := 4.0
 
@@ -200,6 +235,11 @@ class Santuario extends HabilidadeLogica:
 
 ## Intervenção: o aliado na mira (ou o próprio Clérigo, sem aliado perto) fica intocável por 2 s.
 class Intervencao extends HabilidadeLogica:
+	## Linhas de efeito da janelinha da habilidade (TextoHabilidade).
+	func textos(hab: HabilidadeData, ficha: Ficha) -> Array[String]:
+		var l: Array[String] = ["Não toma dano por %s s" % TextoHabilidade.numero(DURACAO), "Aliado na mira, a até %s (sem aliado: você)" % TextoHabilidade.blocos(LogicasClerigo.ALCANCE_ALIADO)]
+		return l
+
 	const DURACAO := 2.0
 
 	func executar(quem: Player, hab: HabilidadeData, _dir: Vector2, alvo: Vector2, _carga: float) -> void:
@@ -214,6 +254,11 @@ class Intervencao extends HabilidadeLogica:
 ## Muralha da fé (suprema): uma cúpula grande em volta do Clérigo; quem está dentro não
 ## toma dano por 4 s.
 class MuralhaDaFe extends HabilidadeLogica:
+	## Linhas de efeito da janelinha da habilidade (TextoHabilidade).
+	func textos(hab: HabilidadeData, ficha: Ficha) -> Array[String]:
+		var l: Array[String] = ["Ninguém dentro toma dano", "Dura %s s; raio de %s" % [TextoHabilidade.numero(DURACAO), TextoHabilidade.blocos(RAIO)]]
+		return l
+
 	const RAIO := 64.0
 	const DURACAO := 4.0
 
@@ -231,6 +276,11 @@ class MuralhaDaFe extends HabilidadeLogica:
 
 ## Coluna de luz: depois de um instante, um raio de luz cai do céu no ponto da mira.
 class ColunaDeLuz extends HabilidadeLogica:
+	## Linhas de efeito da janelinha da habilidade (TextoHabilidade).
+	func textos(hab: HabilidadeData, ficha: Ficha) -> Array[String]:
+		var l: Array[String] = ["Cai após %s s no ponto do mouse (até %s)" % [TextoHabilidade.numero(ATRASO), TextoHabilidade.blocos(hab.alcance)], "Área: raio de %s" % TextoHabilidade.blocos(RAIO)]
+		return l
+
 	const ATRASO := 0.35
 	const RAIO := 20.0
 
@@ -249,6 +299,11 @@ class ColunaDeLuz extends HabilidadeLogica:
 ## Martelo giratório: um martelo de luz gira em volta do Clérigo por 5 s, acertando quem
 ## estiver perto a cada meio segundo.
 class MarteloGiratorio extends HabilidadeLogica:
+	## Linhas de efeito da janelinha da habilidade (TextoHabilidade).
+	func textos(hab: HabilidadeData, ficha: Ficha) -> Array[String]:
+		var l: Array[String] = ["Acerta a cada %s s num raio de %s" % [TextoHabilidade.numero(INTERVALO), TextoHabilidade.blocos(RAIO)], "Dura %s s" % TextoHabilidade.numero(DURACAO)]
+		return l
+
 	const RAIO := 28.0
 	const DURACAO := 5.0
 	const INTERVALO := 0.5
@@ -264,6 +319,11 @@ class MarteloGiratorio extends HabilidadeLogica:
 
 ## Aurora: um cone de luz na direção da mira. Derrete os slimes da noite e Cega os outros.
 class Aurora extends HabilidadeLogica:
+	## Linhas de efeito da janelinha da habilidade (TextoHabilidade).
+	func textos(hab: HabilidadeData, ficha: Ficha) -> Array[String]:
+		var l: Array[String] = ["Cone de %s na sua frente" % TextoHabilidade.blocos(ALCANCE), "Slimes da noite derretem", "Cega os outros por %s s" % TextoHabilidade.numero(CEGO)]
+		return l
+
 	const ALCANCE := 72.0
 	const ABERTURA := deg_to_rad(35.0)  # para cada lado
 	const CEGO := 3.0
@@ -287,6 +347,11 @@ class Aurora extends HabilidadeLogica:
 ## (vale como a da fogueira: os slimes da noite fogem dela) e os slimes da noite que
 ## ficarem dentro derretem.
 class Amanhecer extends HabilidadeLogica:
+	## Linhas de efeito da janelinha da habilidade (TextoHabilidade).
+	func textos(hab: HabilidadeData, ficha: Ficha) -> Array[String]:
+		var l: Array[String] = ["Vira dia num raio de %s em volta de você" % TextoHabilidade.blocos(RAIO), "Slimes da noite fogem da luz e derretem nela", "Dura %s s" % TextoHabilidade.numero(DURACAO)]
+		return l
+
 	const RAIO := 96.0
 	const DURACAO := 10.0
 
