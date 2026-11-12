@@ -125,7 +125,8 @@ func _physics_process(delta: float) -> void:
 	var luz := World.luz_que_protege(self, global_position) if noturno else Vector2.INF
 	var medo := efeitos.fugir_de()
 	if parado:
-		pass
+		if _estado in [Estado.PREPARANDO, Estado.PULANDO]:
+			_mudar(Estado.PASSEANDO)  # congelado ou atordoado no meio do ataque: perde o pulo
 	elif medo != Vector2.INF:
 		dir = (global_position - medo).normalized()
 		_mudar(Estado.PASSEANDO)
@@ -140,6 +141,8 @@ func _physics_process(delta: float) -> void:
 	var rapidez := velocidade * (_VEL_PULO if _estado == Estado.PULANDO else 1.0)
 	if _estado == Estado.RECUANDO:
 		rapidez = _DIST_RECUO / _TEMPO_RECUO  # saltinho para trás depois da cabeçada
+	if efeitos.impulso() != Vector2.ZERO:
+		_empurrao = Vector2.ZERO  # puxado ou empurrado por habilidade: vale só esse movimento
 	velocity = dir * rapidez * efeitos.mult_velocidade() + _empurrao + efeitos.impulso()
 	_empurrao = _empurrao.move_toward(Vector2.ZERO, 400.0 * delta)
 	move_and_slide()

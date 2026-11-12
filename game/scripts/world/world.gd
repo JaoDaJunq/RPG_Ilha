@@ -323,6 +323,27 @@ func _efeito_preso(caminho: NodePath, nome: StringName, segundos: float, pos_loc
 			e.queue_free())
 
 
+## Efeito em laço parado num ponto do chão por `segundos` (zonas: Círculo de cura, Nuvem
+## tóxica...), em todos os jogadores. `escala` multiplica o tamanho da tabela do Efeito.
+static func efeito_laco_todos(quem: Node, nome: StringName, pos: Vector2, segundos: float, escala := 1.0) -> void:
+	var w: World = quem.get_tree().get_first_node_in_group(&"mundo")
+	if w:
+		w._efeito_laco.rpc(nome, pos, segundos, escala)
+
+
+@rpc("any_peer", "call_local", "reliable")
+func _efeito_laco(nome: StringName, pos: Vector2, segundos: float, escala: float) -> void:
+	if not Net.veio_do_anfitriao():
+		return
+	var e := Efeito.criar(nome, pos, true)
+	e.scale *= escala
+	e.z_index = 0  # no chão, embaixo de quem pisa
+	entidades.add_child(e)
+	get_tree().create_timer(segundos, false).timeout.connect(func() -> void:
+		if is_instance_valid(e):
+			e.queue_free())
+
+
 ## Chuva de flechas: as flechas do pacote caem do céu em volta do ponto e chegam ao chão
 ## em `queda` segundos (quando o dano acontece). Só visual, em todos os jogadores.
 const FLECHA_CAINDO := preload("res://assets/tiny_swords/fx/flecha.png")

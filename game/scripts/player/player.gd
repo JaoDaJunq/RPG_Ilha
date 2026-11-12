@@ -183,8 +183,9 @@ func _physics_process(delta: float) -> void:
 
 	var entrada := Input.get_vector(&"mover_esquerda", &"mover_direita", &"mover_cima", &"mover_baixo")
 	if _impulso_restante > 0.0:
+		# O último passo é só o que falta (sem andar um quadro a mais que o pedido).
+		velocity = _impulso * minf(1.0, _impulso_restante / delta)
 		_impulso_restante -= delta
-		velocity = _impulso
 	else:
 		velocity = entrada * ficha.velocidade() * multiplicador_velocidade()
 	move_and_slide()
