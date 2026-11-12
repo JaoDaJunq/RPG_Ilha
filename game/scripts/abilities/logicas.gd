@@ -143,22 +143,9 @@ class Raio extends HabilidadeLogica:
 		if is_instance_valid(melhor) and melhor.has_method(&"prender"):
 			melhor.prender(ATORDOAR)
 		World.efeito_todos(quem, &"raio", onde)
-		# Condução: o raio salta para o inimigo mais perto do primeiro.
+		# Condução: o raio salta para mais 1 inimigo perto (mais 2 se o alvo estiver molhado).
 		if quem.tem(&"conducao"):
-			var salto: Node2D = null
-			var perto := Passivas.CONDUCAO_RAIO
-			for e in Passivas.inimigos_perto(quem, onde, Passivas.CONDUCAO_RAIO):
-				var d := e.global_position.distance_to(onde)
-				if e != melhor and d <= perto:
-					perto = d
-					salto = e
-			if salto:
-				var area2 := salto.get_node_or_null("Hurtbox") as Hurtbox
-				if area2:
-					area2.receber(dano_de(quem, hab), &"raio", quem)
-				if is_instance_valid(salto) and salto.has_method(&"prender"):
-					salto.prender(ATORDOAR)
-				World.efeito_todos(quem, &"raio", salto.global_position if is_instance_valid(salto) else onde)
+			LogicasMago.conducao(quem, hab, melhor, onde, ATORDOAR)
 
 
 ## Mago: congela tudo em volta.

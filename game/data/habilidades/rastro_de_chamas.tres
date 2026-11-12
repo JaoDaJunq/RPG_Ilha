@@ -1,0 +1,21 @@
+[gd_resource type="Resource" script_class="HabilidadeData" load_steps=3 format=3]
+
+[ext_resource type="Script" path="res://scripts/data/habilidade_data.gd" id="1_script"]
+[ext_resource type="Texture2D" path="res://assets/sprites/tiny/icones/icone_experiencia.png" id="2_icone"]
+
+[resource]
+script = ExtResource("1_script")
+id = &"rastro_de_chamas"
+nome = "Rastro de chamas"
+descricao = "Por 4 s, o chão por onde você anda pega fogo. Cada brasa fica 2 s, machuca e deixa Queimadura em quem pisa."
+icone = ExtResource("2_icone")
+modo = 1
+custo_mana = 12.0
+recarga = 10.0
+elemento = &"fogo"
+dano = 0.3
+alcance = 0.0
+logica = &"RastroDeChamas"
+animacao = &"golpe"
+duracao_animacao = 0.2
+som = &"bola_de_fogo"

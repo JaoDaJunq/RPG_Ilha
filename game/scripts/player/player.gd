@@ -1573,6 +1573,7 @@ func _aplicar_passivas_fixas() -> void:
 			add_to_group(&"luz_protege")
 	elif is_in_group(&"luz_protege"):
 		remove_from_group(&"luz_protege")
+	PassivasMago.fixas(self)  # Faísca
 
 
 ## Só o anfitrião, todo quadro: Aura serena e o relógio das Raízes.

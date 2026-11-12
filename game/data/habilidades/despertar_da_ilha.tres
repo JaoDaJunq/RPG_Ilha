@@ -1,0 +1,21 @@
+[gd_resource type="Resource" script_class="HabilidadeData" load_steps=3 format=3]
+
+[ext_resource type="Script" path="res://scripts/data/habilidade_data.gd" id="1_script"]
+[ext_resource type="Texture2D" path="res://assets/sprites/tiny/icones/icone_experiencia.png" id="2_icone"]
+
+[resource]
+script = ExtResource("1_script")
+id = &"despertar_da_ilha"
+nome = "Despertar da ilha"
+descricao = "Suprema. Por 8 s a ilha treme em volta de você (7 blocos): os inimigos erram metade dos ataques e ficam 40% mais lentos."
+icone = ExtResource("2_icone")
+modo = 1
+custo_mana = 30.0
+recarga = 45.0
+elemento = &"terra"
+dano = 0.0
+alcance = 0.0
+logica = &"DespertarDaIlha"
+animacao = &"golpe"
+duracao_animacao = 0.4
+som = &"giro"

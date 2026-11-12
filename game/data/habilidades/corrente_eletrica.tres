@@ -1,0 +1,21 @@
+[gd_resource type="Resource" script_class="HabilidadeData" load_steps=3 format=3]
+
+[ext_resource type="Script" path="res://scripts/data/habilidade_data.gd" id="1_script"]
+[ext_resource type="Texture2D" path="res://assets/sprites/tiny/icones/icone_experiencia.png" id="2_icone"]
+
+[resource]
+script = ExtResource("1_script")
+id = &"corrente_eletrica"
+nome = "Corrente elétrica"
+descricao = "Um choque no inimigo da mira que pula entre até 5 inimigos próximos, atordoando cada um por 0,3 s."
+icone = ExtResource("2_icone")
+modo = 0
+custo_mana = 12.0
+recarga = 5.0
+elemento = &"raio"
+dano = 0.8
+alcance = 120.0
+logica = &"CorrenteEletrica"
+animacao = &"golpe"
+duracao_animacao = 0.2
+som = &"bola_de_fogo"

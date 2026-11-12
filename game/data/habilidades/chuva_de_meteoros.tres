@@ -1,0 +1,21 @@
+[gd_resource type="Resource" script_class="HabilidadeData" load_steps=3 format=3]
+
+[ext_resource type="Script" path="res://scripts/data/habilidade_data.gd" id="1_script"]
+[ext_resource type="Texture2D" path="res://assets/sprites/tiny/icones/icone_experiencia.png" id="2_icone"]
+
+[resource]
+script = ExtResource("1_script")
+id = &"chuva_de_meteoros"
+nome = "Chuva de meteoros"
+descricao = "Suprema. Por 5 s, meteoros caem numa área de 3 blocos de raio na mira: dano de fogo e Queimadura em quem estiver embaixo."
+icone = ExtResource("2_icone")
+modo = 0
+custo_mana = 30.0
+recarga = 40.0
+elemento = &"fogo"
+dano = 1.0
+alcance = 128.0
+logica = &"ChuvaDeMeteoros"
+animacao = &"golpe"
+duracao_animacao = 0.4
+som = &"bola_de_fogo"

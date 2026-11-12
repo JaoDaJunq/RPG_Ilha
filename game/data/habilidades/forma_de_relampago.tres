@@ -1,0 +1,21 @@
+[gd_resource type="Resource" script_class="HabilidadeData" load_steps=3 format=3]
+
+[ext_resource type="Script" path="res://scripts/data/habilidade_data.gd" id="1_script"]
+[ext_resource type="Texture2D" path="res://assets/sprites/tiny/icones/icone_experiencia.png" id="2_icone"]
+
+[resource]
+script = ExtResource("1_script")
+id = &"forma_de_relampago"
+nome = "Forma de relâmpago"
+descricao = "Você vira raio e atravessa até a mira (até 6 blocos), ferindo e atordoando por 0,5 s quem estiver no caminho."
+icone = ExtResource("2_icone")
+modo = 0
+custo_mana = 12.0
+recarga = 6.0
+elemento = &"raio"
+dano = 1.0
+alcance = 96.0
+logica = &"FormaDeRelampago"
+animacao = &"parado"
+duracao_animacao = 0.1
+som = &"esquiva"

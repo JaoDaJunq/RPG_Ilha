@@ -12,6 +12,8 @@ const TABELA := {
 	&"congelar": [preload("res://assets/sprites/tiny/fx/cristais.png"), Vector2i(81, 63), 1, 1.5, 0.25],
 	&"explosao": [preload("res://assets/tiny_swords/fx/explosao.png"), Vector2i(192, 192), 8, 20.0, 0.3],
 	&"subir_nivel": [preload("res://assets/tiny_swords/fx/brilho.png"), Vector2i(192, 192), 11, 14.0, 0.25],
+	# Chamas do pacote (as da árvore queimando): Rastro de chamas, Tornado de fogo.
+	&"fogo": [preload("res://assets/tiny_swords/fx/fogo.png"), Vector2i(64, 64), 8, 12.0, 0.25, Vector2(0, -24)],
 	# Habilidades 3 e 4 (Pixelbolt). O deslocamento põe o "chão" do desenho no ponto do efeito.
 	&"escudo": [preload("res://assets/sprites/tiny/fx/escudo.png"), Vector2i(120, 120), 12, 12.5, 0.25],
 	&"furia": [preload("res://assets/sprites/tiny/fx/furia.png"), Vector2i(128, 128), 19, 15.8, 0.25, Vector2(0, -16)],
