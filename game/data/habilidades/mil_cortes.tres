@@ -1,0 +1,21 @@
+[gd_resource type="Resource" script_class="HabilidadeData" load_steps=3 format=3]
+
+[ext_resource type="Script" path="res://scripts/data/habilidade_data.gd" id="1_script"]
+[ext_resource type="Texture2D" path="res://assets/sprites/tiny/icones/icone_experiencia.png" id="2_icone"]
+
+[resource]
+script = ExtResource("1_script")
+id = &"mil_cortes"
+nome = "Mil cortes"
+descricao = "Suprema. Fica intocável por 1,8 s e golpeia 8 vezes todos os inimigos em volta (1,2 de dano físico cada)."
+icone = ExtResource("2_icone")
+modo = 1
+custo_mana = 25.0
+recarga = 45.0
+elemento = &"fisico"
+dano = 1.2
+alcance = 0.0
+logica = &"MilCortes"
+animacao = &"golpe"
+duracao_animacao = 1.5
+som = &"giro"

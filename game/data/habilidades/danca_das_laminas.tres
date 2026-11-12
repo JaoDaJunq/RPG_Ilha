@@ -1,0 +1,21 @@
+[gd_resource type="Resource" script_class="HabilidadeData" load_steps=3 format=3]
+
+[ext_resource type="Script" path="res://scripts/data/habilidade_data.gd" id="1_script"]
+[ext_resource type="Texture2D" path="res://assets/sprites/tiny/icones/icone_experiencia.png" id="2_icone"]
+
+[resource]
+script = ExtResource("1_script")
+id = &"danca_das_laminas"
+nome = "Dança das lâminas"
+descricao = "Salta entre até 4 inimigos (começando pelo mais perto do mouse, até 6 blocos) e acerta cada um com 1,5 de dano físico. Você termina ao lado do último."
+icone = ExtResource("2_icone")
+modo = 0
+custo_mana = 11.0
+recarga = 10.0
+elemento = &"fisico"
+dano = 1.5
+alcance = 96.0
+logica = &"DancaDasLaminas"
+animacao = &"golpe"
+duracao_animacao = 0.3
+som = &"giro"

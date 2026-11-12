@@ -1,0 +1,21 @@
+[gd_resource type="Resource" script_class="HabilidadeData" load_steps=3 format=3]
+
+[ext_resource type="Script" path="res://scripts/data/habilidade_data.gd" id="1_script"]
+[ext_resource type="Texture2D" path="res://assets/sprites/tiny/icones/icone_experiencia.png" id="2_icone"]
+
+[resource]
+script = ExtResource("1_script")
+id = &"praga"
+nome = "Praga"
+descricao = "Suprema. Todo inimigo envenenado perto (até a borda da tela) toma de uma vez todo o veneno que ainda faltava, e o veneno acaba."
+icone = ExtResource("2_icone")
+modo = 1
+custo_mana = 20.0
+recarga = 40.0
+elemento = &"quimico"
+dano = 0.0
+alcance = 0.0
+logica = &"Praga"
+animacao = &"golpe"
+duracao_animacao = 0.3
+som = &"bola_de_fogo"
