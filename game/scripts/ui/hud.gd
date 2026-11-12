@@ -27,6 +27,15 @@ var _retrato: TextureRect
 var _barra_vida: ProgressBar
 var _barra_mana: ProgressBar
 var _barra_xp: ProgressBar
+## Recurso da classe: Fúria (Guerreiro) ou pontos de combo (Ladino).
+const ICONE_FURIA := preload("res://assets/sprites/tiny/icones/icone_furia.png")
+const ICONE_COMBO := preload("res://assets/sprites/tiny/icones/icone_golpe_furtivo.png")
+const COR_FURIA := Color("d07a3a")
+const COR_COMBO := Color("e0c040")
+var _linha_furia: HBoxContainer
+var _barra_furia: ProgressBar
+var _linha_combo: HBoxContainer
+var _barra_combo: ProgressBar
 var _aviso: Label
 var _aviso_tempo := 0.0
 var _tecla_e: Control
@@ -168,6 +177,7 @@ func _process(delta: float) -> void:
 		return
 	_atualizar_vinheta(delta)
 	_barra_mana.value = jogador.mana / jogador.ficha.mana_maxima() * 100.0
+	_atualizar_recurso()
 	var carga := jogador.carga_atual()
 	for i in _slots.size():
 		_slots[i].sombra.anchor_top = 1.0 - jogador.recarga_restante(i)
@@ -397,6 +407,15 @@ func _montar() -> void:
 	_barra_mana = _barra(Color("4a86d0"), 20, true)
 	_barra_mana.value = 100.0
 	pv.add_child(_linha_com_icone(ICONES_ATRIBUTO[&"espirito"], _barra_mana))
+	# Recurso da classe (Fúria do Guerreiro ou combo do Ladino): só aparece para essas classes.
+	_barra_furia = _barra(COR_FURIA, 16, true)
+	_linha_furia = _linha_com_icone(ICONE_FURIA, _barra_furia)
+	_linha_furia.visible = false
+	pv.add_child(_linha_furia)
+	_barra_combo = _barra(COR_COMBO, 16, true)
+	_linha_combo = _linha_com_icone(ICONE_COMBO, _barra_combo)
+	_linha_combo.visible = false
+	pv.add_child(_linha_combo)
 	_barra_xp = _barra(Color("e7c46e"), 18, true)
 	pv.add_child(_linha_com_icone(ICONE_XP, _barra_xp))
 	pv.add_child(_rotulo("C · ficha", 16, COR_TEXTO_2))
@@ -551,6 +570,27 @@ func _slot(tecla: String, parar_mouse := false) -> Dictionary:
 	num.position = Vector2(7, 2)
 	fundo.add_child(num)
 	return {fundo = fundo, selecionado = selecionado, icone = icone, sombra = sombra, rotulo = num, acao = &""}
+
+
+## Fúria (0 a 100) ou combo (0 a 5) do jogador, na barra embaixo da mana.
+func _atualizar_recurso() -> void:
+	var r := jogador.recursos
+	_linha_furia.visible = r != null and r.usa_furia()
+	_linha_combo.visible = r != null and r.usa_combo()
+	if _linha_furia.visible:
+		_barra_furia.value = r.furia / RecursosClasse.FURIA_MAXIMA * 100.0
+		_barra_furia.tooltip_text = "Fúria %d / %d" % [roundi(r.furia), roundi(RecursosClasse.FURIA_MAXIMA)]
+	if _linha_combo.visible:
+		_barra_combo.value = 100.0 * r.combo / RecursosClasse.COMBO_MAXIMO
+		_barra_combo.tooltip_text = "Pontos de combo %d / %d" % [r.combo, RecursosClasse.COMBO_MAXIMO]
+
+
+## A barra visível do recurso da classe (Fúria ou combo; nula para as outras classes), para
+## os testes. Valor de 0 a 100.
+func barra_recurso() -> ProgressBar:
+	if _linha_furia.visible:
+		return _barra_furia
+	return _barra_combo if _linha_combo.visible else null
 
 
 func _linha_com_icone(icone: Texture2D, barra: ProgressBar) -> HBoxContainer:

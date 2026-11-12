@@ -7,6 +7,9 @@ extends CharacterBody2D
 ##   gelo   → congela (para de andar) por TEMPO_CONGELADO
 ##   físico num congelado → ESTILHAÇA: dano dobrado e descongela
 ##   fogo   → dano dobrado; num congelado, só derrete o gelo
+##
+## Estados (Lentidão, Medo, Provocado, Cego...): ficam no componente EfeitosEstado (filho
+## "EfeitosEstado"); o slime respeita todos ao andar, atacar e tomar dano.
 
 ## Slime no estilo Tiny Swords (L14): quadros 4 (parado) e 5 (achatado) da folha de pedras.
 const TEXTURA := preload("res://assets/sprites/tiny/pedras_slime.png")
@@ -23,7 +26,7 @@ const NIVEL_NOTURNO := 3
 @export var recarga_contato := 1.0
 ## Animação atual (sincronizada).
 @export var animacao: StringName = &"parado"
-## Congelado ou preso (sincronizado para todos verem a cor).
+## Sem poder andar: congelado, preso, atordoado ou derrubado (sincronizado).
 @export var parado := false
 ## Slime da noite: nasce no escuro, é mais forte e derrete quando amanhece.
 @export var noturno := false
@@ -32,19 +35,15 @@ const NIVEL_NOTURNO := 3
 
 var _recarga := 0.0
 var _empurrao := Vector2.ZERO
-var _congelado := 0.0
-var _preso := 0.0
 var _dano_visivel := 0.0  # mostra o quadro de dano por um instante
-# Veneno (Lâmina envenenada do Ladino): uma pancada de `_veneno_dano` por segundo.
-var _veneno_golpes := 0
-var _veneno_espera := 0.0
-var _veneno_dano := 0.0
-var _alvo_atual: Player = null  # quem ele persegue (só o anfitrião sabe)
+## Quem ele persegue (só o anfitrião sabe): um jogador ou, provocado, uma invocação.
+var _alvo_atual: Node2D = null
 
 @onready var visual: AnimatedSprite2D = $Visual
 @onready var vida: HealthComponent = $HealthComponent
 @onready var hurtbox: Hurtbox = $Hurtbox
 @onready var barra: BarraCabeca = $BarraCabeca
+@onready var efeitos: EfeitosEstado = $EfeitosEstado
 
 
 func _ready() -> void:
@@ -76,24 +75,23 @@ func _ready() -> void:
 
 
 func congelado() -> bool:
-	return _congelado > 0.0
+	return efeitos.tem(EfeitosEstado.CONGELADO)
 
 
 func preso() -> bool:
-	return _preso > 0.0
+	return efeitos.tem(EfeitosEstado.PRESO)
 
 
-## Só o anfitrião chama (armadilha).
+## Só o anfitrião chama (armadilha, Raio).
 func prender(segundos: float) -> void:
-	_preso = maxf(_preso, segundos)
+	efeitos.aplicar(EfeitosEstado.PRESO, segundos)
+	parado = not efeitos.pode_mover()
 
 
 ## Só o anfitrião chama (Lâmina envenenada): perde `dano` de vida por segundo durante
-## `segundos` (um golpe novo recomeça a contagem).
-func envenenar(segundos: float, dano: float) -> void:
-	_veneno_golpes = maxi(1, roundi(segundos))
-	_veneno_espera = 1.0
-	_veneno_dano = dano
+## `segundos` (um golpe novo recomeça a contagem). `origem`: quem envenenou.
+func envenenar(segundos: float, dano: float, origem: Node = null) -> void:
+	efeitos.aplicar(EfeitosEstado.VENENO, segundos, dano, origem)
 	envenenado = true
 
 
@@ -102,22 +100,8 @@ func persegue(jogador: Node) -> bool:
 	return _alvo_atual == jogador and _estado in [Estado.PERSEGUINDO, Estado.PREPARANDO, Estado.PULANDO, Estado.RECUANDO]
 
 
-func _processar_veneno(delta: float) -> void:
-	if _veneno_golpes <= 0:
-		return
-	_veneno_espera -= delta
-	if _veneno_espera > 0.0:
-		return
-	_veneno_espera += 1.0
-	_veneno_golpes -= 1
-	if _veneno_golpes <= 0:
-		envenenado = false
-	if vida.tomar_dano(_veneno_dano, &"veneno"):
-		_piscar.rpc(vida.atual, vida.maximo)
-
-
 func _physics_process(delta: float) -> void:
-	visual.modulate = Color(0.6, 0.85, 1.0) if parado else (Color(0.65, 1.0, 0.55) if envenenado else Color.WHITE)
+	visual.modulate = efeitos.cor()
 	if parado:
 		visual.pause()
 	elif not visual.is_playing():
@@ -129,21 +113,27 @@ func _physics_process(delta: float) -> void:
 	if not multiplayer.is_server():
 		return
 	_recarga = maxf(0.0, _recarga - delta)
-	_congelado = maxf(0.0, _congelado - delta)
-	_preso = maxf(0.0, _preso - delta)
-	parado = congelado() or preso()
-	_processar_veneno(delta)
+	parado = not efeitos.pode_mover()
+	envenenado = efeitos.tem(EfeitosEstado.VENENO)
 	if is_queued_for_deletion():
-		return  # o veneno o derrotou
-	var alvo := _jogador_mais_proximo()
+		return  # o veneno ou a queimadura o derrotou
+	var alvo := _escolher_alvo()
 	_alvo_atual = alvo
 	var dir := Vector2.ZERO
 	# A luz protege da noite: o slime noturno foge se estiver dentro dela e não persegue quem
-	# está nela (os do dia não ligam).
+	# está nela (os do dia não ligam). Com Medo, foge de quem o assustou.
 	var luz := World.luz_que_protege(self, global_position) if noturno else Vector2.INF
-	if luz != Vector2.INF and not parado:
+	var medo := efeitos.fugir_de()
+	if parado:
+		if _estado in [Estado.PREPARANDO, Estado.PULANDO]:
+			_mudar(Estado.PASSEANDO)  # congelado ou atordoado no meio do ataque: perde o pulo
+	elif medo != Vector2.INF:
+		dir = (global_position - medo).normalized()
+		_mudar(Estado.PASSEANDO)
+		visual.flip_h = dir.x < 0.0
+	elif luz != Vector2.INF:
 		dir = (global_position - luz).normalized()
-	elif not parado:
+	else:
 		dir = _decidir(alvo, delta)
 	animacao = &"pulo" if dir != Vector2.ZERO or _estado == Estado.PULANDO else &"parado"
 	if _estado == Estado.PREPARANDO:
@@ -151,9 +141,20 @@ func _physics_process(delta: float) -> void:
 	var rapidez := velocidade * (_VEL_PULO if _estado == Estado.PULANDO else 1.0)
 	if _estado == Estado.RECUANDO:
 		rapidez = _DIST_RECUO / _TEMPO_RECUO  # saltinho para trás depois da cabeçada
-	velocity = dir * rapidez + _empurrao
+	if efeitos.impulso() != Vector2.ZERO:
+		_empurrao = Vector2.ZERO  # puxado ou empurrado por habilidade: vale só esse movimento
+	velocity = dir * rapidez * efeitos.mult_velocidade() + _empurrao + efeitos.impulso()
 	_empurrao = _empurrao.move_toward(Vector2.ZERO, 400.0 * delta)
 	move_and_slide()
+
+
+## Quem perseguir: provocado, quem provocou (mesmo uma invocação); senão, o jogador visível
+## mais perto.
+func _escolher_alvo() -> Node2D:
+	var provocador := efeitos.alvo_provocado()
+	if provocador:
+		return provocador
+	return _jogador_mais_proximo()
 
 
 func _jogador_mais_proximo() -> Player:
@@ -161,7 +162,7 @@ func _jogador_mais_proximo() -> Player:
 	var menor := INF
 	for j in get_tree().get_nodes_in_group(&"jogadores"):
 		if (j as Player).escondido():
-			continue  # Bomba de fumaça: perdeu o jogador de vista
+			continue  # Bomba de fumaça ou Invisível: perdeu o jogador de vista
 		var d := global_position.distance_to(j.global_position)
 		if d < menor:
 			menor = d
@@ -173,11 +174,11 @@ func _on_atingido(quantidade: float, tipo: StringName, origem: Node) -> void:
 	var dano := quantidade
 	match tipo:
 		&"gelo":
-			_congelado = TEMPO_CONGELADO
+			efeitos.aplicar(EfeitosEstado.CONGELADO, TEMPO_CONGELADO, 0.0, origem)
 			World.efeito_todos(self, &"congelar", global_position + Vector2(0, -6))
 		&"fogo":
 			if congelado():
-				_congelado = 0.0
+				efeitos.remover(EfeitosEstado.CONGELADO)
 			else:
 				dano *= 2.0
 		&"luz":
@@ -186,14 +187,31 @@ func _on_atingido(quantidade: float, tipo: StringName, origem: Node) -> void:
 		&"fisico":
 			if congelado():
 				dano *= 2.0
-				_congelado = 0.0
+				efeitos.remover(EfeitosEstado.CONGELADO)
 				World.avisar_todos(self, "Estilhaçou! Golpe em inimigo congelado dá dano dobrado.")
-	parado = congelado() or preso()
+	parado = not efeitos.pode_mover()
 	if not vida.tomar_dano(dano, tipo):
 		return
 	if origem is Node2D and not parado:
 		_empurrao = (global_position - origem.global_position).normalized() * 160.0
 	_piscar.rpc(vida.atual, vida.maximo)
+
+
+## O pulo acertou `alvo` (um jogador ou uma invocação): dá o dano, se não errar (Cego).
+## Devolve se machucou.
+func _cabecada(alvo: Node2D) -> bool:
+	if efeitos.erra_ataque():
+		World.efeito_todos(self, &"poeira", alvo.global_position)
+		return false
+	var v := alvo.get_node_or_null("HealthComponent") as HealthComponent
+	if v == null or not v.tomar_dano(Passivas.ataque_inimigo(self, alvo, dano_contato), &"fisico"):
+		return false
+	if alvo is Player:
+		(alvo as Player).avisar("O slime pulou em você! Esquive (Shift) quando ele achatar.")
+		(alvo as Player).reagir_ao_golpe(global_position)
+	return true
+
+
 
 
 ## Todos veem o golpe; a vida vai junto para a barra em cima da cabeça aparecer nos clientes.
@@ -251,14 +269,18 @@ var _acertou_pulo := false
 var _dir_recuo := Vector2.ZERO
 
 
-func _decidir(alvo: Player, delta: float) -> Vector2:
+func _decidir(alvo: Node2D, delta: float) -> Vector2:
 	if _casa == Vector2.INF:
 		_casa = global_position
 	_tempo_estado += delta
 	var para_alvo := alvo.global_position - global_position if alvo else Vector2.INF
-	# Passos de gato (Ladino): o slime só nota o jogador mais de perto.
-	var ve_alvo := alvo != null and para_alvo.length() < raio_visao * alvo.fator_visao() \
+	# Passos de gato (Ladino): o slime só nota o jogador mais de perto. Provocado, sempre vê
+	# quem provocou.
+	var fator: float = (alvo as Player).fator_visao() if alvo is Player else 1.0
+	var ve_alvo: bool = alvo != null and para_alvo.length() < raio_visao * fator \
 			and not (noturno and World.luz_que_protege(self, alvo.global_position) != Vector2.INF)
+	if alvo != null and alvo == efeitos.alvo_provocado():
+		ve_alvo = true
 	match _estado:
 		Estado.PREPARANDO:
 			if _tempo_estado >= _TEMPO_PREPARO:
@@ -269,9 +291,7 @@ func _decidir(alvo: Player, delta: float) -> Vector2:
 			if not _acertou_pulo and alvo and para_alvo.length() < 12.0:
 				_acertou_pulo = true
 				# Cabeçada: o dano vem uma vez; se pegou, o slime quica para trás.
-				if alvo.vida.tomar_dano(dano_contato * World.mult_dificuldade(self, &"dano_inimigo"), &"fisico"):
-					alvo.avisar("O slime pulou em você! Esquive (Shift) quando ele achatar.")
-					alvo.reagir_ao_golpe(global_position)
+				if _cabecada(alvo):
 					_dir_recuo = -para_alvo.normalized() if para_alvo.length() > 0.1 else -_dir_pulo
 					_mudar(Estado.RECUANDO)
 					return _dir_recuo
@@ -288,7 +308,7 @@ func _decidir(alvo: Player, delta: float) -> Vector2:
 	if ve_alvo:
 		_estado = Estado.PERSEGUINDO
 		visual.flip_h = para_alvo.x < 0.0
-		if para_alvo.length() < _DIST_ATAQUE and _recarga <= 0.0:
+		if para_alvo.length() < _DIST_ATAQUE and _recarga <= 0.0 and efeitos.pode_atacar():
 			_dir_pulo = para_alvo.normalized()
 			_mudar(Estado.PREPARANDO)
 			return Vector2.ZERO

@@ -31,10 +31,30 @@ extends Area2D
 
 ## O projétil acabou: onde parou e se acertou algo (a bomba explode aqui). Só no anfitrião.
 signal terminou(pos: Vector2, acertou: bool)
+## Acertou `alvo` (a cada acerto; o perfurante e o que quica avisam várias vezes). Anfitrião.
+signal acertou(alvo: Node, pos: Vector2)
 
 var lancador: Node = null
+
+# --- Variações (o anfitrião liga depois de criar, antes ou logo depois de pôr no mundo) ---
+## Atravessa os inimigos (acerta cada um uma vez) em vez de parar no primeiro.
+var perfura := false
+## Depois de acertar, salta para o inimigo mais perto (até `raio_quique` px) mais N vezes.
+var quiques := 0
+var raio_quique := 64.0
+## Bumerangue: vai até o fim (`duracao`), volta para o lançador e acerta de novo na volta.
+var volta := false
+## Puxa o atingido até `puxa` px na direção do lançador (Corrente do Guerreiro).
+var puxa := 0.0
+## Estado aplicado em quem for acertado (vazio = nenhum). Ver EfeitosEstado.
+var estado: StringName = &""
+var estado_segundos := 1.0
+var estado_forca := 0.0
+
 var _vida := 0.0
 var _acertou := false
+var _atingidos: Array[Node] = []
+var _voltando := false
 
 @onready var visual: AnimatedSprite2D = $Visual
 
@@ -66,7 +86,29 @@ func _physics_process(delta: float) -> void:
 	if congela_agua:
 		World.congelar_agua_em(self, global_position + Vector2(0, 10))
 	_vida += delta
+	if volta:
+		_voar_bumerangue()
+		return
 	if _vida >= duracao:
+		terminou.emit(global_position, false)
+		queue_free()
+
+
+## Bumerangue: no fim da ida, vira para o lançador; some ao chegar nele (ou depois de 3x a
+## duração, se ele sumiu).
+func _voar_bumerangue() -> void:
+	var dono := lancador as Node2D if is_instance_valid(lancador) else null
+	if not _voltando and _vida >= duracao:
+		_voltando = true
+		_atingidos.clear()  # acerta de novo na volta
+	if _voltando and dono:
+		var para := dono.global_position + Vector2(0, -10) - global_position
+		direcao = para.normalized()
+		if para.length() < 10.0:
+			terminou.emit(global_position, not _atingidos.is_empty())
+			queue_free()
+			return
+	if _vida >= duracao * 3.0 or (_voltando and dono == null):
 		terminou.emit(global_position, false)
 		queue_free()
 
@@ -79,8 +121,24 @@ func _on_area_entered(area: Area2D) -> void:
 		return  # sem fogo amigo; flechas e magias passam por cima das construções
 	if dono is ResourceNode and not (dono as ResourceNode).para_projetil(elemento):
 		return  # passam por cima de árvores, tocos e pedras (só o fogo para numa árvore e a acende)
-	_acertou = true
+	if dono in _atingidos:
+		return
+	_atingidos.append(dono)
 	(area as Hurtbox).receber(dano, elemento, lancador)
+	_no_alvo(dono)
+	acertou.emit(dono, global_position)
+	if dono is ResourceNode:
+		pass  # árvore que segura o projétil: ele para (abaixo)
+	elif perfura or volta:
+		return  # segue voando
+	elif quiques > 0:
+		var proximo := Golpes.mais_perto(self, global_position, raio_quique, _atingidos)
+		if proximo:
+			quiques -= 1
+			_vida = 0.0
+			_virar.rpc((proximo.global_position + Vector2(0, -6) - global_position).normalized())
+			return
+	_acertou = true
 	set_deferred(&"monitoring", false)
 	terminou.emit(global_position, true)
 	_impacto.rpc()
@@ -88,6 +146,24 @@ func _on_area_entered(area: Area2D) -> void:
 		visual.animation_finished.connect(queue_free)
 	else:
 		queue_free()
+
+
+## Estado e puxão no atingido (anfitrião).
+func _no_alvo(alvo: Node) -> void:
+	if not is_instance_valid(alvo):
+		return
+	if estado != &"":
+		EfeitosEstado.aplicar_em(alvo, estado, estado_segundos, estado_forca, lancador)
+	if puxa > 0.0 and is_instance_valid(lancador) and alvo is Node2D:
+		Golpes.puxar(alvo as Node2D, (lancador as Node2D).global_position, puxa)
+
+
+## Muda a direção (quique) em todos, para a arte apontar certo.
+@rpc("authority", "call_local", "reliable")
+func _virar(nova: Vector2) -> void:
+	direcao = nova
+	if girar == 0.0:
+		visual.rotation = direcao.angle() - angulo_da_arte
 
 
 @rpc("authority", "call_local", "reliable")

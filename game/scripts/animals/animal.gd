@@ -28,13 +28,9 @@ const NIVEIS := {&"galinha": 1, &"coelho": 1, &"ovelha": 1, &"javali": 2}
 @export var especie: StringName = &"galinha"
 @export var animacao: StringName = &"parado"
 @export var olhando_esquerda := false
-## Envenenado (sincronizado para todos verem a cor verde).
+## Envenenado (sincronizado; o Contágio olha).
 @export var envenenado := false
 
-# Veneno (Lâmina envenenada do Ladino): uma pancada de `_veneno_dano` por segundo.
-var _veneno_golpes := 0
-var _veneno_espera := 0.0
-var _veneno_dano := 0.0
 var _casa := Vector2.INF
 var _destino := Vector2.INF
 var _tempo := 0.0
@@ -48,6 +44,8 @@ var _dir_recuo := Vector2.ZERO
 @onready var vida: HealthComponent = $HealthComponent
 @onready var hurtbox: Hurtbox = $Hurtbox
 @onready var barra: BarraCabeca = $BarraCabeca
+## Estados (Lentidão, Medo, Provocado...): o animal respeita todos ao andar e atacar.
+@onready var efeitos: EfeitosEstado = $EfeitosEstado
 
 
 func _ready() -> void:
@@ -80,12 +78,23 @@ func _ready() -> void:
 
 
 ## Só o anfitrião chama (Lâmina envenenada): perde `dano` de vida por segundo durante
-## `segundos` (um golpe novo recomeça a contagem).
-func envenenar(segundos: float, dano: float) -> void:
-	_veneno_golpes = maxi(1, roundi(segundos))
-	_veneno_espera = 1.0
-	_veneno_dano = dano
+## `segundos` (um golpe novo recomeça a contagem). `origem`: quem envenenou.
+func envenenar(segundos: float, dano: float, origem: Node = null) -> void:
+	efeitos.aplicar(EfeitosEstado.VENENO, segundos, dano, origem)
 	envenenado = true
+
+
+## Só o anfitrião chama (armadilha, Raio): não anda por `segundos`.
+func prender(segundos: float) -> void:
+	efeitos.aplicar(EfeitosEstado.PRESO, segundos)
+
+
+func congelado() -> bool:
+	return efeitos.tem(EfeitosEstado.CONGELADO)
+
+
+func preso() -> bool:
+	return efeitos.tem(EfeitosEstado.PRESO)
 
 
 ## Está atrás deste jogador? (Golpe furtivo: quem não persegue leva o dobro.) Só o javali
@@ -94,23 +103,9 @@ func persegue(jogador: Node) -> bool:
 	return ESPECIES[especie].get("bravo", false) and _assustado > 0.0 and _de_quem == jogador
 
 
-func _processar_veneno(delta: float) -> void:
-	if _veneno_golpes <= 0:
-		return
-	_veneno_espera -= delta
-	if _veneno_espera > 0.0:
-		return
-	_veneno_espera += 1.0
-	_veneno_golpes -= 1
-	if _veneno_golpes <= 0:
-		envenenado = false
-	if vida.tomar_dano(_veneno_dano, &"veneno"):
-		_piscar.rpc(vida.atual)
-
-
 func _physics_process(delta: float) -> void:
 	visual.flip_h = olhando_esquerda
-	visual.modulate = Color(0.65, 1.0, 0.55) if envenenado else Color.WHITE
+	visual.modulate = efeitos.cor()
 	if visual.animation != animacao:
 		visual.play(animacao)
 	if not multiplayer.is_server():
@@ -120,17 +115,26 @@ func _physics_process(delta: float) -> void:
 	_tempo += delta
 	_assustado = maxf(0.0, _assustado - delta)
 	_recarga = maxf(0.0, _recarga - delta)
-	_processar_veneno(delta)
+	envenenado = efeitos.tem(EfeitosEstado.VENENO)
 	if is_queued_for_deletion():
-		return  # o veneno o derrotou
+		return  # o veneno ou a queimadura o derrotou
 	var dados: Dictionary = ESPECIES[especie]
 	var dir := Vector2.ZERO
 	var rapidez: float = dados.vel
 	var recuando := false
+	# Provocado: vai atrás de quem provocou (o javali investe; os outros só se aproximam).
+	var provocador := efeitos.alvo_provocado()
+	if provocador:
+		_de_quem = provocador
+		_assustado = maxf(_assustado, 0.5)
 	# Bomba de fumaça: quem some de vista deixa de ser perseguido (ou de assustar o bicho).
 	if _assustado > 0.0 and is_instance_valid(_de_quem) and _de_quem is Player and (_de_quem as Player).escondido():
 		_assustado = 0.0
-	if _assustado > 0.0 and is_instance_valid(_de_quem):
+	var medo := efeitos.fugir_de()
+	if medo != Vector2.INF:
+		dir = (global_position - medo).normalized()  # Medo: foge
+		rapidez *= 2.0
+	elif _assustado > 0.0 and is_instance_valid(_de_quem):
 		var para := _de_quem.global_position - global_position
 		if dados.get("bravo", false):
 			# Cabeçada: investe, acerta uma vez, recua um pouco, para ~1 s e investe de novo.
@@ -144,13 +148,13 @@ func _physics_process(delta: float) -> void:
 			else:
 				dir = para.normalized()  # o javali investe
 				rapidez *= 1.6
-				if para.length() < 14.0 and _de_quem is Player:
+				if para.length() < 14.0 and efeitos.pode_atacar():
 					_recarga = TEMPO_RECUO + PAUSA_CABECADA
-					var alvo := _de_quem as Player
-					if alvo.vida.tomar_dano(DANO_JAVALI * World.mult_dificuldade(self, &"dano_inimigo"), &"fisico"):
-						alvo.reagir_ao_golpe(global_position)
+					if _cabecada(_de_quem):
 						_dir_recuo = -para.normalized() if para.length() > 0.1 else -dir
 						_recuo = TEMPO_RECUO
+		elif provocador:
+			dir = para.normalized() if para.length() > 12.0 else Vector2.ZERO
 		else:
 			dir = -para.normalized()  # os outros fogem
 			rapidez *= 2.0
@@ -164,11 +168,27 @@ func _physics_process(delta: float) -> void:
 			_destino = Vector2.INF
 		else:
 			dir = (_destino - global_position).normalized() * 0.6
+	rapidez *= efeitos.mult_velocidade()  # Lentidão; 0 se congelado, preso, atordoado...
+	if rapidez <= 0.0:
+		dir = Vector2.ZERO
 	if dir.x != 0.0 and not recuando:  # recuando, continua de frente para quem acertou
 		olhando_esquerda = dir.x < 0.0
 	animacao = &"andar" if dir != Vector2.ZERO else &"parado"
-	velocity = dir * rapidez
+	velocity = dir * rapidez + efeitos.impulso()
 	move_and_slide()
+
+
+## A cabeçada do javali em `alvo` (jogador ou invocação). Cego pode errar. Devolve se machucou.
+func _cabecada(alvo: Node2D) -> bool:
+	if efeitos.erra_ataque():
+		World.efeito_todos(self, &"poeira", alvo.global_position)
+		return false
+	var v := alvo.get_node_or_null("HealthComponent") as HealthComponent
+	if v == null or not v.tomar_dano(Passivas.ataque_inimigo(self, alvo, DANO_JAVALI), &"fisico"):
+		return false
+	if alvo is Player:
+		(alvo as Player).reagir_ao_golpe(global_position)
+	return true
 
 
 func _on_atingido(quantidade: float, tipo: StringName, origem: Node) -> void:

@@ -366,29 +366,40 @@ static func inimigo_na_mira(quem: Player, mira: Vector2, alcance: float, raio_mi
 	return melhor
 
 
+## Arquivos de lógicas de cada classe (um por classe, para cada um mexer só no seu).
+## Toda `class Nome extends HabilidadeLogica` escrita num deles (ou aqui) já fica registrada:
+## o campo `logica` do .tres é o nome da classe interna.
+const POR_CLASSE: Array[Script] = [
+	preload("res://scripts/abilities/logicas_guerreiro.gd"),
+	preload("res://scripts/abilities/logicas_mago.gd"),
+	preload("res://scripts/abilities/logicas_arqueiro.gd"),
+	preload("res://scripts/abilities/logicas_ladino.gd"),
+	preload("res://scripts/abilities/logicas_clerigo.gd"),
+]
+
+static var _registro: Dictionary = {}  # nome da lógica → classe interna (GDScript)
+
+
+## A lógica pelo nome (procura aqui e nos arquivos de cada classe).
 static func criar(nome: StringName) -> HabilidadeLogica:
-	match nome:
-		&"GolpeFurtivo": return GolpeFurtivo.new()
-		&"LaminaEnvenenada": return LaminaEnvenenada.new()
-		&"BombaFumaca": return BombaFumaca.new()
-		&"LequeAdagas": return LequeAdagas.new()
-		&"Cura": return Cura.new()
-		&"EscudoSagrado": return EscudoSagrado.new()
-		&"LuzSagrada": return LuzSagrada.new()
-		&"Bencao": return Bencao.new()
-		&"Investida": return Investida.new()
-		&"Giro": return Giro.new()
-		&"BolaDeFogo": return BolaDeFogo.new()
-		&"LancaGelo": return LancaGelo.new()
-		&"TiroCarregado": return TiroCarregado.new()
-		&"Armadilha": return Armadilha.new()
-		&"Bloqueio": return Bloqueio.new()
-		&"Furia": return Furia.new()
-		&"Raio": return Raio.new()
-		&"NovaGelo": return NovaGelo.new()
-		&"ChuvaFlechas": return ChuvaFlechas.new()
-		&"Bomba": return Bomba.new()
-		&"Piscar": return Piscar.new()
-		&"Cambalhota": return Cambalhota.new()
+	var classe := classe_da_logica(nome)
+	if classe:
+		return classe.new()
 	push_error("Lógica de habilidade desconhecida: %s" % nome)
 	return HabilidadeLogica.new()
+
+
+## A classe interna da lógica `nome`, ou nula. O mesmo nome em dois arquivos dá erro.
+static func classe_da_logica(nome: StringName) -> GDScript:
+	if _registro.is_empty():
+		var scripts: Array[Script] = [load("res://scripts/abilities/logicas.gd")]
+		scripts.append_array(POR_CLASSE)
+		for s in scripts:
+			var mapa := s.get_script_constant_map()
+			for k in mapa:
+				var c: Variant = mapa[k]
+				if c is GDScript and (c as GDScript).can_instantiate() and (c as GDScript).new() is HabilidadeLogica:
+					if _registro.has(StringName(k)):
+						push_error("Lógica com o mesmo nome em dois arquivos: %s" % k)
+					_registro[StringName(k)] = c
+	return _registro.get(nome)

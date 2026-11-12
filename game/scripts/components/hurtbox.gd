@@ -22,8 +22,15 @@ func receber(quantidade: float, tipo: StringName, origem: Node) -> void:
 	if jogador:
 		quantidade = Passivas.dano_causado(jogador, quantidade, tipo, dono)
 	quantidade *= Passivas.marca_no_alvo(dono)
+	var estados := EfeitosEstado.de(dono)
+	if estados:
+		quantidade *= estados.mult_dano_recebido()  # Marcado
 	var vida: HealthComponent = dono.get_node_or_null("HealthComponent") as HealthComponent if dono else null
 	var vivo_antes := vida != null and vida.esta_vivo()
 	atingido.emit(quantidade, tipo, origem)
+	# Só inimigos e animais contam como "acerto" (Fúria, combo, companheiro); árvore não.
+	if is_instance_valid(jogador) and is_instance_valid(dono) and (dono.is_in_group(&"inimigos") or dono.is_in_group(&"animais")):
+		jogador.ultimo_alvo = dono as Node2D
+		Passivas.acertou(jogador, dono, quantidade, tipo)
 	if vivo_antes and is_instance_valid(vida) and not vida.esta_vivo() and is_instance_valid(jogador):
 		Passivas.derrotou(jogador, dono)

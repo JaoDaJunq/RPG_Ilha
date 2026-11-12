@@ -1,0 +1,54 @@
+[gd_scene load_steps=5 format=3]
+
+[ext_resource type="Script" path="res://scripts/abilities/companheiro.gd" id="1_invocacao"]
+[ext_resource type="Script" path="res://scripts/components/health_component.gd" id="2_vida"]
+
+[sub_resource type="CircleShape2D" id="Shape_corpo"]
+radius = 5.0
+
+[sub_resource type="SceneReplicationConfig" id="Replicacao"]
+properties/0/path = NodePath(".:position")
+properties/0/spawn = true
+properties/0/replication_mode = 1
+properties/1/path = NodePath(".:textura_caminho")
+properties/1/spawn = true
+properties/1/replication_mode = 0
+properties/2/path = NodePath(".:quadro")
+properties/2/spawn = true
+properties/2/replication_mode = 0
+properties/3/path = NodePath(".:quadro_inicial")
+properties/3/spawn = true
+properties/3/replication_mode = 0
+properties/4/path = NodePath(".:quadros")
+properties/4/spawn = true
+properties/4/replication_mode = 0
+properties/5/path = NodePath(".:fps")
+properties/5/spawn = true
+properties/5/replication_mode = 0
+properties/6/path = NodePath(".:escala")
+properties/6/spawn = true
+properties/6/replication_mode = 0
+properties/7/path = NodePath(".:deslocamento")
+properties/7/spawn = true
+properties/7/replication_mode = 0
+properties/8/path = NodePath(".:olhando_esquerda")
+properties/8/spawn = true
+properties/8/replication_mode = 2
+
+[node name="Companheiro" type="CharacterBody2D"]
+motion_mode = 1
+script = ExtResource("1_invocacao")
+
+[node name="Visual" type="AnimatedSprite2D" parent="."]
+
+[node name="Colisao" type="CollisionShape2D" parent="."]
+position = Vector2(0, -3)
+shape = SubResource("Shape_corpo")
+
+[node name="HealthComponent" type="Node" parent="."]
+script = ExtResource("2_vida")
+maximo = 30.0
+invulneravel_por = 0.3
+
+[node name="Sync" type="MultiplayerSynchronizer" parent="."]
+replication_config = SubResource("Replicacao")
