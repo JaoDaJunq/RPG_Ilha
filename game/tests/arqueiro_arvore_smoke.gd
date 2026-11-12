@@ -123,10 +123,15 @@ func _atirador() -> void:
 	await _limpar()
 
 	# Rajada: 3 flechas no mesmo alvo.
+	# Conta os acertos na Hurtbox: com a máquina carregada (a bateria inteira), um quadro
+	# lento pode cair dentro da proteção de 0,15 s do slime, que é medida em tempo de tela.
 	s = _slime(o + Vector2(50, 0))
+	var acertos: Array[float] = []
+	s.hurtbox.atingido.connect(func(q: float, _t: StringName, _o: Node) -> void: acertos.append(q))
 	await _usar(&"rajada", s.global_position + Vector2(0, -6))
 	await esperar(1.0)
-	checar(absf(_tirou(s) - 3.0 * _dano(&"rajada")) < 0.01, "Rajada: 3 flechas, %.2f de dano (3 x %.2f)" % [_tirou(s), _dano(&"rajada")])
+	checar(acertos.size() == 3 and acertos.all(func(q: float) -> bool: return absf(q - _dano(&"rajada")) < 0.01) and _tirou(s) >= 2.0 * _dano(&"rajada") - 0.01,
+		"Rajada: 3 flechas acertaram (%d acertos de %.2f; o slime perdeu %.2f)" % [acertos.size(), _dano(&"rajada"), _tirou(s)])
 	await _limpar()
 
 	# Flecha do horizonte: atravessa e vai longe (perto e a 300 px).
