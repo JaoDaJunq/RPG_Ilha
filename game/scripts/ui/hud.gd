@@ -34,12 +34,7 @@ var _tecla_progresso: ProgressBar
 var _slots: Array[Dictionary] = []  # {fundo, selecionado, icone, sombra}
 var _slot_esquiva: Dictionary
 var _carga: ProgressBar
-var _ficha: PanelContainer
-var _ficha_texto: Label
-var _ficha_rodape: Label
-var _ficha_atributos: Dictionary[StringName, Label] = {}
-var _ficha_botoes: Dictionary[StringName, Button] = {}
-var _ficha_botao_arvore: Button
+var _ficha: FichaTela
 var _nomes: Dictionary[Node, Label] = {}
 var _dica: PanelContainer  # janelinha da habilidade (botão direito)
 var _dica_slot: Control  # o botão em que ela está aberta
@@ -75,6 +70,10 @@ func configurar(p: Player) -> void:
 	jogador.inventario.mudou.connect(_atualizar_itens)
 	_mochila.configurar(p)
 	_arvore.configurar(p, _mochila.aberta)
+	_ficha.configurar(p, func() -> void:
+		_ficha.visible = false
+		_mochila.fechar()
+		_arvore.abrir())
 	jogador.vida.mudou.connect(func(atual: float, maximo: float) -> void: _barra_vida.value = atual / maximo * 100.0)
 	jogador.progresso_mudou.connect(_atualizar_progresso)
 	jogador.progresso_mudou.connect(_atualizar_slots)  # a árvore muda o que vai em Q R T E
@@ -150,7 +149,7 @@ func _unhandled_input(event: InputEvent) -> void:
 		_mochila.fechar()
 		get_viewport().set_input_as_handled()
 	elif event.is_action_pressed(&"ficha") and jogador:
-		_atualizar_progresso()
+		_ficha.atualizar()
 		_ficha.visible = not _ficha.visible
 
 
@@ -299,24 +298,9 @@ func _atualizar_itens() -> void:
 		_itens_barra[k].fundo.tooltip_text = dados.nome if dados else ""
 
 
-func _texto_ficha() -> String:
-	var f := jogador.ficha
-	return "%s\nNível %d · %s\nRamos: %s e %s" % [
-		f.titulo().to_upper(), jogador.nivel, f.classe.familia, f.classe.ramo_a, f.classe.ramo_b]
-
-
-func _rodape_ficha() -> String:
-	var f := jogador.ficha
-	return "\n".join([
-		"Pontos para distribuir: %d" % jogador.pontos_atributo,
-		"Pontos de habilidade: %d" % jogador.pontos_habilidade,
-		"Vida %d · Mana %d · Velocidade %d" % [f.vida_maxima(), f.mana_maxima(), f.velocidade()],
-		"Dano físico x%.1f · mágico x%.1f" % [f.multiplicador_fisico(), f.multiplicador_magico()],
-		"%s: %s" % [f.raca.habilidade_nome, f.raca.habilidade_descricao],
-		"",
-		"%s andar · clique abre, segurar coleta e golpeia · %s dash" % [_teclas_de_andar(), Configuracoes.tecla_de(&"esquivar")],
-		"%s habilidades · 1-9 itens · %s mochila · %s ficha · %s árvore · %s dia/noite" % [_teclas_de_habilidades(), Configuracoes.tecla_de(&"mochila"), Configuracoes.tecla_de(&"ficha"), Configuracoes.tecla_de(&"arvore"), Configuracoes.tecla_de(&"alternar_noite")],
-	])
+## A ficha do personagem (C).
+func ficha() -> FichaTela:
+	return _ficha
 
 
 func _atualizar_progresso() -> void:
@@ -326,19 +310,6 @@ func _atualizar_progresso() -> void:
 	_titulo_personagem.text = "Nv %d · %s" % [jogador.nivel, f.titulo()]
 	_barra_xp.value = 100.0 * jogador.xp / maxf(jogador.xp_para_subir(), 1.0)
 	_barra_xp.tooltip_text = "Experiência %d / %d" % [jogador.xp, jogador.xp_para_subir()]
-	_ficha_texto.text = _texto_ficha()
-	_ficha_rodape.text = _rodape_ficha()
-	_ficha_botao_arvore.text = "Árvore de habilidades (%s)" % Configuracoes.tecla_de(&"arvore")
-	for a in Ficha.ATRIBUTOS:
-		var bonus: int = f.raca.bonus.get(a, 0)
-		var pontos: int = jogador.distribuidos.get(a, 0)
-		var extras: Array[String] = []
-		if bonus != 0:
-			extras.append("raça %+d" % bonus)
-		if pontos > 0:
-			extras.append("+%d" % pontos)
-		_ficha_atributos[a].text = "%s %d %s" % [Ficha.NOMES[a], f.valor(a), ("(" + ", ".join(extras) + ")") if not extras.is_empty() else ""]
-		_ficha_botoes[a].visible = jogador.pontos_atributo > 0
 
 
 # --- Vinheta vermelha ---------------------------------------------------------------
@@ -492,44 +463,12 @@ func _montar() -> void:
 	_carga.visible = false
 	_raiz.add_child(_carga)
 
-	# Ficha (C).
-	_ficha = _painel()
-	_ficha.position = Vector2(12, 168)
+	# Ficha (C): ver FichaTela.
+	# Fica por cima do painel do personagem (ela tem o retrato, o nível e a experiência).
+	_ficha = FichaTela.new()
+	_ficha.position = Vector2(12, 10)
 	_ficha.visible = false
-	_ficha.mouse_filter = Control.MOUSE_FILTER_STOP  # os botões "+" recebem o clique
-	var fv := VBoxContainer.new()
-	fv.add_theme_constant_override(&"separation", 4)
-	_ficha.add_child(fv)
-	_ficha_texto = _rotulo("", 16)
-	fv.add_child(_ficha_texto)
-	for a in Ficha.ATRIBUTOS:
-		var la := HBoxContainer.new()
-		la.add_theme_constant_override(&"separation", 8)
-		fv.add_child(la)
-		la.add_child(_icone(ICONES_ATRIBUTO[a], Vector2(40, 36)))
-		var r := _rotulo("", 16)
-		r.custom_minimum_size = Vector2(230, 0)
-		la.add_child(r)
-		_ficha_atributos[a] = r
-		var botao := Button.new()
-		botao.text = "+"
-		botao.custom_minimum_size = Vector2(28, 26)
-		for estado in [&"normal", &"hover", &"pressed"]:
-			botao.add_theme_stylebox_override(estado, _caixinha(estado != &"normal"))
-		botao.tooltip_text = "Colocar 1 ponto em " + Ficha.NOMES[a]
-		botao.pressed.connect(func() -> void: jogador.pedir_atributo(a))
-		la.add_child(botao)
-		_ficha_botoes[a] = botao
-	_ficha_rodape = _rotulo("", 16, COR_TEXTO_2)
-	_ficha_rodape.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-	_ficha_rodape.custom_minimum_size = Vector2(330, 0)
-	fv.add_child(_ficha_rodape)
-	_ficha_botao_arvore = Button.new()
-	_ficha_botao_arvore.pressed.connect(func() -> void:
-		_ficha.visible = false
-		_mochila.fechar()
-		_arvore.abrir())
-	fv.add_child(_ficha_botao_arvore)
+	_raiz.add_child(_ficha)
 
 	# Teclinha E (segue o objeto quando dá para coletar).
 	_tecla_e = VBoxContainer.new()
@@ -568,22 +507,7 @@ func _atualizar_teclas() -> void:
 	for s in _itens_barra + _slots + [_slot_esquiva]:
 		if s.has("acao") and s.acao != &"":
 			s.rotulo.text = Configuracoes.tecla_de(s.acao)
-	if jogador:
-		_ficha_rodape.text = _rodape_ficha()
 
-
-func _teclas_de_andar() -> String:
-	var nomes: Array[String] = []
-	for a in [&"mover_cima", &"mover_esquerda", &"mover_baixo", &"mover_direita"]:
-		nomes.append(Configuracoes.tecla_de(a))
-	return "".join(nomes)
-
-
-func _teclas_de_habilidades() -> String:
-	var nomes: Array[String] = []
-	for i in 4:
-		nomes.append(Configuracoes.tecla_de(StringName("habilidade_%d" % (i + 1))))
-	return " ".join(nomes)
 
 ## Um espaço da barra (quadradinho azul do pacote): fundo, ícone, sombra de recarga e
 ## tecla. O selecionado (carregando) ganha uma borda dourada.
@@ -650,35 +574,15 @@ func _icone(textura: Texture2D, tamanho: Vector2) -> TextureRect:
 	return t
 
 
-## Botãozinho "+" da ficha: quadradinho com borda dourada.
-func _caixinha(destaque: bool) -> StyleBoxFlat:
-	var s := StyleBoxFlat.new()
-	s.bg_color = Color("6b4a2a") if destaque else Color("4a3220")
-	s.border_color = Color("f0c860") if destaque else Color("b48a3a")
-	s.set_border_width_all(2)
-	return s
-
-
 ## Barra de valor. Com `moldura`, usa a barra de vida do pacote: a moldura é desenhada
 ## inteira e a cor preenche só o miolo escuro dela.
 func _barra(cor: Color, altura: int, moldura := false) -> ProgressBar:
+	if moldura:
+		return Tema.barra_com_moldura(cor, altura)
 	var b := ProgressBar.new()
 	b.custom_minimum_size = Vector2(0, altura)
 	b.show_percentage = false
 	b.mouse_filter = Control.MOUSE_FILTER_PASS
-	if moldura:
-		var vazio := StyleBoxEmpty.new()
-		b.add_theme_stylebox_override(&"background", vazio)
-		b.add_theme_stylebox_override(&"fill", vazio)
-		var caixa := Tema.moldura_barra()
-		b.draw.connect(func() -> void:
-			b.draw_style_box(caixa, Rect2(Vector2.ZERO, b.size))
-			var cima := roundf(b.size.y * 0.24)
-			var baixo := roundf(b.size.y * 0.32)
-			var miolo := Rect2(7, cima, (b.size.x - 14) * b.ratio, b.size.y - cima - baixo)
-			if miolo.size.x > 0.0:
-				b.draw_rect(miolo, cor))
-		return b
 	var fundo := StyleBoxFlat.new()
 	fundo.bg_color = Color("2a2a22")
 	fundo.border_color = Color("0e100d")

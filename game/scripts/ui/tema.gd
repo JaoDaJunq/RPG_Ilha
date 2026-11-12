@@ -120,6 +120,27 @@ static func moldura_barra() -> StyleBoxTexture:
 	return s
 
 
+## Barra de valor com a moldura da barra de vida do pacote: a moldura é desenhada inteira e
+## a cor preenche só o miolo escuro dela.
+static func barra_com_moldura(cor: Color, altura: int) -> ProgressBar:
+	var b := ProgressBar.new()
+	b.custom_minimum_size = Vector2(0, altura)
+	b.show_percentage = false
+	b.mouse_filter = Control.MOUSE_FILTER_PASS
+	var vazio := StyleBoxEmpty.new()
+	b.add_theme_stylebox_override(&"background", vazio)
+	b.add_theme_stylebox_override(&"fill", vazio)
+	var caixa := moldura_barra()
+	b.draw.connect(func() -> void:
+		b.draw_style_box(caixa, Rect2(Vector2.ZERO, b.size))
+		var cima := roundf(b.size.y * 0.24)
+		var baixo := roundf(b.size.y * 0.32)
+		var miolo := Rect2(7, cima, (b.size.x - 14) * b.ratio, b.size.y - cima - baixo)
+		if miolo.size.x > 0.0:
+			b.draw_rect(miolo, cor))
+	return b
+
+
 ## Peça de 9 partes do pacote (cantos e meios de 64 px em 0, 128 e 256), juntada e
 ## reduzida à metade.
 static func fatias(nome: String) -> Texture2D:
