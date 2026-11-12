@@ -19,6 +19,7 @@ func _ready() -> void:
 			classe = StringName(a.get_slice("=", 1))
 	var w := await criar_mundo(0, true, classe, &"humano")
 	var p := w.jogador
+	liberar_habilidades(p)  # as habilidades 3 e 4 vêm da árvore
 	for passo in ROTEIRO[classe]:
 		var alvo := p.global_position + Vector2(44, 4)
 		var slime: Slime = colocar(w, SLIME, alvo)

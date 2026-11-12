@@ -256,7 +256,8 @@ func _decidir(alvo: Player, delta: float) -> Vector2:
 		_casa = global_position
 	_tempo_estado += delta
 	var para_alvo := alvo.global_position - global_position if alvo else Vector2.INF
-	var ve_alvo := alvo != null and para_alvo.length() < raio_visao \
+	# Passos de gato (Ladino): o slime só nota o jogador mais de perto.
+	var ve_alvo := alvo != null and para_alvo.length() < raio_visao * alvo.fator_visao() \
 			and not (noturno and World.luz_que_protege(self, alvo.global_position) != Vector2.INF)
 	match _estado:
 		Estado.PREPARANDO:

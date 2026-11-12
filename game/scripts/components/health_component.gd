@@ -11,9 +11,15 @@ signal morreu
 @export var invulneravel_por := 0.0
 
 var atual: float
+## Escudo temporário (Fé do Clérigo): some antes da vida de verdade.
+var escudo := 0.0
+## Quem é dono desta vida pode ajustar o dano recebido (passivas da árvore de habilidades):
+## func(quantidade: float, tipo: StringName) -> float. Roda depois das reduções.
+var ajuste_dano: Callable
 var _protecao := 0.0
 var _reducao := 0.0
 var _reducao_restante := 0.0
+var _escudo_restante := 0.0
 
 
 func _ready() -> void:
@@ -23,6 +29,10 @@ func _ready() -> void:
 func _process(delta: float) -> void:
 	_protecao = maxf(0.0, _protecao - delta)
 	_reducao_restante = maxf(0.0, _reducao_restante - delta)
+	if _escudo_restante > 0.0:
+		_escudo_restante -= delta
+		if _escudo_restante <= 0.0:
+			escudo = 0.0
 
 
 func esta_vivo() -> bool:
@@ -38,8 +48,16 @@ func tomar_dano(quantidade: float, tipo: StringName = &"fisico") -> bool:
 		return false
 	if _reducao_restante > 0.0:
 		quantidade *= 1.0 - _reducao
-	atual = maxf(0.0, atual - quantidade)
+	if ajuste_dano.is_valid():
+		quantidade = maxf(0.0, ajuste_dano.call(quantidade, tipo))
+	if escudo > 0.0:
+		var absorvido := minf(escudo, quantidade)
+		escudo -= absorvido
+		quantidade -= absorvido
 	_protecao = invulneravel_por
+	if quantidade <= 0.0:
+		return true  # o escudo segurou tudo
+	atual = maxf(0.0, atual - quantidade)
 	dano_recebido.emit(quantidade, tipo)
 	mudou.emit(atual, maximo)
 	if atual <= 0.0:
@@ -66,9 +84,20 @@ func reducao_ativa() -> bool:
 	return _reducao_restante > 0.0
 
 
-func curar(quantidade: float) -> void:
+## Ganha `quantidade` de escudo por `segundos` (soma com o que já tinha, até a vida máxima).
+func dar_escudo(quantidade: float, segundos: float) -> void:
+	if quantidade <= 0.0:
+		return
+	escudo = minf(maximo, escudo + quantidade)
+	_escudo_restante = maxf(_escudo_restante, segundos)
+
+
+## Cura e devolve quanto passou da vida máxima (a Fé transforma isso em escudo).
+func curar(quantidade: float) -> float:
+	var sobra := maxf(0.0, atual + quantidade - maximo)
 	atual = minf(maximo, atual + quantidade)
 	mudou.emit(atual, maximo)
+	return sobra
 
 
 func curar_tudo() -> void:

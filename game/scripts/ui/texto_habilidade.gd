@@ -132,6 +132,11 @@ static func efeitos(hab: HabilidadeData, ficha: Ficha = null) -> Array[String]:
 			l.append("Recupera %s de vida por segundo" % numero(Logicas.Bencao.VIDA_POR_SEGUNDO))
 			l.append("Dura %s s" % numero(Logicas.Bencao.DURACAO))
 			l.append("Área: aliados num raio de %s" % blocos(Logicas.Bencao.RAIO))
+		&"Piscar":
+			l.append("Teleporta %s" % blocos(hab.alcance))
+		&"Cambalhota":
+			l.append("Avança %s" % blocos(hab.alcance))
+			l.append("O dash (Shift) fica pronto na hora")
 	return l
 
 

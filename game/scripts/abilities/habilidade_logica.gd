@@ -8,10 +8,10 @@ func executar(_quem: Player, _hab: HabilidadeData, _dir: Vector2, _alvo: Vector2
 	pass
 
 
-## Dano já com o multiplicador do atributo certo.
+## Dano já com o multiplicador do atributo certo, as melhorias da árvore e a Ressonância.
 static func dano_de(quem: Player, hab: HabilidadeData, base := -1.0) -> float:
 	var bonus := quem.bonus_dano_fisico() if hab.elemento == &"fisico" else 1.0
-	return (hab.dano if base < 0.0 else base) * quem.ficha.multiplicador(hab.elemento) * bonus
+	return (hab.dano if base < 0.0 else base) * quem.ficha.multiplicador(hab.elemento) * bonus * quem.mult_habilidade(hab)
 
 
 ## Acerta todas as áreas atingíveis num círculo (menos o próprio jogador).
