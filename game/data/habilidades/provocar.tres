@@ -1,0 +1,21 @@
+[gd_resource type="Resource" script_class="HabilidadeData" load_steps=3 format=3]
+
+[ext_resource type="Script" path="res://scripts/data/habilidade_data.gd" id="1_script"]
+[ext_resource type="Texture2D" path="res://assets/sprites/tiny/icones/icone_experiencia.png" id="2_icone"]
+
+[resource]
+script = ExtResource("1_script")
+id = &"provocar"
+nome = "Provocar"
+descricao = "Os inimigos a até 4 blocos só querem saber de você por 4 s."
+icone = ExtResource("2_icone")
+modo = 1
+custo_mana = 5.0
+recarga = 10.0
+elemento = &"fisico"
+dano = 0.0
+alcance = 0.0
+logica = &"Provocar"
+animacao = &"golpe"
+duracao_animacao = 0.3
+som = &"giro"

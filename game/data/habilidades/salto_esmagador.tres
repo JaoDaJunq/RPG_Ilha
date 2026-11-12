@@ -1,0 +1,21 @@
+[gd_resource type="Resource" script_class="HabilidadeData" load_steps=3 format=3]
+
+[ext_resource type="Script" path="res://scripts/data/habilidade_data.gd" id="1_script"]
+[ext_resource type="Texture2D" path="res://assets/sprites/tiny/icones/icone_experiencia.png" id="2_icone"]
+
+[resource]
+script = ExtResource("1_script")
+id = &"salto_esmagador"
+nome = "Salto esmagador"
+descricao = "Pula até o mouse (até 5 blocos); ao cair, machuca e derruba por 1 s os inimigos em volta."
+icone = ExtResource("2_icone")
+modo = 0
+custo_mana = 10.0
+recarga = 8.0
+elemento = &"fisico"
+dano = 1.5
+alcance = 80.0
+logica = &"SaltoEsmagador"
+animacao = &"golpe"
+duracao_animacao = 0.35
+som = &"esquiva"
