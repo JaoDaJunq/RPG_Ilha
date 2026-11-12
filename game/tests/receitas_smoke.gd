@@ -36,7 +36,7 @@ func _ready() -> void:
 	inv.pedir_fechar()
 	w.hud._mochila.abrir(&"mochila")
 	await get_tree().process_frame
-	checar(w.hud._mochila._lista_receitas != null and w.hud._mochila._lista_receitas.get_child_count() > 0, "a mochila mostra a lista de receitas")
+	checar(w.hud._mochila._lista_receitas != null and w.hud._mochila._lista_receitas.get_child_count() > 0 and w.hud._mochila._livro.visible, "o livro de receitas aparece ao lado da mochila")
 	terminar()
 
 

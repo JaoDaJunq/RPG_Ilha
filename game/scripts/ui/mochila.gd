@@ -24,10 +24,15 @@ var _grade_bau: GridContainer
 var _cursor: Control
 var _cursor_icone: TextureRect
 var _cursor_qtd: Label
-var _lista_receitas: VBoxContainer
+var _livro: PanelContainer
+var _lista_receitas: GridContainer
 var _filtro_receitas: CheckButton
+var _detalhe_nome: Label
+var _detalhe_ingredientes: HBoxContainer
+var _detalhe_dica: Label
 var _modo_atual: StringName = &"mochila"
-var _botoes_receitas: Array[Dictionary] = []
+var _botoes_receitas: Array[Dictionary] = []  # {botao (Panel), icone, marca, receita, pode}
+var _receita_escolhida: StringName = &""
 
 
 func _ready() -> void:
@@ -98,9 +103,14 @@ func _montar() -> void:
 	centro.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	centro.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	add_child(centro)
+	# Como no Minecraft: o livro de receitas fica do lado de fora da janela, à esquerda.
+	var lado_a_lado := HBoxContainer.new()
+	lado_a_lado.add_theme_constant_override(&"separation", 10)
+	centro.add_child(lado_a_lado)
+	lado_a_lado.add_child(_montar_livro())
 	var painel := PanelContainer.new()
 	painel.add_theme_stylebox_override(&"panel", Tema.painel())
-	centro.add_child(painel)
+	lado_a_lado.add_child(painel)
 	var v := VBoxContainer.new()
 	v.add_theme_constant_override(&"separation", 8)
 	painel.add_child(v)
@@ -137,30 +147,6 @@ func _montar() -> void:
 	_resultado.fundo.size_flags_vertical = Control.SIZE_SHRINK_CENTER
 	_resultado.fundo.custom_minimum_size = Vector2(TAM + 12, TAM + 12)
 	fab.add_child(_resultado.fundo)
-	var receitas := PanelContainer.new()
-	receitas.add_theme_stylebox_override(&"panel", Tema.painel())
-	receitas.custom_minimum_size = Vector2(230, 0)
-	fab.add_child(receitas)
-	var lista_vertical := VBoxContainer.new()
-	lista_vertical.add_theme_constant_override(&"separation", 4)
-	receitas.add_child(lista_vertical)
-	var cabecalho_receitas := _rotulo("Receitas", 17)
-	cabecalho_receitas.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	lista_vertical.add_child(cabecalho_receitas)
-	_filtro_receitas = CheckButton.new()
-	_filtro_receitas.text = "Só as que dá para fazer"
-	_filtro_receitas.add_theme_font_size_override(&"font_size", 13)
-	_filtro_receitas.toggled.connect(func(_ligado: bool) -> void: _atualizar_receitas())
-	lista_vertical.add_child(_filtro_receitas)
-	var rolagem := ScrollContainer.new()
-	rolagem.custom_minimum_size = Vector2(214, 210)
-	rolagem.size_flags_vertical = Control.SIZE_EXPAND_FILL
-	lista_vertical.add_child(rolagem)
-	_lista_receitas = VBoxContainer.new()
-	_lista_receitas.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	_lista_receitas.add_theme_constant_override(&"separation", 3)
-	rolagem.add_child(_lista_receitas)
-	_montar_lista_receitas()
 
 	# Baú (27), só quando um baú está aberto.
 	var do_bau: Array[int] = []
@@ -340,73 +326,215 @@ func _textura(id: StringName) -> Texture2D:
 	return ItemData.carregar(id).icone if ItemData.existe(id) else null
 
 
-func _montar_lista_receitas() -> void:
-	for filho in _lista_receitas.get_children():
-		filho.queue_free()
-	_botoes_receitas.clear()
+# --- Livro de receitas (como o do Minecraft) -----------------------------------------
+# Fica fora da janela, à esquerda. Cada receita é um quadradinho com o ícone do que ela
+# faz. Clicar numa receita PEDE ao anfitrião para montar os ingredientes na grade: o
+# resultado aparece pronto na saída e só falta clicar nele. O que falta fica como sombra.
+
+const LIVRO_COLUNAS := 5
+const COR_PODE := Color.WHITE
+const COR_NAO_PODE := Color(0.42, 0.44, 0.5, 0.85)
+
+
+func _montar_livro() -> PanelContainer:
+	_livro = PanelContainer.new()
+	_livro.add_theme_stylebox_override(&"panel", Tema.painel())
+	var v := VBoxContainer.new()
+	v.add_theme_constant_override(&"separation", 8)
+	_livro.add_child(v)
+	var titulo := _rotulo("Receitas", 20)
+	titulo.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	v.add_child(titulo)
+	_filtro_receitas = CheckButton.new()
+	_filtro_receitas.text = "Só as que dá para fazer"
+	_filtro_receitas.add_theme_font_size_override(&"font_size", 14)
+	_filtro_receitas.toggled.connect(func(_ligado: bool) -> void: _atualizar_receitas())
+	v.add_child(_filtro_receitas)
+	var rolagem := ScrollContainer.new()
+	rolagem.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
+	rolagem.custom_minimum_size = Vector2(LIVRO_COLUNAS * (TAM + 4) + 8, 0)
+	rolagem.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	v.add_child(rolagem)
+	_lista_receitas = GridContainer.new()
+	_lista_receitas.columns = LIVRO_COLUNAS
+	_lista_receitas.add_theme_constant_override(&"h_separation", 4)
+	_lista_receitas.add_theme_constant_override(&"v_separation", 4)
+	rolagem.add_child(_lista_receitas)
 	for receita in ReceitaData.todas():
-		var botao := Button.new()
-		botao.custom_minimum_size = Vector2(204, 42)
-		botao.alignment = HORIZONTAL_ALIGNMENT_LEFT
-		botao.theme_type_variation = &"BotaoPequeno"
-		botao.icon = _textura(receita.resultado)
-		botao.add_theme_constant_override("icon_max_width", 32)
-		botao.text = ItemData.carregar(receita.resultado).nome if ItemData.existe(receita.resultado) else String(receita.resultado)
-		botao.add_theme_font_size_override(&"font_size", 14)
-		botao.pressed.connect(_selecionar_receita.bind(receita.resultado))
-		_lista_receitas.add_child(botao)
-		_botoes_receitas.append({botao = botao, receita = receita})
+		_lista_receitas.add_child(_quadro_receita(receita))
+	v.add_child(HSeparator.new())
+	# Embaixo: o nome e os ingredientes da receita apontada (ou escolhida).
+	_detalhe_nome = _rotulo("", 16)
+	_detalhe_nome.add_theme_color_override(&"font_color", Tema.COR_DESTAQUE)
+	_detalhe_nome.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	v.add_child(_detalhe_nome)
+	_detalhe_ingredientes = HBoxContainer.new()
+	_detalhe_ingredientes.alignment = BoxContainer.ALIGNMENT_CENTER
+	_detalhe_ingredientes.add_theme_constant_override(&"separation", 6)
+	_detalhe_ingredientes.custom_minimum_size = Vector2(0, 40)
+	v.add_child(_detalhe_ingredientes)
+	_detalhe_dica = _rotulo("Clique numa receita para montar", 13)
+	_detalhe_dica.add_theme_color_override(&"font_color", Tema.COR_TEXTO_2)
+	_detalhe_dica.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	_detalhe_dica.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	_detalhe_dica.custom_minimum_size = Vector2(LIVRO_COLUNAS * (TAM + 4), 0)
+	v.add_child(_detalhe_dica)
+	return _livro
+
+
+func _quadro_receita(receita: ReceitaData) -> Panel:
+	var fundo := Panel.new()
+	fundo.add_theme_stylebox_override(&"panel", Tema.espaco())
+	fundo.custom_minimum_size = Vector2(TAM, TAM)
+	fundo.mouse_filter = Control.MOUSE_FILTER_STOP
+	fundo.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
+	var icone := _icone()
+	icone.texture = _textura(receita.resultado)
+	fundo.add_child(icone)
+	if receita.quantidade > 1:
+		var qtd := _qtd()
+		qtd.text = str(receita.quantidade)
+		fundo.add_child(qtd)
+	# Moldura dourada da receita escolhida (só interface).
+	var marca := Panel.new()
+	var borda := StyleBoxFlat.new()
+	borda.bg_color = Color(0, 0, 0, 0)
+	borda.border_color = Tema.COR_DESTAQUE
+	borda.set_border_width_all(3)
+	borda.set_corner_radius_all(4)
+	marca.add_theme_stylebox_override(&"panel", borda)
+	marca.set_anchors_preset(Control.PRESET_FULL_RECT)
+	marca.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	marca.visible = false
+	fundo.add_child(marca)
+	var dados := {botao = fundo, icone = icone, marca = marca, receita = receita, pode = false}
+	fundo.gui_input.connect(_clique_receita.bind(dados))
+	fundo.mouse_entered.connect(_mostrar_detalhe.bind(receita))
+	fundo.mouse_exited.connect(func() -> void: _mostrar_detalhe(_receita_por_resultado(_receita_escolhida)))
+	_botoes_receitas.append(dados)
+	return fundo
+
+
+func _clique_receita(evento: InputEvent, dados: Dictionary) -> void:
+	var b := evento as InputEventMouseButton
+	if b == null or not b.pressed or b.button_index != MOUSE_BUTTON_LEFT:
+		return
+	accept_event()
+	_selecionar_receita(dados.receita.resultado)
+
+
+## Quantos de cada item a receita usa.
+func _necessarios(receita: ReceitaData) -> Dictionary[StringName, int]:
+	var faltas: Dictionary[StringName, int] = {}
+	if receita.sem_forma:
+		for item in receita.ingredientes:
+			faltas[item] = faltas.get(item, 0) + 1
+	else:
+		for linha in receita.padrao:
+			for x in linha.length():
+				if linha[x] != " ":
+					var item: StringName = receita.chave.get(linha[x], &"")
+					faltas[item] = faltas.get(item, 0) + 1
+	return faltas
+
+
+func _cabe_na_grade(receita: ReceitaData, lado: int) -> bool:
+	if receita.sem_forma:
+		return receita.ingredientes.size() <= lado * lado
+	return not receita.padrao.is_empty() and receita.padrao.size() <= lado and receita.padrao[0].length() <= lado
+
+
+## O que o jogador tem para fabricar: a mochila mais o que já está na grade.
+func _itens_disponiveis() -> Dictionary[StringName, int]:
+	var itens: Dictionary[StringName, int] = {}
+	if jogador == null:
+		return itens
+	itens = jogador.inventario.itens()
+	for k in 9:
+		var id: StringName = jogador.inventario.item_em(Inventory.GRADE + k)
+		if id != &"":
+			itens[id] = itens.get(id, 0) + jogador.inventario.qtd_em(Inventory.GRADE + k)
+	return itens
 
 
 func _atualizar_receitas() -> void:
 	if _lista_receitas == null or jogador == null:
 		return
-	var grade_lado: int = 3 if _modo_atual == &"bancada" else 2
-	var itens: Dictionary[StringName, int] = jogador.inventario.itens()
-	var indices: Array[int] = []
-	if grade_lado == 3:
-		for k in 9:
-			indices.append(Inventory.GRADE + k)
-	else:
-		indices = Inventory.GRADE_2X2.duplicate()
-	for espaco in indices:
-		var id: StringName = jogador.inventario.item_em(espaco)
-		if id != &"":
-			itens[id] = itens.get(id, 0) + jogador.inventario.qtd_em(espaco)
-	for par in _botoes_receitas:
-		var receita: ReceitaData = par.receita
-		var cabe: bool = receita.sem_forma and receita.ingredientes.size() <= grade_lado * grade_lado
-		if not receita.sem_forma:
-			cabe = not receita.padrao.is_empty() and receita.padrao.size() <= grade_lado and receita.padrao[0].length() <= grade_lado
-		var faltas: Dictionary[StringName, int] = {}
-		if receita.sem_forma:
-			for item in receita.ingredientes:
-				faltas[item] = faltas.get(item, 0) + 1
-		else:
-			for linha in receita.padrao:
-				for x in linha.length():
-					var letra: String = linha[x]
-					if letra != " ":
-						var item: StringName = receita.chave.get(letra, &"")
-						faltas[item] = faltas.get(item, 0) + 1
-		var pode: bool = cabe
+	_livro.visible = _modo_atual != &"bau"
+	var lado: int = 3 if _modo_atual == &"bancada" else 2
+	var itens := _itens_disponiveis()
+	for dados in _botoes_receitas:
+		var receita: ReceitaData = dados.receita
+		var cabe := _cabe_na_grade(receita, lado)
+		var pode := cabe
+		var faltas := _necessarios(receita)
 		for item in faltas:
 			if itens.get(item, 0) < faltas[item]:
 				pode = false
-		var botao: Button = par.botao
-		botao.modulate = Color.WHITE if pode else Color(0.47, 0.49, 0.54, 0.78)
-		botao.visible = cabe and (not _filtro_receitas.button_pressed or pode)
-		if cabe and not pode:
-			var nome_faltando: String = ""
-			for item in faltas:
-				if itens.get(item, 0) < faltas[item]:
-					nome_faltando = ItemData.carregar(item).nome
-					break
-			botao.tooltip_text = "Falta: " + nome_faltando
-		else:
-			botao.tooltip_text = ""
+		dados.pode = pode
+		dados.botao.modulate = COR_PODE if pode else COR_NAO_PODE
+		dados.botao.visible = cabe and (not _filtro_receitas.button_pressed or pode)
+		dados.marca.visible = receita.resultado == _receita_escolhida
+		dados.botao.tooltip_text = _nome(receita.resultado)
+	_mostrar_detalhe(_receita_por_resultado(_receita_escolhida))
+
+
+func _mostrar_detalhe(receita: ReceitaData) -> void:
+	if _detalhe_nome == null:
+		return
+	for filho in _detalhe_ingredientes.get_children():
+		filho.queue_free()
+	if receita == null:
+		_detalhe_nome.text = ""
+		_detalhe_dica.text = "Clique numa receita para montar"
+		return
+	_detalhe_nome.text = _nome(receita.resultado)
+	if receita.quantidade > 1:
+		_detalhe_nome.text += " x%d" % receita.quantidade
+	var itens := _itens_disponiveis()
+	var faltas := _necessarios(receita)
+	var tudo := true
+	for item in faltas:
+		var caixa := HBoxContainer.new()
+		caixa.add_theme_constant_override(&"separation", 2)
+		var icone := TextureRect.new()
+		icone.texture = _textura(item)
+		icone.stretch_mode = TextureRect.STRETCH_KEEP_CENTERED
+		icone.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
+		icone.custom_minimum_size = Vector2(36, 36)
+		icone.tooltip_text = _nome(item)
+		caixa.add_child(icone)
+		var tem: int = itens.get(item, 0)
+		var conta := _rotulo("%d/%d" % [mini(tem, faltas[item]), faltas[item]], 14)
+		conta.add_theme_color_override(&"font_color", Tema.COR_TEXTO if tem >= faltas[item] else Color("ff8a7a"))
+		caixa.add_child(conta)
+		_detalhe_ingredientes.add_child(caixa)
+		tudo = tudo and tem >= faltas[item]
+	var lado: int = 3 if _modo_atual == &"bancada" else 2
+	if not _cabe_na_grade(receita, lado):
+		_detalhe_dica.text = "Só na bancada de trabalho"
+	elif tudo:
+		_detalhe_dica.text = "Clique para montar e depois pegue o resultado"
+	else:
+		_detalhe_dica.text = "Faltam ingredientes (aparecem apagados na grade)"
+
+
+func _receita_por_resultado(resultado: StringName) -> ReceitaData:
+	if resultado == &"":
+		return null
+	for receita in ReceitaData.todas():
+		if receita.resultado == resultado:
+			return receita
+	return null
+
+
+func _nome(id: StringName) -> String:
+	return ItemData.carregar(id).nome if ItemData.existe(id) else String(id)
 
 
 func _selecionar_receita(resultado: StringName) -> void:
-	if jogador != null:
-		jogador.inventario.pedir_receita(resultado)
+	if jogador == null:
+		return
+	_receita_escolhida = resultado
+	jogador.inventario.pedir_receita(resultado)
+	_atualizar_receitas()
