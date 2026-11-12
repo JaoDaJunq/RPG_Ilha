@@ -25,6 +25,15 @@ func _ready() -> void:
 	inv.pedir_clique(espaco_graveto)
 	inv.pedir_clique(Inventory.GRADE + 1, true)
 	checar(inv.item_em(Inventory.GRADE + 1) == &"graveto" and not inv.sombras_receita.has(Inventory.GRADE + 1), "colocar o item na posição apaga a sombra")
+	# Na bancada (grade 3x3), clicar na receita também monta tudo (antes dava erro de tipo).
+	inv.pedir_fechar()
+	inv.definir([])
+	inv.adicionar(&"madeira", 2)
+	inv.na_bancada = true
+	inv.pedir_receita(&"tabua")
+	checar(inv.item_em(Inventory.GRADE) == &"madeira", "na bancada, selecionar tábuas põe a madeira na grade 3x3")
+	checar(inv.receita_atual() != null and inv.receita_atual().resultado == &"tabua", "na bancada, o resultado aparece pronto para fabricar")
+	inv.pedir_fechar()
 	w.hud._mochila.abrir(&"mochila")
 	await get_tree().process_frame
 	checar(w.hud._mochila._lista_receitas != null and w.hud._mochila._lista_receitas.get_child_count() > 0, "a mochila mostra a lista de receitas")

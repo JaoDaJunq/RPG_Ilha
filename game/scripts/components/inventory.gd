@@ -304,8 +304,10 @@ func _receita_cabe(receita: ReceitaData) -> bool:
 
 func _posicoes_receita(receita: ReceitaData, total: int) -> Dictionary[int, StringName]:
 	var alvos: Dictionary[int, StringName] = {}
-	var indices: Array[int] = GRADE_2X2.duplicate() if total == 4 else []
-	if total == 9:
+	var indices: Array[int] = []
+	if total == 4:
+		indices = GRADE_2X2.duplicate()
+	else:
 		for k in 9:
 			indices.append(GRADE + k)
 	if receita.sem_forma:
