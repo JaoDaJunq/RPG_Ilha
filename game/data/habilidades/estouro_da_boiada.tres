@@ -1,0 +1,20 @@
+[gd_resource type="Resource" script_class="HabilidadeData" load_steps=3 format=3]
+
+[ext_resource type="Script" path="res://scripts/data/habilidade_data.gd" id="1_script"]
+[ext_resource type="Texture2D" path="res://assets/sprites/tiny/icones/icone_experiencia.png" id="2_icone"]
+
+[resource]
+script = ExtResource("1_script")
+id = &"estouro_da_boiada"
+nome = "Estouro da boiada"
+descricao = "Uma manada de javalis atravessa 9 blocos na direção da mira, machucando e derrubando (1,5 s) tudo no caminho."
+icone = ExtResource("2_icone")
+modo = 0
+custo_mana = 20.0
+recarga = 18.0
+elemento = &"fisico"
+dano = 2.0
+alcance = 0.0
+logica = &"EstouroDaBoiada"
+animacao = &"golpe"
+som = &"giro"

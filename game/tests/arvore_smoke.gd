@@ -29,7 +29,12 @@ func _dados() -> void:
 			if n.icone == null or (n.ativa() and not n.pendente and n.habilidade == null):
 				ruins.append(String(n.id))
 		checar(ruins.is_empty(), "%s: todo nó tem ícone e toda ativa que funciona tem a habilidade (%s)" % [c, ", ".join(ruins)])
-	checar(ArvoreData.no(&"arqueiro", &"assobio").pendente and not ArvoreData.no(&"arqueiro", &"assobio").usavel(), "Assobio fica marcado como efeito pendente")
+	# A regra do "efeito pendente" com um nó fabricado aqui (as árvores podem não ter mais nenhum).
+	var falso := NoArvore.new()
+	falso.tipo = NoArvore.Tipo.ATIVA
+	falso.habilidade = ArvoreData.no(&"arqueiro", &"tiro_carregado").habilidade
+	falso.pendente = true
+	checar(not falso.usavel() and falso.rank_maximo() == 1 and falso.texto_estado_efeito().begins_with("Efeito pendente"), "nó com efeito pendente: não vai para as teclas nem aceita melhorias")
 	checar(ArvoreData.no(&"mago", &"piscar").usavel() and ArvoreData.no(&"ladino", &"cambalhota").usavel(), "Piscar e Cambalhota (novas) já funcionam")
 
 
@@ -165,7 +170,7 @@ func _tela(w: World, p: Player) -> void:
 	tela.botao_aprender().pressed.emit()
 	await get_tree().physics_frame
 	checar(p.tem(&"flecha_perfurante") and p.pontos_habilidade == pontos - 1 and tela.texto_pontos() == "Pontos: %d" % p.pontos_habilidade, "o botão Aprender aprende e o contador acompanha")
-	checar(not &"flecha_perfurante" in p.ids_nas_teclas(), "habilidade com efeito pendente não vai para as teclas")
+	checar((&"flecha_perfurante" in p.ids_nas_teclas()) == ArvoreData.no(&"arqueiro", &"flecha_perfurante").usavel(), "a habilidade aprendida vai para as teclas só se já funciona")
 	checar(tela.estado_caminho(&"ponto_fraco", &"flecha_perfurante") == &"aprendido", "aprendeu: o caminho até ele fica dourado")
 	tela.selecionar(&"rede")
 	checar(tela.botao_aprender().disabled, "nó de outro ramo: o botão fica desligado")

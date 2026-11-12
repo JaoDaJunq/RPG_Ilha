@@ -1,0 +1,20 @@
+[gd_resource type="Resource" script_class="HabilidadeData" load_steps=3 format=3]
+
+[ext_resource type="Script" path="res://scripts/data/habilidade_data.gd" id="1_script"]
+[ext_resource type="Texture2D" path="res://assets/sprites/tiny/icones/icone_experiencia.png" id="2_icone"]
+
+[resource]
+script = ExtResource("1_script")
+id = &"mina_de_fogo"
+nome = "Mina de fogo"
+descricao = "Arma uma mina no chão (até 3,5 blocos). Quando um inimigo ou animal pisa, ela explode, machuca com fogo todos num raio de 1,75 bloco e deixa Queimadura por 3 s. Dura 40 s."
+icone = ExtResource("2_icone")
+modo = 0
+custo_mana = 8.0
+recarga = 5.0
+elemento = &"fogo"
+dano = 2.0
+alcance = 56.0
+logica = &"MinaDeFogo"
+animacao = &"golpe"
+som = &"golpe_coleta"
