@@ -32,7 +32,7 @@ func _ready() -> void:
 	await get_tree().physics_frame
 	var armadas := get_tree().get_nodes_in_group(&"armadilhas")
 	checar(armadas.size() == 1, "armadilha fica no chão")
-	checar(armadas.size() == 1 and armadas[0].global_position.distance_to(p.global_position) <= 57.0, "armadilha respeita o alcance")
+	checar(armadas.size() == 1 and armadas[0].global_position.distance_to(p.global_position) <= 56.0 * Passivas.OLHO_DE_AGUIA + 1.0, "armadilha respeita o alcance (com o Olho de águia: +20%)")
 	# O slime anda até a armadilha.
 	slime.global_position = armadas[0].global_position + Vector2(0, 12)
 	slime.set_physics_process(true)

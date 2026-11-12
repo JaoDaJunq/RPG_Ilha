@@ -48,6 +48,13 @@ func criar_mundo(slimes := 0, limpar := true, classe: StringName = &"mago", raca
 	return w
 
 
+## Libera na árvore as 4 habilidades da classe (Q R T E, na ordem de ClasseData), como se o
+## jogador já tivesse os pontos: os testes de cada habilidade não dependem de subir de nível.
+func liberar_habilidades(p: Player) -> void:
+	for h in p.ficha.classe.habilidades:
+		p.aprender_de_graca(h.id)
+
+
 func colocar(w: World, cena: PackedScene, pos: Vector2) -> Node2D:
 	var n: Node2D = cena.instantiate()
 	n.position = pos

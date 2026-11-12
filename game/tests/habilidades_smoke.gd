@@ -35,25 +35,26 @@ func _fim_do_mundo(w: World) -> void:
 func _guerreiro() -> void:
 	var w := await criar_mundo(0, true, &"guerreiro")
 	var p := w.jogador
+	liberar_habilidades(p)  # Bloqueio, Fúria, Raio... vêm da árvore
 	var v := p.vida
 
 	# Bloqueio: 60% menos dano por 3 s, depois volta ao normal.
 	v.curar_tudo()
 	var antes := v.atual
 	v.tomar_dano(10.0)
-	checar(is_equal_approx(antes - v.atual, 10.0), "sem bloqueio: dano cheio (%.1f)" % (antes - v.atual))
+	checar(is_equal_approx(antes - v.atual, 9.0), "sem bloqueio: dano cheio, menos os 10%% da Pele de ferro (%.1f)" % (antes - v.atual))
 	v.curar_tudo()
 	checar(p.usar_habilidade_por_id(&"bloqueio"), "guerreiro tem o Bloqueio")
 	await esperar(0.2)
 	checar(v.reducao_ativa(), "Bloqueio ligou a redução de dano")
 	antes = v.atual
 	v.tomar_dano(10.0)
-	checar(is_equal_approx(antes - v.atual, 4.0), "com Bloqueio o dano cai 60%% (%.1f de 10)" % (antes - v.atual))
+	checar(is_equal_approx(antes - v.atual, 3.6), "com Bloqueio o dano cai 60%% (e a Pele de ferro tira 10%%: %.1f de 10)" % (antes - v.atual))
 	await esperar(3.1)
 	v.curar_tudo()
 	antes = v.atual
 	v.tomar_dano(10.0)
-	checar(is_equal_approx(antes - v.atual, 10.0), "o Bloqueio acaba depois de 3 s (%.1f)" % (antes - v.atual))
+	checar(is_equal_approx(antes - v.atual, 9.0), "o Bloqueio acaba depois de 3 s (%.1f)" % (antes - v.atual))
 
 	# Fúria: +50% no dano do golpe e +25% de velocidade.
 	var a := _slime(w, p.global_position + Vector2(40, 0))
@@ -85,6 +86,7 @@ func _guerreiro() -> void:
 func _mago() -> void:
 	var w := await criar_mundo(0, true, &"mago")
 	var p := w.jogador
+	liberar_habilidades(p)  # Bloqueio, Fúria, Raio... vêm da árvore
 	var base := p.global_position
 
 	# Raio: o inimigo mais perto da mira, dentro do alcance; machuca e atordoa.
@@ -131,6 +133,7 @@ func _mago() -> void:
 func _arqueiro() -> void:
 	var w := await criar_mundo(0, true, &"arqueiro")
 	var p := w.jogador
+	liberar_habilidades(p)  # Bloqueio, Fúria, Raio... vêm da árvore
 	var base := p.global_position
 
 	# Chuva de flechas: nada no começo; passado 0,4 s, machuca todos no ponto marcado.

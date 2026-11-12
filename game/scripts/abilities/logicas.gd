@@ -17,6 +17,7 @@ static func lancar(cena: PackedScene, quem: Player, dir: Vector2, dano: float, v
 	p.direcao = dir.normalized()
 	p.dano = dano
 	p.velocidade *= velocidade_mult
+	p.duracao *= Passivas.alcance(quem)  # Olho de águia: voa mais tempo, vai mais longe
 	p.position = quem.global_position + Vector2(0, -10) + p.direcao * 8.0
 	quem.get_parent().add_child(p, true)
 	return p
@@ -72,20 +73,23 @@ class LancaGelo extends HabilidadeLogica:
 class TiroCarregado extends HabilidadeLogica:
 	func executar(quem: Player, hab: HabilidadeData, dir: Vector2, _alvo: Vector2, carga: float) -> void:
 		carga = clampf(carga, 0.0, 1.0)
-		Logicas.lancar(Logicas.FLECHA, quem, dir, dano_de(quem, hab, hab.dano * (1.0 + 2.0 * carga)), 1.0 + carga)
+		# Mão leve: a flecha voa mais rápido, mas chega à mesma distância (o alcance é do Olho de águia).
+		var rapido := Passivas.MAO_LEVE_TIRO if quem.tem(&"mao_leve") else 1.0
+		var p := Logicas.lancar(Logicas.FLECHA, quem, dir, dano_de(quem, hab, hab.dano * (1.0 + 2.0 * carga)), (1.0 + carga) * rapido)
+		p.duracao /= rapido
 
 
 ## Arqueiro: armadilha no chão, onde o mouse estiver (até o alcance).
 class Armadilha extends HabilidadeLogica:
 	func executar(quem: Player, hab: HabilidadeData, _dir: Vector2, alvo: Vector2, _carga: float) -> void:
 		var de := quem.global_position
-		var ponto := de + (alvo - de).limit_length(hab.alcance)
-		# Cada jogador tem no máximo 2 armadilhas armadas; a mais antiga some.
+		var ponto := de + (alvo - de).limit_length(hab.alcance * Passivas.alcance(quem))
+		# Cada jogador tem no máximo 2 armadilhas armadas (3 com o Engenhoso); a mais antiga some.
 		var minhas: Array[Node] = []
 		for n in quem.get_tree().get_nodes_in_group(&"armadilhas"):
-			if n.dono_id == quem.id_rede():
+			if n.dono_id == quem.id_rede() and not n.is_queued_for_deletion():
 				minhas.append(n)
-		if minhas.size() >= 2:
+		if minhas.size() >= Passivas.armadilhas_maximas(quem):
 			minhas[0].queue_free()
 		var a: Node2D = Logicas.ARMADILHA.instantiate()
 		a.dono_id = quem.id_rede()
@@ -139,6 +143,22 @@ class Raio extends HabilidadeLogica:
 		if is_instance_valid(melhor) and melhor.has_method(&"prender"):
 			melhor.prender(ATORDOAR)
 		World.efeito_todos(quem, &"raio", onde)
+		# Condução: o raio salta para o inimigo mais perto do primeiro.
+		if quem.tem(&"conducao"):
+			var salto: Node2D = null
+			var perto := Passivas.CONDUCAO_RAIO
+			for e in Passivas.inimigos_perto(quem, onde, Passivas.CONDUCAO_RAIO):
+				var d := e.global_position.distance_to(onde)
+				if e != melhor and d <= perto:
+					perto = d
+					salto = e
+			if salto:
+				var area2 := salto.get_node_or_null("Hurtbox") as Hurtbox
+				if area2:
+					area2.receber(dano_de(quem, hab), &"raio", quem)
+				if is_instance_valid(salto) and salto.has_method(&"prender"):
+					salto.prender(ATORDOAR)
+				World.efeito_todos(quem, &"raio", salto.global_position if is_instance_valid(salto) else onde)
 
 
 ## Mago: congela tudo em volta.
@@ -159,7 +179,7 @@ class ChuvaFlechas extends HabilidadeLogica:
 
 	func executar(quem: Player, hab: HabilidadeData, _dir: Vector2, alvo: Vector2, _carga: float) -> void:
 		var de := quem.global_position
-		var ponto := de + (alvo - de).limit_length(hab.alcance)
+		var ponto := de + (alvo - de).limit_length(hab.alcance * Passivas.alcance(quem))
 		var dano := dano_de(quem, hab)
 		World.chuva_de_flechas_todos(quem, ponto, RAIO, FLECHAS, ATRASO)
 		quem.get_tree().create_timer(ATRASO).timeout.connect(func() -> void:
@@ -177,7 +197,7 @@ class Bomba extends HabilidadeLogica:
 		var dano := dano_de(quem, hab)
 		# O projétil só leva a bomba (e acende o que encostar); quem machuca é a explosão.
 		var p := Logicas.lancar(Logicas.BOMBA, quem, dir, 0.0, 0.85)
-		p.duracao = TEMPO
+		p.duracao = TEMPO * Passivas.alcance(quem)
 		p.terminou.connect(func(pos: Vector2, acertou: bool) -> void:
 			if not is_instance_valid(quem):
 				return
@@ -254,10 +274,10 @@ class Cura extends HabilidadeLogica:
 	static func quantidade(ficha: Ficha) -> float:
 		return BASE + POR_ESPIRITO * ficha.valor(&"espirito")
 
-	func executar(quem: Player, _hab: HabilidadeData, _dir: Vector2, _alvo: Vector2, _carga: float) -> void:
-		var cura := quantidade(quem.ficha)
+	func executar(quem: Player, hab: HabilidadeData, _dir: Vector2, _alvo: Vector2, _carga: float) -> void:
+		var cura := quantidade(quem.ficha) * quem.mult_habilidade(hab)
 		for j in Logicas.jogadores_em_volta(quem, RAIO):
-			j.vida.curar(cura)
+			j.receber_cura(quem, cura)
 			World.efeito_todos(j, &"subir_nivel", j.global_position + Vector2(0, -14))
 
 
@@ -268,8 +288,10 @@ class EscudoSagrado extends HabilidadeLogica:
 	const DURACAO := 4.0
 
 	func executar(quem: Player, _hab: HabilidadeData, _dir: Vector2, _alvo: Vector2, _carga: float) -> void:
+		# Égide: escudos 30% mais fortes (50% → 65% menos dano).
+		var reducao := minf(0.9, REDUCAO * Passivas.escudos(quem))
 		for j in Logicas.jogadores_em_volta(quem, RAIO):
-			j.bloquear(REDUCAO, DURACAO)
+			j.bloquear(reducao, DURACAO)
 			World.efeito_preso_todos(j, &"escudo", DURACAO, Vector2(0, -9))
 
 
@@ -289,10 +311,33 @@ class Bencao extends HabilidadeLogica:
 	const DURACAO := 8.0
 	const VIDA_POR_SEGUNDO := 3.0
 
-	func executar(quem: Player, _hab: HabilidadeData, _dir: Vector2, _alvo: Vector2, _carga: float) -> void:
+	func executar(quem: Player, hab: HabilidadeData, _dir: Vector2, _alvo: Vector2, _carga: float) -> void:
 		for j in Logicas.jogadores_em_volta(quem, RAIO):
-			j.abencoar(DURACAO, VIDA_POR_SEGUNDO)
+			j.abencoar(DURACAO, VIDA_POR_SEGUNDO * quem.mult_habilidade(hab), quem)
 			World.efeito_todos(j, &"subir_nivel", j.global_position + Vector2(0, -14))
+
+
+## Mago (árvore, inicial): teleporte curto na direção da mira.
+class Piscar extends HabilidadeLogica:
+	const DURACAO := 0.05
+
+	func executar(quem: Player, hab: HabilidadeData, dir: Vector2, _alvo: Vector2, _carga: float) -> void:
+		World.efeito_todos(quem, &"poeira", quem.global_position)
+		quem.vida.proteger(DURACAO + 0.1)
+		quem.mover_por_habilidade(dir * hab.alcance, DURACAO)
+		World.efeito_todos(quem, &"poeira", quem.global_position + dir * hab.alcance)
+
+
+## Ladino (árvore, inicial): um dash na direção da mira que libera o dash comum na hora,
+## para o segundo pulo mudar de direção.
+class Cambalhota extends HabilidadeLogica:
+	const DURACAO := 0.16
+
+	func executar(quem: Player, hab: HabilidadeData, dir: Vector2, _alvo: Vector2, _carga: float) -> void:
+		quem.vida.proteger(DURACAO + 0.1)
+		quem.mover_por_habilidade(dir * hab.alcance, DURACAO)
+		quem.liberar_esquiva()
+		World.efeito_todos(quem, &"poeira", quem.global_position)
 
 
 ## Jogadores (o próprio incluso) a até `raio` px de quem lançou: os aliados do Clérigo.
@@ -343,5 +388,7 @@ static func criar(nome: StringName) -> HabilidadeLogica:
 		&"NovaGelo": return NovaGelo.new()
 		&"ChuvaFlechas": return ChuvaFlechas.new()
 		&"Bomba": return Bomba.new()
+		&"Piscar": return Piscar.new()
+		&"Cambalhota": return Cambalhota.new()
 	push_error("Lógica de habilidade desconhecida: %s" % nome)
 	return HabilidadeLogica.new()

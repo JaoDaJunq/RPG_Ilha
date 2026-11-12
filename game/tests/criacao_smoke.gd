@@ -57,7 +57,7 @@ func _ready() -> void:
 	for k in Inventory.BARRA:
 		no_bar = no_bar or inv.item_em(k) == &"cajado"
 	checar(no_bar, "o cajado do mago está na barra")
-	checar(p.habilidades().size() == 4 and p.habilidades()[0].id == &"bola_de_fogo", "habilidades do mago")
+	checar(p.habilidades().size() == 2 and p.habilidades()[0].id == &"bola_de_fogo", "o mago nasce com as 2 habilidades padrão (as outras vêm da árvore)")
 
 	# 4. Roupas: tirar com Shift + clique manda para a mochila; a roupa branca volta.
 	inv.pedir_clique(Inventory.EQUIP_CORPO, false, true)

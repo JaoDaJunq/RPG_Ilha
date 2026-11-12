@@ -28,7 +28,8 @@ Co-op online de sobrevivência e exploração numa ilha de fantasia que reage ao
 - Criação de personagem dentro do mundo (L24): na primeira vez que o jogador entra num mundo, abre a tela de criação (o mundo segue rodando para os outros). Passo 1: raça (Humano ou Ogro), rosto e pele, com o bonequinho ao lado de roupa branca mudando na hora. Passo 2: classe (Guerreiro, Mago ou Arqueiro), e o boneco veste as roupas base dela. "Entrar no mundo" manda a escolha ao anfitrião, que confere, define a ficha (atributos que mudam vida, mana, velocidade, dano e coleta), veste as roupas e põe a arma da classe na barra. Quem já tem personagem salvo no mundo pula a tela. Ficha na tecla C. Testes e linha de comando (`--solo`, `--hospedar`, `--entrar`, `--raca`, `--classe`) pulam a tela (`Net.pular_criacao`); `--criar` força.
 - Roupas: dois espaços (cabeça e corpo) na mochila, ao lado de um bonequinho que mostra o personagem vestido (como no Minecraft). Arrastar ou Shift + clique veste e tira; sem roupa, o boneco fica com a roupinha branca. Por enquanto só visual (a classe vem da escolha, não das roupas).
 - Raças e classes básicas de RPG: 4 raças (Humano, Ogro, Elfo com Passo leve, Anão com Mineiro) e 5 classes (Guerreiro, Mago, Arqueiro, Ladino com Golpe furtivo, Lâmina envenenada, Bomba de fumaça e Leque de adagas, Clérigo com Cura, Escudo sagrado, Luz sagrada e Bênção). Números em `design/balanceamento.md`. Provisório até a arte chegar: Elfo e Anão usam o corpo do Humano, e Ladino e Clérigo usam ícones e roupas emprestados (colete e bandana ficam brancos até haver arte).
-- Níveis e experiência: derrotar slimes (dividido com quem está perto) e coletar dão experiência; cada nível dá 2 pontos de atributo (botões "+" na ficha) e 1 de habilidade (a árvore vem depois). Humano ganha 10% a mais.
+- Níveis e experiência: derrotar slimes (dividido com quem está perto) e coletar dão experiência; cada nível dá 2 pontos de atributo (botões "+" na ficha) e 1 de habilidade (gasto na árvore). Humano ganha 10% a mais.
+- Árvore de habilidades (K, ou o botão na ficha; `design/arvore_habilidades.md`): 3 passivas da classe desde o nível 1, 2 habilidades padrão, mais 3 iniciais nos níveis 2 a 4, UM ramo a partir do nível 5 e melhorias (até 3 por habilidade) com os pontos que sobram. O jogador pede, o anfitrião confere (pontos, nível, pré-requisito, ramo) e manda para todos; a árvore e as teclas Q R T E escolhidas são salvas no mundo. Passivas que já mudam o jogo ficam em `game/scripts/player/passivas.gd`; nós com "!" na tela ainda estão com o efeito pendente.
 - Habilidades da classe nas teclas 1 e 2 (Investida e Giro; Bola de fogo e Lança de gelo; Tiro carregado e Armadilha), com mana e recarga, e esquiva no Espaço.
 - Reações: gelo congela (e um golpe estilhaça com dano dobrado), lança de gelo sobre a água vira ponte que derrete, fogo passa devagar para árvores vizinhas.
 - Jogar sozinho, hospedar ou entrar pelo IP do anfitrião (até 4 jogadores).
@@ -41,7 +42,7 @@ Co-op online de sobrevivência e exploração numa ilha de fantasia que reage ao
 - Golpe com clique esquerdo; slimes perseguem e machucam; ao desmaiar, o jogador volta ao acampamento.
 - N alterna dia e noite; M liga/desliga o som.
 
-**Ainda não tem:** as outras classes, árvore de habilidades e fonte pixel própria.
+**Ainda não tem:** o efeito das habilidades novas dos ramos (marcadas com "!" na árvore) e fonte pixel própria.
 
 ## Como rodar
 
@@ -65,6 +66,7 @@ Atalhos para testar sem o menu: `-- --solo`, `-- --hospedar` ou `-- --entrar=IP`
 | Dash (esquiva) | Shift |
 | Habilidades da classe | Q, R, T e E (Tiro carregado: segure e solte). Botão direito no botão delas (ou no Shift) mostra o que fazem |
 | Ficha do personagem | C |
+| Árvore de habilidades | K (clique num nó para ver e aprender; com ela aberta não há dash nem habilidades) |
 | Dia / noite | N |
 | Som | M |
 

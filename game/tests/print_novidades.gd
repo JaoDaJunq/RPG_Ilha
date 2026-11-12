@@ -8,6 +8,7 @@ const ANIMAL := preload("res://scenes/animals/animal.tscn")
 func _ready() -> void:
 	var w := await criar_mundo(0, true, &"guerreiro", &"ogro")
 	var p := w.jogador
+	liberar_habilidades(p)  # a Fúria vem da árvore
 	var o := Vector2i((w.centro / World.T).floor()) + Vector2i(4, 2)
 	# Um cercadinho com a parede de lado (girada) e uma porta girada.
 	for y in range(0, 4):

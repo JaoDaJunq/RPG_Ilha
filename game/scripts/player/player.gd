@@ -50,6 +50,11 @@ var xp := 0
 var pontos_atributo := 0
 var pontos_habilidade := 0
 var distribuidos: Dictionary[StringName, int] = {}
+## Árvore de habilidades (ArvoreData): nó → nível (1 = aprendido; 2 a 4 = com melhorias).
+## Os nós que já vêm com a classe não entram aqui. Também vem no _progresso_sync.
+var arvore: Dictionary[StringName, int] = {}
+## Habilidades nas teclas Q R T E (ids, na ordem). Vazio = as 2 que vêm com a classe.
+var teclas: Array[StringName] = []
 ## Posição de mira fixa (usada pelos testes). Se nula, usa o mouse.
 var mira_forcada: Variant = null
 var alvo: Interactable = null
@@ -62,8 +67,8 @@ var _direcao: StringName = &"baixo"
 var _progresso := 0.0
 var _recarga_golpe := 0.0
 var _atacando := 0.0
-var _recargas: Array[float] = []          # local (para o HUD)
-var _prontas_no_anfitriao: Dictionary = {}  # índice → ms (o anfitrião confere)
+var _recargas: Dictionary = {}              # id da habilidade → segundos (local, para o HUD)
+var _prontas_no_anfitriao: Dictionary = {}  # id da habilidade → ms (o anfitrião confere)
 var _recarga_esquiva := 0.0
 var _impulso := Vector2.ZERO
 var _impulso_restante := 0.0
@@ -93,8 +98,8 @@ func _ready() -> void:
 	vida.maximo = ficha.vida_maxima()
 	vida.atual = vida.maximo
 	mana = ficha.mana_maxima()
-	_recargas.resize(habilidades().size())
-	_recargas.fill(0.0)
+	_recargas.clear()
+	_aplicar_passivas_fixas()
 	ponto_de_retorno = position
 	if aparencia.is_empty():
 		aparencia = aparencia_padrao(raca)
@@ -109,6 +114,7 @@ func _ready() -> void:
 		vida.morreu.connect(_on_morreu)
 		inventario.mudou.connect(_roupas_mudaram)
 		hurtbox.atingido.connect(func(qtd: float, tipo: StringName, _o: Node) -> void: vida.tomar_dano(qtd, tipo))
+		vida.ajuste_dano = func(qtd: float, tipo: StringName) -> float: return Passivas.dano_recebido(self, qtd, tipo)
 	if eh_local():
 		get_tree().call_group(&"mundo", &"registrar_jogador_local", self)
 
@@ -122,14 +128,27 @@ func id_rede() -> int:
 	return get_multiplayer_authority()
 
 
+## As habilidades nas teclas Q R T E (as que vêm com a classe e as aprendidas na árvore).
 func habilidades() -> Array[HabilidadeData]:
-	return ficha.classe.habilidades if ficha else ([] as Array[HabilidadeData])
+	var l: Array[HabilidadeData] = []
+	if ficha == null:
+		return l
+	for id in ids_nas_teclas():
+		var n := ArvoreData.no(classe, id)
+		if n and n.usavel() and tem(id):
+			l.append(n.habilidade)
+	return l
+
+
+func ids_nas_teclas() -> Array[StringName]:
+	return teclas if not teclas.is_empty() else ArvoreData.padrao(classe)
 
 
 func _physics_process(delta: float) -> void:
 	if multiplayer.is_server():
 		_regenerar_mana(delta)
 		_processar_bencao()
+		_processar_passivas(delta)
 		if criando:
 			vida.proteger(1.0)  # criando o personagem, ninguém o machuca
 	if not eh_local():
@@ -142,8 +161,8 @@ func _physics_process(delta: float) -> void:
 	_recarga_golpe = maxf(0.0, _recarga_golpe - delta)
 	_recarga_esquiva = maxf(0.0, _recarga_esquiva - delta)
 	_atacando = maxf(0.0, _atacando - delta)
-	for i in _recargas.size():
-		_recargas[i] = maxf(0.0, _recargas[i] - delta)
+	for id in _recargas:
+		_recargas[id] = maxf(0.0, _recargas[id] - delta)
 
 	var entrada := Input.get_vector(&"mover_esquerda", &"mover_direita", &"mover_cima", &"mover_baixo")
 	if _impulso_restante > 0.0:
@@ -225,7 +244,7 @@ func recarga_restante(i: int) -> float:
 	var hab := habilidades()
 	if i >= hab.size() or hab[i].recarga <= 0.0:
 		return 0.0
-	return _recargas[i] / hab[i].recarga
+	return clampf(float(_recargas.get(hab[i].id, 0.0)) / maxf(recarga_de(hab[i]), 0.01), 0.0, 1.0)
 
 
 func recarga_esquiva_restante() -> float:
@@ -236,7 +255,7 @@ func recarga_esquiva_restante() -> float:
 func carga_atual() -> float:
 	if _carregando < 0:
 		return -1.0
-	return clampf((Time.get_ticks_msec() / 1000.0 - _inicio_carga) / CARGA_MAXIMA, 0.0, 1.0)
+	return clampf((Time.get_ticks_msec() / 1000.0 - _inicio_carga) / Passivas.carga_maxima(self), 0.0, 1.0)
 
 
 ## Mostra um aviso na tela deste jogador (de onde quer que seja chamado).
@@ -252,7 +271,8 @@ func avisar(texto: String, som: StringName = &"") -> void:
 func golpear() -> void:
 	if _recarga_golpe > 0.0:
 		return
-	_recarga_golpe = recarga_golpe
+	_recarga_golpe = recarga_golpe * (0.5 if _golpe_rapido else 1.0)  # Ritmo: golpe depois do dash
+	_golpe_rapido = false
 	_atacando = 0.25
 	var dir := direcao_mira()
 	_direcao = SpriteSheets.direcao_de(dir)
@@ -268,6 +288,9 @@ func esquivar() -> void:
 	_recarga_esquiva = ficha.recarga_esquiva()
 	_impulso = dir * VELOCIDADE_ESQUIVA
 	_impulso_restante = DURACAO_ESQUIVA
+	if tem(&"ritmo"):
+		_ritmo_ate_ms = Time.get_ticks_msec() + Passivas.RITMO_MS
+		_golpe_rapido = true
 	Sfx.tocar(&"esquiva", -8.0)
 	_pedir_esquiva.rpc_id(1)
 
@@ -275,9 +298,9 @@ func esquivar() -> void:
 ## Aperta a tecla da habilidade `i`: lança na hora ou começa a carregar.
 func comecar_habilidade(i: int) -> void:
 	var hab := habilidades()
-	if i >= hab.size() or _recargas[i] > 0.0:
+	if i >= hab.size() or float(_recargas.get(hab[i].id, 0.0)) > 0.0:
 		return
-	if mana < hab[i].custo_mana:
+	if mana < custo_de(hab[i]):
 		avisar("Sem mana suficiente para %s." % hab[i].nome)
 		return
 	if hab[i].modo == HabilidadeData.Modo.CARREGAR:
@@ -298,14 +321,14 @@ func soltar_carga() -> void:
 
 func usar_habilidade(i: int, carga: float) -> void:
 	var hab := habilidades()
-	if i >= hab.size() or _recargas[i] > 0.0:
+	if i >= hab.size() or float(_recargas.get(hab[i].id, 0.0)) > 0.0:
 		return
-	_recargas[i] = hab[i].recarga
+	_recargas[hab[i].id] = recarga_de(hab[i])
 	_atacando = 0.2
 	var dir := direcao_mira()
 	_direcao = SpriteSheets.direcao_de(dir)
 	Sfx.tocar(SONS.get(hab[i].id, &"ataque"), -10.0)
-	_pedir_habilidade.rpc_id(1, i, dir, posicao_mira(), carga)
+	_pedir_habilidade.rpc_id(1, hab[i].id, dir, posicao_mira(), carga)
 
 
 ## Atalho usado pelos testes: usa a habilidade pelo id, se a classe tiver.
@@ -357,7 +380,7 @@ var _vida_vista := -1.0
 func reagir_ao_golpe(origem: Vector2) -> void:
 	var dir := global_position - origem
 	dir = dir.normalized() if dir.length() > 0.1 else Vector2.DOWN
-	mover_por_habilidade(dir * EMPURRAO_DANO, DURACAO_EMPURRAO)
+	mover_por_habilidade(dir * EMPURRAO_DANO * Passivas.empurrao(self), DURACAO_EMPURRAO)
 	_reagir_dor.rpc(dir)
 
 
@@ -408,20 +431,33 @@ func _pedir_esquiva() -> void:
 
 
 @rpc("any_peer", "call_local", "reliable")
-func _pedir_habilidade(i: int, dir: Vector2, alvo_mira: Vector2, carga: float) -> void:
+func _pedir_habilidade(hab_id: StringName, dir: Vector2, alvo_mira: Vector2, carga: float) -> void:
 	if not multiplayer.is_server() or not _pedido_do_dono():
 		return
-	var hab := habilidades()
-	if i < 0 or i >= hab.size():
+	# Só vale a habilidade que está numa das teclas (aprendida na árvore).
+	var hab: HabilidadeData = null
+	for h in habilidades():
+		if h.id == hab_id:
+			hab = h
+	if hab == null:
 		return
 	var agora := Time.get_ticks_msec()
+	var custo := custo_de(hab)
 	# Folga de 100 ms: o pedido pode chegar um pouco antes do relógio do anfitrião.
-	if agora < int(_prontas_no_anfitriao.get(i, 0)) - 100 or mana < hab[i].custo_mana:
+	if agora < int(_prontas_no_anfitriao.get(hab_id, 0)) - 100 or mana < custo:
 		return
-	_prontas_no_anfitriao[i] = agora + int(hab[i].recarga * 1000.0)
-	mana -= hab[i].custo_mana
+	_prontas_no_anfitriao[hab_id] = agora + int(recarga_de(hab) * 1000.0)
+	mana -= custo
 	_enviar_mana()
-	Logicas.criar(hab[i].logica).executar(self, hab[i], dir.normalized(), alvo_mira, carga)
+	_contar_feitico(custo <= 0.0 and hab.custo_mana > 0.0)
+	# Ressonância: elemento diferente do último dá mais dano neste lançamento.
+	_mult_lancamento = 1.0
+	if hab.elemento in Passivas.ELEMENTOS_MAGO:
+		if tem(&"ressonancia") and _ultimo_elemento != &"" and _ultimo_elemento != hab.elemento:
+			_mult_lancamento = Passivas.RESSONANCIA
+		_ultimo_elemento = hab.elemento
+	Logicas.criar(hab.logica).executar(self, hab, dir.normalized(), alvo_mira, carga)
+	_mult_lancamento = 1.0
 
 
 @rpc("any_peer", "call_local", "reliable")
@@ -488,17 +524,18 @@ func _pedir_atributo(atributo: StringName) -> void:
 
 
 func _enviar_progresso() -> void:
-	_progresso_sync.rpc(nivel, xp, pontos_atributo, pontos_habilidade, distribuidos)
+	_progresso_sync.rpc(nivel, xp, pontos_atributo, pontos_habilidade, distribuidos, arvore, teclas)
 
 
-## O anfitrião manda o progresso para todos (o nível aparece no nome em cima da cabeça).
+## O anfitrião manda o progresso para todos (o nível aparece no nome em cima da cabeça; a
+## árvore de cada um vale para as passivas de grupo, como Comando e Vigília).
 func enviar_progresso_para(peer: int) -> void:
-	_progresso_sync.rpc_id(peer, nivel, xp, pontos_atributo, pontos_habilidade, distribuidos)
+	_progresso_sync.rpc_id(peer, nivel, xp, pontos_atributo, pontos_habilidade, distribuidos, arvore, teclas)
 	_enviar_aspecto(peer)
 
 
 @rpc("any_peer", "call_local", "reliable")
-func _progresso_sync(n: int, x: int, pa: int, ph: int, dist: Dictionary) -> void:
+func _progresso_sync(n: int, x: int, pa: int, ph: int, dist: Dictionary, arv: Dictionary, tec: Array) -> void:
 	if not Net.veio_do_anfitriao():
 		return
 	nivel = n
@@ -510,8 +547,34 @@ func _progresso_sync(n: int, x: int, pa: int, ph: int, dist: Dictionary) -> void
 	distribuidos.clear()
 	for k in copia:
 		distribuidos[StringName(k)] = int(copia[k])
+	_definir_arvore(arv, tec)
 	_recalcular_ficha()
+	_aplicar_passivas_fixas()
 	progresso_mudou.emit()
+
+
+## Árvore para o arquivo do mundo (JSON: chaves e valores simples).
+func _arvore_para_salvar() -> Dictionary:
+	var d := {}
+	for k in arvore:
+		d[String(k)] = arvore[k]
+	return d
+
+
+## Copia a árvore e as teclas recebidas (ou salvas), só com nós que existem na classe.
+func _definir_arvore(arv: Dictionary, tec: Array) -> void:
+	var copia_arv := arv.duplicate()
+	var copia_tec := tec.duplicate()
+	arvore.clear()
+	for k in copia_arv:
+		var n := ArvoreData.no(classe, StringName(k))
+		if n:
+			arvore[n.id] = clampi(int(copia_arv[k]), 0, n.rank_maximo())
+	teclas.clear()
+	for k in copia_tec:
+		var n := ArvoreData.no(classe, StringName(k))
+		if n and n.usavel() and tem(n.id) and not n.id in teclas and teclas.size() < TECLAS:
+			teclas.append(n.id)
 
 
 ## O que o anfitrião guarda deste jogador no arquivo do mundo.
@@ -521,6 +584,8 @@ func registro() -> Dictionary:
 		"nivel": nivel, "xp": xp,
 		"pontos_atributo": pontos_atributo, "pontos_habilidade": pontos_habilidade,
 		"distribuidos": distribuidos.duplicate(),
+		"arvore": _arvore_para_salvar(),
+		"teclas": Array(teclas).map(func(id: StringName) -> String: return String(id)),
 		"itens": inventario.para_salvar(),
 		"aparencia": aparencia.duplicate(),
 		"kit": true,
@@ -550,7 +615,9 @@ func restaurar(reg: Dictionary, pular_criacao := true) -> void:
 	var dist: Dictionary = reg.get("distribuidos", {})
 	for k in dist:
 		distribuidos[StringName(k)] = int(dist[k])
+	_definir_arvore(reg.get("arvore", {}), reg.get("teclas", []))
 	_recalcular_ficha()
+	_aplicar_passivas_fixas()
 	vida.curar_tudo()
 	mana = ficha.mana_maxima()
 	inventario.definir(reg.get("itens", {}))
@@ -578,7 +645,7 @@ func _recalcular_ficha() -> void:
 func _regenerar_mana(delta: float) -> void:
 	var maximo := ficha.mana_maxima()
 	if mana < maximo:
-		mana = minf(maximo, mana + ficha.regeneracao_mana() * delta)
+		mana = minf(maximo, mana + ficha.regeneracao_mana() * Passivas.regeneracao_mana(self) * delta)
 		if absf(mana - _mana_enviada) >= 1.0 or mana >= maximo:
 			_enviar_mana()
 
@@ -651,7 +718,7 @@ func _tempo_coleta() -> float:
 	var recurso := alvo.dono() as ResourceNode
 	var minerando := recurso != null and recurso.acao == "Minerar"
 	var ferramenta := &"picareta" if minerando else &"machado"
-	return maxf(alvo.tempo_segurar * ficha.tempo_coleta(minerando) / poder_da_mao(ferramenta), 0.01)
+	return maxf(alvo.tempo_segurar * ficha.tempo_coleta(minerando) / poder_da_mao(ferramenta) / Passivas.coleta(self, minerando), 0.01)
 
 
 func _atualizar_alvo() -> void:
@@ -905,9 +972,11 @@ func criar_personagem(raca_id: StringName, classe_id: StringName, ap: Dictionary
 	vida.curar_tudo()
 	mana = ficha.mana_maxima()
 	_enviar_mana()
-	_recargas.resize(habilidades().size())
-	_recargas.fill(0.0)
+	_recargas.clear()
 	_prontas_no_anfitriao.clear()
+	arvore.clear()
+	teclas.clear()
+	_aplicar_passivas_fixas()
 	dar_kit()
 	_vestir_base()
 	_roupas_mudaram()
@@ -969,9 +1038,11 @@ func _aspecto_sync(raca_id: StringName, classe_id: StringName, ap: Dictionary, r
 	criando = em_criacao
 	if trocou_classe:
 		_recalcular_ficha()
-		_recargas.resize(habilidades().size())
-		_recargas.fill(0.0)
+		_recargas.clear()
+		_aplicar_passivas_fixas()
 		if not multiplayer.is_server():
+			arvore.clear()  # a árvore da classe nova chega logo depois (_progresso_sync)
+			teclas.clear()
 			vida.atual = vida.maximo
 			vida.mudou.emit(vida.atual, vida.maximo)
 			mana = ficha.mana_maxima()
@@ -1040,7 +1111,7 @@ func bonus_dano_fisico() -> float:
 
 
 func multiplicador_velocidade() -> float:
-	return BONUS_FURIA_VELOCIDADE if furia_ativa() else 1.0
+	return (BONUS_FURIA_VELOCIDADE if furia_ativa() else 1.0) * Passivas.velocidade(self)
 
 
 @rpc("any_peer", "reliable")
@@ -1083,6 +1154,8 @@ func envenenar_atingido(area: Hurtbox) -> void:
 
 ## Só o anfitrião chama (Bomba de fumaça): os inimigos perdem este jogador de vista.
 func esconder(segundos: float) -> void:
+	if tem(&"emboscada"):
+		_emboscada_pronta = true
 	_fumaca_sync.rpc(segundos)
 
 
@@ -1097,11 +1170,13 @@ func _fumaca_sync(segundos: float) -> void:
 
 
 ## Só o anfitrião chama (Bênção): recupera `vida_por_segundo` a cada segundo, por `segundos`.
-func abencoar(segundos: float, vida_por_segundo: float) -> void:
+## `de`: quem abençoou (as passivas de cura dele valem).
+func abencoar(segundos: float, vida_por_segundo: float, de: Player = null) -> void:
 	var agora := Time.get_ticks_msec()
 	_bencao_ate_ms = agora + int(segundos * 1000.0)
 	_bencao_proximo_ms = agora + 1000
 	_bencao_vida = vida_por_segundo
+	_bencao_de = de
 
 
 func abencoado() -> bool:
@@ -1113,7 +1188,307 @@ func _processar_bencao() -> void:
 	if _bencao_ate_ms == 0 or Time.get_ticks_msec() < _bencao_proximo_ms:
 		return
 	_bencao_proximo_ms += 1000
-	if vida.esta_vivo() and vida.atual < vida.maximo:
-		vida.curar(_bencao_vida)
+	var de := _bencao_de if is_instance_valid(_bencao_de) else null
+	if vida.esta_vivo() and (vida.atual < vida.maximo or (de and de.tem(&"fe"))):
+		receber_cura(de, _bencao_vida)
 	if _bencao_proximo_ms > _bencao_ate_ms:
 		_bencao_ate_ms = 0
+
+
+## Só o anfitrião: cura vinda de `de` (Clérigo). Mãos que curam aumenta; com a Fé, o que
+## passaria da vida máxima vira escudo por 5 s (a Égide deixa o escudo mais forte).
+func receber_cura(de: Player, quantidade: float) -> void:
+	if de:
+		quantidade *= Passivas.cura(de)
+	var sobra := vida.curar(quantidade)
+	if de and de.tem(&"fe") and sobra > 0.0:
+		vida.dar_escudo(sobra * Passivas.escudos(de), Passivas.FE_SEGUNDOS)
+
+
+# --- Árvore de habilidades ----------------------------------------------------------------
+## Os nós ficam em ArvoreData; o que as passivas fazem, em Passivas. O dono PEDE para
+## aprender (ou melhorar) um nó e para trocar o que vai em cada tecla; o anfitrião confere
+## pontos, nível, pré-requisitos e o ramo escolhido, aplica e manda para todos.
+const TECLAS := 4
+
+var _bencao_de: Player
+var _mult_lancamento := 1.0  # Ressonância (vale só durante um lançamento)
+var _ultimo_elemento: StringName = &""
+var _feiticos := 0  # Sobrecarga: feitiços seguidos pagos
+var _feitico_gratis := false
+var _emboscada_pronta := false
+var _ritmo_ate_ms := 0
+var _golpe_rapido := false
+var _aura := 0.0
+var _pos_parado := Vector2.INF
+var _parado_desde_ms := 0
+var _suspiro_pronto_ms := 0
+
+
+## Nível do nó: 0 não aprendido, 1 aprendido, 2 a 4 com melhorias. Os da classe valem 1.
+func rank(no_id: StringName) -> int:
+	var r: int = arvore.get(no_id, 0)
+	if r == 0 and ArvoreData.eh_padrao(classe, no_id):
+		return 1
+	return r
+
+
+func tem(no_id: StringName) -> bool:
+	return rank(no_id) > 0
+
+
+func melhorias(no_id: StringName) -> int:
+	return maxi(0, rank(no_id) - 1)
+
+
+## O ramo que o jogador escolheu (o primeiro nó de ramo aprendido), ou vazio.
+func ramo_escolhido() -> StringName:
+	for id in arvore:
+		var n := ArvoreData.no(classe, id)
+		if n and n.ramo != NoArvore.RAMO_CLASSE and n.ramo != NoArvore.RAMO_INICIAIS and arvore[id] > 0:
+			return n.ramo
+	return &""
+
+
+## Por que não dá para aprender (ou melhorar) o nó agora. Vazio: dá. Os mesmos testes
+## rodam na tela (para o botão) e no anfitrião (que é quem decide).
+func motivo_bloqueio(n: NoArvore) -> String:
+	if n == null:
+		return "Esse nó não é da sua classe."
+	var r := rank(n.id)
+	if r >= n.rank_maximo():
+		if n.padrao and n.rank_maximo() == 1:
+			return "Já vem com a classe."
+		return "Já aprendido." if n.rank_maximo() == 1 else "Melhorias completas."
+	if r == 0:
+		if nivel < n.nivel:
+			return "Precisa do nível %d." % n.nivel
+		for req in n.requisitos:
+			if not tem(req):
+				return "Precisa aprender antes: %s." % _nome_no(req)
+		if not n.algum_de.is_empty() and not n.algum_de.any(func(id: StringName) -> bool: return tem(id)):
+			var nomes: Array[String] = []
+			for id in n.algum_de:
+				nomes.append(_nome_no(id))
+			return "Precisa aprender antes uma destas: %s." % ", ".join(nomes)
+		var escolhido := ramo_escolhido()
+		if n.ramo != NoArvore.RAMO_CLASSE and n.ramo != NoArvore.RAMO_INICIAIS and escolhido != &"" and escolhido != n.ramo:
+			return "Você já escolheu o ramo %s (só um ramo por personagem)." % ArvoreData.nome_ramo(classe, escolhido)
+	var custo := n.custo if r == 0 else 1
+	if pontos_habilidade < custo:
+		return "Sem pontos de habilidade (ganhe 1 a cada nível)."
+	return ""
+
+
+func _nome_no(no_id: StringName) -> String:
+	var n := ArvoreData.no(classe, no_id)
+	return n.nome if n else String(no_id)
+
+
+## O dono pede para aprender ou melhorar um nó.
+func pedir_aprender(no_id: StringName) -> void:
+	_pedir_aprender.rpc_id(1, no_id)
+
+
+@rpc("any_peer", "call_local", "reliable")
+func _pedir_aprender(no_id: StringName) -> void:
+	if not multiplayer.is_server() or not _pedido_do_dono():
+		return
+	var n := ArvoreData.no(classe, no_id)
+	var motivo := motivo_bloqueio(n)
+	if motivo != "":
+		avisar(motivo)
+		return
+	var r := rank(no_id)
+	pontos_habilidade -= n.custo if r == 0 else 1
+	arvore[no_id] = r + 1
+	if r == 0 and n.usavel():
+		_por_numa_tecla_livre(no_id)
+	_aplicar_passivas_fixas()
+	_enviar_progresso()
+	if r == 0:
+		avisar("Aprendeu %s!" % n.nome, &"subir_nivel")
+	else:
+		avisar("%s melhorou (%d de %d)." % [n.nome, r, NoArvore.MELHORIAS], &"subir_nivel")
+
+
+## Atalho dos testes (só no anfitrião): aprende o nó sem gastar ponto nem olhar o nível.
+func aprender_de_graca(no_id: StringName) -> void:
+	var n := ArvoreData.no(classe, no_id)
+	if not multiplayer.is_server() or n == null or tem(no_id):
+		return
+	arvore[no_id] = 1
+	if n.usavel():
+		_por_numa_tecla_livre(no_id)
+	_aplicar_passivas_fixas()
+	_enviar_progresso()
+
+
+func _por_numa_tecla_livre(no_id: StringName) -> void:
+	if teclas.is_empty():
+		teclas = ArvoreData.padrao(classe).duplicate()
+	if not no_id in teclas and teclas.size() < TECLAS:
+		teclas.append(no_id)
+
+
+## O dono pede para pôr a habilidade `no_id` na tecla `posicao` (0 a 3 = Q R T E).
+func pedir_tecla(no_id: StringName, posicao: int) -> void:
+	_pedir_tecla.rpc_id(1, no_id, posicao)
+
+
+@rpc("any_peer", "call_local", "reliable")
+func _pedir_tecla(no_id: StringName, posicao: int) -> void:
+	if not multiplayer.is_server() or not _pedido_do_dono():
+		return
+	var n := ArvoreData.no(classe, no_id)
+	if n == null or not n.usavel() or not tem(no_id) or posicao < 0 or posicao >= TECLAS:
+		return
+	var t: Array[StringName] = ids_nas_teclas().duplicate()
+	var onde := t.find(no_id)
+	if onde >= 0:
+		if posicao >= t.size():
+			return
+		t[onde] = t[posicao]  # troca de lugar com a que estava lá
+		t[posicao] = no_id
+	elif posicao < t.size():
+		t[posicao] = no_id
+	else:
+		t.append(no_id)
+	teclas = t
+	_enviar_progresso()
+
+
+func recarga_de(hab: HabilidadeData) -> float:
+	return Passivas.recarga(self, hab)
+
+
+func custo_de(hab: HabilidadeData) -> float:
+	if _feitico_gratis and tem(&"sobrecarga") and hab.custo_mana > 0.0:
+		return 0.0
+	return Passivas.custo_mana(self, hab)
+
+
+## Dano das habilidades: melhorias e Ressonância.
+func mult_habilidade(hab: HabilidadeData) -> float:
+	return (1.0 + NoArvore.DANO_POR_MELHORIA * melhorias(hab.id)) * _mult_lancamento
+
+
+## Sobrecarga (anfitrião): a cada 4 feitiços pagos, o próximo sai de graça.
+func _contar_feitico(foi_gratis: bool) -> void:
+	if not tem(&"sobrecarga"):
+		return
+	if foi_gratis:
+		_feiticos = 0
+		_definir_gratis(false)
+		return
+	_feiticos += 1
+	if _feiticos >= Passivas.SOBRECARGA_A_CADA:
+		_feiticos = 0
+		_definir_gratis(true)
+		avisar("Sobrecarga! O próximo feitiço sai sem gastar mana.")
+
+
+func _definir_gratis(valor: bool) -> void:
+	_feitico_gratis = valor
+	if not eh_local():
+		_gratis_sync.rpc_id(id_rede(), valor)
+
+
+@rpc("any_peer", "reliable")
+func _gratis_sync(valor: bool) -> void:
+	if Net.veio_do_anfitriao():
+		_feitico_gratis = valor
+
+
+func feitico_gratis() -> bool:
+	return _feitico_gratis
+
+
+## Emboscada (anfitrião): o primeiro golpe depois da fumaça é crítico.
+func consumir_emboscada() -> bool:
+	if not _emboscada_pronta:
+		return false
+	_emboscada_pronta = false
+	return Time.get_ticks_msec() <= _fumaca_ate_ms + Passivas.EMBOSCADA_JANELA_MS
+
+
+func ritmo_ativo() -> bool:
+	return Time.get_ticks_msec() < _ritmo_ate_ms
+
+
+## Segundos que o jogador está parado no mesmo lugar (Raízes; anfitrião).
+func parado_ha() -> float:
+	if _pos_parado == Vector2.INF:
+		return 0.0
+	return (Time.get_ticks_msec() - _parado_desde_ms) / 1000.0
+
+
+func dano_veneno() -> float:
+	return _veneno_dano
+
+
+## Último suspiro (anfitrião): gasta a vez deste Clérigo, se estiver pronta.
+func usar_ultimo_suspiro() -> bool:
+	var agora := Time.get_ticks_msec()
+	if _suspiro_pronto_ms > 0 and agora < _suspiro_pronto_ms:
+		return false
+	_suspiro_pronto_ms = agora + Passivas.ULTIMO_SUSPIRO_MS
+	return true
+
+
+## Para onde o jogador olha (das animações sincronizadas; vale em todas as máquinas).
+func frente() -> Vector2:
+	var a := String(animacao)
+	if a.ends_with("esquerda"):
+		return Vector2.LEFT
+	if a.ends_with("direita"):
+		return Vector2.RIGHT
+	if a.ends_with("cima"):
+		return Vector2.UP
+	return Vector2.DOWN
+
+
+## Quanto os inimigos enxergam este jogador (Passos de gato).
+func fator_visao() -> float:
+	return Passivas.visao_inimiga(self)
+
+
+## Passivas que valem o tempo todo: a Luz própria do Clérigo afasta os slimes da noite
+## (World.luz_que_protege olha o grupo "luz_protege").
+func _aplicar_passivas_fixas() -> void:
+	if tem(&"luz_propria"):
+		set_meta(&"raio_luz", Passivas.LUZ_PROPRIA_RAIO)
+		if not is_in_group(&"luz_protege"):
+			add_to_group(&"luz_protege")
+	elif is_in_group(&"luz_protege"):
+		remove_from_group(&"luz_protege")
+
+
+## Só o anfitrião, todo quadro: Aura serena e o relógio das Raízes.
+func _processar_passivas(delta: float) -> void:
+	if ficha == null or criando:
+		return
+	if _pos_parado == Vector2.INF or global_position.distance_to(_pos_parado) > 1.0:
+		_pos_parado = global_position
+		_parado_desde_ms = Time.get_ticks_msec()
+	if tem(&"aura_serena"):
+		_aura += delta
+		if _aura >= Passivas.AURA_INTERVALO:
+			_aura -= Passivas.AURA_INTERVALO
+			for j in Logicas.jogadores_em_volta(self, Passivas.AURA_RAIO):
+				if j.vida.esta_vivo() and j.vida.atual < j.vida.maximo:
+					j.receber_cura(self, Passivas.AURA_SERENA)
+
+
+## Cambalhota (o anfitrião manda): o dash fica pronto na hora, para o segundo pulo.
+func liberar_esquiva() -> void:
+	if eh_local():
+		_liberar_esquiva()
+	else:
+		_liberar_esquiva.rpc_id(id_rede())
+
+
+@rpc("any_peer", "reliable")
+func _liberar_esquiva() -> void:
+	if Net.veio_do_anfitriao():
+		_recarga_esquiva = 0.0

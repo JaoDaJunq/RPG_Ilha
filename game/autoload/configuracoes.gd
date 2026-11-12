@@ -41,6 +41,7 @@ const GRUPOS: Array[Dictionary] = [
 	{"titulo": "Telas e outros", "entradas": [
 		{"nome": "Mochila", "acoes": [&"mochila"]},
 		{"nome": "Ficha do personagem", "acoes": [&"ficha"]},
+		{"nome": "Árvore de habilidades", "acoes": [&"arvore"]},
 		{"nome": "Alternar dia e noite", "acoes": [&"alternar_noite"]},
 		{"nome": "Ligar e desligar o som", "acoes": [&"alternar_som"]},
 	]},

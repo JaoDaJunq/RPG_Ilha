@@ -21,6 +21,7 @@ var jogador: Player
 var _raiz: Control
 var _itens_barra: Array[Dictionary] = []  # {fundo, selecionado, icone, sombra, qtd}
 var _mochila: Mochila
+var _arvore: ArvoreTela
 var _titulo_personagem: Label
 var _retrato: TextureRect
 var _barra_vida: ProgressBar
@@ -38,6 +39,7 @@ var _ficha_texto: Label
 var _ficha_rodape: Label
 var _ficha_atributos: Dictionary[StringName, Label] = {}
 var _ficha_botoes: Dictionary[StringName, Button] = {}
+var _ficha_botao_arvore: Button
 var _nomes: Dictionary[Node, Label] = {}
 var _dica: PanelContainer  # janelinha da habilidade (botão direito)
 var _dica_slot: Control  # o botão em que ela está aberta
@@ -72,8 +74,10 @@ func configurar(p: Player) -> void:
 	jogador = p
 	jogador.inventario.mudou.connect(_atualizar_itens)
 	_mochila.configurar(p)
+	_arvore.configurar(p, _mochila.aberta)
 	jogador.vida.mudou.connect(func(atual: float, maximo: float) -> void: _barra_vida.value = atual / maximo * 100.0)
 	jogador.progresso_mudou.connect(_atualizar_progresso)
+	jogador.progresso_mudou.connect(_atualizar_slots)  # a árvore muda o que vai em Q R T E
 	_vida_vista = jogador.vida.atual
 	jogador.vida.mudou.connect(_ao_mudar_vida)
 	jogador.aspecto_mudou.connect(_atualizar_aspecto)
@@ -85,14 +89,19 @@ func configurar(p: Player) -> void:
 ## retrato, título e botões de habilidade acompanham. Sem HUD enquanto cria o personagem.
 func _atualizar_aspecto() -> void:
 	_retrato.texture = _retrato_de(jogador)
+	_atualizar_slots()
+	_atualizar_progresso()
+	_raiz.visible = not jogador.criando
+
+
+## Os botões Q R T E mostram as habilidades nas teclas (as da classe e as da árvore).
+func _atualizar_slots() -> void:
 	var hab := jogador.habilidades()
 	for i in _slots.size():
 		var tem := i < hab.size()
 		_slots[i].icone.texture = hab[i].icone if tem else null
 		_slots[i].fundo.tooltip_text = "Botão direito: detalhes" if tem else ""
-		_slots[i].fundo.visible = tem  # classe com 2 habilidades: F e G somem
-	_atualizar_progresso()
-	_raiz.visible = not jogador.criando
+		_slots[i].fundo.visible = tem  # teclas ainda sem habilidade somem
 
 
 func mostrar_aviso(texto: String) -> void:
@@ -107,6 +116,10 @@ func texto_aviso() -> String:
 
 func ficha_visivel() -> bool:
 	return _ficha.visible
+
+
+func arvore() -> ArvoreTela:
+	return _arvore
 
 
 ## Clicou em qualquer lugar: a janelinha da habilidade fecha. (Clicar com o botão direito no
@@ -125,7 +138,13 @@ func _unhandled_input(event: InputEvent) -> void:
 		fechar_descricao()
 		get_viewport().set_input_as_handled()
 	elif event.is_action_pressed(&"mochila") and jogador and not jogador.criando:
+		_arvore.fechar()
 		_mochila.alternar()
+		get_viewport().set_input_as_handled()
+	elif event.is_action_pressed(&"arvore") and jogador and not jogador.criando:
+		_mochila.fechar()
+		_ficha.visible = false
+		_arvore.alternar()
 		get_viewport().set_input_as_handled()
 	elif event.is_action_pressed(&"ui_cancel") and _mochila.aberta():
 		_mochila.fechar()
@@ -290,13 +309,13 @@ func _rodape_ficha() -> String:
 	var f := jogador.ficha
 	return "\n".join([
 		"Pontos para distribuir: %d" % jogador.pontos_atributo,
-		"Pontos de habilidade: %d (árvore em breve)" % jogador.pontos_habilidade,
+		"Pontos de habilidade: %d" % jogador.pontos_habilidade,
 		"Vida %d · Mana %d · Velocidade %d" % [f.vida_maxima(), f.mana_maxima(), f.velocidade()],
 		"Dano físico x%.1f · mágico x%.1f" % [f.multiplicador_fisico(), f.multiplicador_magico()],
 		"%s: %s" % [f.raca.habilidade_nome, f.raca.habilidade_descricao],
 		"",
 		"%s andar · clique abre, segurar coleta e golpeia · %s dash" % [_teclas_de_andar(), Configuracoes.tecla_de(&"esquivar")],
-		"%s habilidades · 1-9 itens · %s mochila · %s ficha · %s dia/noite" % [_teclas_de_habilidades(), Configuracoes.tecla_de(&"mochila"), Configuracoes.tecla_de(&"ficha"), Configuracoes.tecla_de(&"alternar_noite")],
+		"%s habilidades · 1-9 itens · %s mochila · %s ficha · %s árvore · %s dia/noite" % [_teclas_de_habilidades(), Configuracoes.tecla_de(&"mochila"), Configuracoes.tecla_de(&"ficha"), Configuracoes.tecla_de(&"arvore"), Configuracoes.tecla_de(&"alternar_noite")],
 	])
 
 
@@ -309,6 +328,7 @@ func _atualizar_progresso() -> void:
 	_barra_xp.tooltip_text = "Experiência %d / %d" % [jogador.xp, jogador.xp_para_subir()]
 	_ficha_texto.text = _texto_ficha()
 	_ficha_rodape.text = _rodape_ficha()
+	_ficha_botao_arvore.text = "Árvore de habilidades (%s)" % Configuracoes.tecla_de(&"arvore")
 	for a in Ficha.ATRIBUTOS:
 		var bonus: int = f.raca.bonus.get(a, 0)
 		var pontos: int = jogador.distribuidos.get(a, 0)
@@ -451,6 +471,8 @@ func _montar() -> void:
 
 	_mochila = Mochila.new()
 	_raiz.add_child(_mochila)
+	_arvore = ArvoreTela.new()
+	_raiz.add_child(_arvore)
 
 	# Aviso e carga, logo acima da barra.
 	_aviso = _rotulo("", 16)
@@ -502,6 +524,12 @@ func _montar() -> void:
 	_ficha_rodape.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	_ficha_rodape.custom_minimum_size = Vector2(330, 0)
 	fv.add_child(_ficha_rodape)
+	_ficha_botao_arvore = Button.new()
+	_ficha_botao_arvore.pressed.connect(func() -> void:
+		_ficha.visible = false
+		_mochila.fechar()
+		_arvore.abrir())
+	fv.add_child(_ficha_botao_arvore)
 
 	# Teclinha E (segue o objeto quando dá para coletar).
 	_tecla_e = VBoxContainer.new()

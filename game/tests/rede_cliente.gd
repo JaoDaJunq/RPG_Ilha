@@ -69,6 +69,7 @@ func _ready() -> void:
 		await esperar(0.1)
 		espera += 0.1
 	p.pedir_atributo(&"agilidade")
+	p.pedir_aprender(&"chuva_flechas")  # o ponto de habilidade do nível 2
 	await esperar(0.5)
 	var anfitriao: Player = w.entidades.get_node_or_null("1")
 
@@ -97,6 +98,8 @@ func _ready() -> void:
 		"mana_gasta": p.mana < mana_antes,
 		"nivel": p.nivel,
 		"agilidade": p.ficha.valor(&"agilidade"),
+		"arvore_chuva": p.tem(&"chuva_flechas"),
+		"teclas": p.habilidades().size(),
 		"nivel_anfitriao": anfitriao.nivel if anfitriao else -1,
 		"antes_estado": arvore_antes.estado,
 		"noite": w.noite,

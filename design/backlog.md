@@ -34,7 +34,7 @@ Lista oficial de tarefas. Marcar `[x]` só com prova (teste OK ou print revisado
 - [x] T31 Criação no menu: Humano e Ogro; Guerreiro (Investida, Giro), Mago (Bola de fogo, Lança de gelo) e Arqueiro (Tiro carregado, Armadilha). Tudo em rede.
 - [x] T32 Elementos e reações: congelar, estilhaçar (dano dobrado), ponte de gelo sobre a água que derrete, fogo que se espalha devagar para árvores vizinhas.
 - [x] T33 Níveis 1–16 e experiência (slime 10, coleta 2, dividida num raio de 160 px; Humano +10%). Por nível: +2 pontos de atributo (botões "+" na ficha) e +1 de habilidade (guardados para a T34). Subir de nível cura e enche a mana.
-- [ ] T34 Tela da árvore de habilidades (ramos de cada classe) e refazer escolhas na fogueira.
+- [x] T34 Árvore de habilidades (K): dados das 5 classes, aprender e melhorar pelo anfitrião, um ramo por personagem, passivas com efeito, teclas Q R T E escolhidas na árvore, salvo no mundo (12/11). Falta: refazer escolhas na fogueira e o efeito das habilidades novas marcadas com "!".
 - [ ] T35 Ramos completos de Guerreiro, Mago e Arqueiro; modo "com mira".
 - [ ] T36 Clérigo, Druida, Assassino e Alquimista; Elfo, Anão e Tritão.
 - [ ] T37 Arte COMPLETA por raça e classe (4 raças x 5 classes, 3 vistas), montada por peças; ver `design/guia_codex.md` (decisão de 01/11: desistimos das roupas trocáveis).

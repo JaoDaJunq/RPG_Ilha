@@ -65,7 +65,7 @@ func _tirou(s: Slime) -> float:
 
 ## Zera recargas e enche a mana para usar a habilidade de novo.
 func _recarregar(p: Player) -> void:
-	p._recargas.fill(0.0)
+	p._recargas.clear()
 	p._prontas_no_anfitriao.clear()
 	p.mana = p.ficha.mana_maxima()
 
@@ -74,6 +74,7 @@ func _recarregar(p: Player) -> void:
 func _aliado(w: World, nome: String, pos: Vector2) -> Player:
 	var a: Player = JOGADOR.instantiate()
 	a.name = nome
+	a.classe = &"mago"  # sem passivas de defesa: os números do Clérigo ficam limpos
 	a.position = pos
 	w.entidades.add_child(a)
 	return a
@@ -124,10 +125,13 @@ func _ladino() -> void:
 	var mult := p.ficha.multiplicador_fisico()
 	checar(p.inventario.quantidade_de(&"adagas") == 1, "o Ladino nasce com as adagas")
 	checar(p.equipado.get("corpo") == &"roupa_ladino" and p.equipado.get("cabeca") == &"", "o Ladino nasce com o traje completo")
-	checar(p.habilidades().size() == 4 and p.habilidades()[0].id == &"golpe_furtivo", "o Ladino tem 4 habilidades")
+	checar(p.habilidades().size() == 2 and p.habilidades()[0].id == &"golpe_furtivo", "o Ladino nasce com 2 habilidades (Golpe furtivo e Leque)")
+	liberar_habilidades(p)
+	checar(p.habilidades().size() == 4 and p.habilidades()[3].id == &"bomba_fumaca", "liberadas na árvore, o Ladino tem 4 habilidades")
 
 	# Golpe furtivo num inimigo que não persegue: dano dobrado, e o ladino avança até ele.
 	var parado := _slime_parado(w, p.global_position + Vector2(52, 0))
+	parado.visual.flip_h = true  # olhando para o ladino: sem o bônus de Pelas costas
 	await get_tree().physics_frame
 	p.mira_forcada = parado.global_position
 	var x0 := p.global_position.x
@@ -191,7 +195,8 @@ func _ladino() -> void:
 	_recarregar(p)
 	p.global_position = w.centro + Vector2(0, 80)
 	await get_tree().physics_frame
-	var perseguidor := _slime_vivo(w, p.global_position + Vector2(70, 0))
+	# 55 px: com os Passos de gato, o slime só nota o ladino a 70% da visão (63 px).
+	var perseguidor := _slime_vivo(w, p.global_position + Vector2(55, 0))
 	await esperar(0.25)
 	checar(perseguidor.persegue(p), "antes da fumaça, o slime persegue")
 	p.usar_habilidade_por_id(&"bomba_fumaca")
@@ -210,6 +215,7 @@ func _ladino() -> void:
 	var leque: Array[Slime] = []
 	for ang in [-0.28, 0.0, 0.28]:
 		leque.append(_slime_parado(w, p.global_position + Vector2(46, 0).rotated(ang)))
+		leque.back().visual.flip_h = true  # de frente para o ladino: sem Pelas costas
 	await get_tree().physics_frame
 	p.mira_forcada = p.global_position + Vector2(200, -10)
 	p.usar_habilidade_por_id(&"leque_adagas")
@@ -231,7 +237,9 @@ func _clerigo() -> void:
 	var p := w.jogador
 	checar(p.inventario.quantidade_de(&"maca") == 1, "o Clérigo nasce com a maça")
 	checar(p.equipado.get("corpo") == &"roupa_clerigo" and p.equipado.get("cabeca") == &"", "o Clérigo nasce com o traje completo")
-	checar(p.habilidades().size() == 4 and p.habilidades()[3].id == &"bencao", "o Clérigo tem 4 habilidades")
+	liberar_habilidades(p)
+	checar(p.habilidades().size() == 4 and p.habilidades()[3].id == &"bencao", "liberadas na árvore, o Clérigo tem 4 habilidades")
+	p._aura = -1000.0  # a Aura serena (passiva, testada em passivas_smoke) fica de fora destas contas
 	p.global_position = w.centro + Vector2(0, 80)
 	var perto := _aliado(w, "2", p.global_position + Vector2(30, 0))
 	var longe := _aliado(w, "3", p.global_position + Vector2(220, 0))

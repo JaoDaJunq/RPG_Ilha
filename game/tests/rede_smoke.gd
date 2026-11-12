@@ -99,6 +99,10 @@ func _ready() -> void:
 	if cliente:
 		checar(cliente.distribuidos.get(&"agilidade", 0) == 1 and cliente.pontos_atributo == 1, "ponto que o cliente colocou chegou no anfitrião")
 	checar(relatorio.get("agilidade", 0) == Ficha.criar(&"ogro", &"arqueiro").valor(&"agilidade") + 1, "cliente vê a própria Agilidade subir (%s)" % relatorio.get("agilidade"))
+	# Árvore de habilidades: o cliente pediu a Chuva de flechas com o ponto do nível 2.
+	if cliente:
+		checar(cliente.tem(&"chuva_flechas") and cliente.pontos_habilidade == 0, "o anfitrião aprovou o pedido da árvore do cliente (Chuva de flechas)")
+	checar(relatorio.get("arvore_chuva", false) and relatorio.get("teclas", 0) == 3, "cliente recebeu a árvore e a Chuva na tecla T (%s teclas)" % relatorio.get("teclas"))
 	checar(relatorio.get("antes_estado", -1) == ResourceNode.Estado.ESGOTADO, "quem entra depois vê a árvore já cortada")
 	checar(relatorio.get("noite", false), "quem entra depois recebe a noite que já tinha caído")
 	checar(relatorio.get("item_chao", []) == ["couro", 2], "cliente vê o item caído no chão com o item e a quantidade certos (%s)" % [relatorio.get("item_chao")])
