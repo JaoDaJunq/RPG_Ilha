@@ -27,6 +27,11 @@ class GritoDeGuerra extends HabilidadeLogica:
 	const BONUS := 0.10
 	const DURACAO := 6.0
 
+	func linhas_efeito(_hab: HabilidadeData) -> Array[String]:
+		return ["Medo por %s s nos inimigos num raio de %s" % [TextoHabilidade.numero(MEDO), TextoHabilidade.blocos(RAIO_MEDO)],
+				"Dano: +%s%% para você e aliados num raio de %s" % [TextoHabilidade.numero(BONUS * 100.0), TextoHabilidade.blocos(RAIO_ALIADOS)],
+				"O bônus dura %s s" % TextoHabilidade.numero(DURACAO)]
+
 	func executar(quem: Player, hab: HabilidadeData, _dir: Vector2, _alvo: Vector2, _carga: float) -> void:
 		Golpes.estado_em_volta(quem, quem.global_position, RAIO_MEDO, EfeitosEstado.MEDO, MEDO)
 		Golpes.buff_em_volta(quem, RAIO_ALIADOS, Buffs.DANO, BONUS * quem.mult_habilidade(hab), DURACAO)
@@ -38,6 +43,10 @@ class EscudoArremessado extends HabilidadeLogica:
 	const QUIQUES := 2  # acerta o primeiro e quica em mais 2
 	const RAIO_QUIQUE := 64.0
 	const ATORDOAR := 0.5
+
+	func linhas_efeito(_hab: HabilidadeData) -> Array[String]:
+		return ["Quica em até %d inimigos (até %s entre um e outro)" % [QUIQUES + 1, TextoHabilidade.blocos(RAIO_QUIQUE)],
+				"Atordoa cada um por %s s" % TextoHabilidade.numero(ATORDOAR)]
 
 	func executar(quem: Player, hab: HabilidadeData, dir: Vector2, _alvo: Vector2, _carga: float) -> void:
 		var p := Logicas.lancar(LogicasGuerreiro.ESCUDO, quem, dir, dano_de(quem, hab))
@@ -55,6 +64,9 @@ class Provocar extends HabilidadeLogica:
 	const RAIO := 64.0
 	const DURACAO := 4.0
 
+	func linhas_efeito(_hab: HabilidadeData) -> Array[String]:
+		return ["Inimigos num raio de %s perseguem só você" % TextoHabilidade.blocos(RAIO), "Dura %s s" % TextoHabilidade.numero(DURACAO)]
+
 	func executar(quem: Player, _hab: HabilidadeData, _dir: Vector2, _alvo: Vector2, _carga: float) -> void:
 		Golpes.estado_em_volta(quem, quem.global_position, RAIO, EfeitosEstado.PROVOCADO, DURACAO)
 		World.efeito_todos(quem, &"furia", quem.global_position)
@@ -68,6 +80,11 @@ class Bastiao extends HabilidadeLogica:
 	const REDUCAO := 0.5
 	const REDUCAO_MAXIMA := 0.8
 	const EMPURRAO := 24.0
+
+	func linhas_efeito(_hab: HabilidadeData) -> Array[String]:
+		return ["Cúpula com raio de %s por %s s" % [TextoHabilidade.blocos(RAIO), TextoHabilidade.numero(DURACAO)],
+				"Dentro: dano recebido -%s%%" % TextoHabilidade.numero(REDUCAO * 100.0),
+				"Empurra os inimigos para fora"]
 
 	func executar(quem: Player, hab: HabilidadeData, _dir: Vector2, _alvo: Vector2, _carga: float) -> void:
 		var z := Zona.criar(quem, quem.global_position, RAIO, DURACAO, 0.25)
@@ -88,6 +105,10 @@ class Bastiao extends HabilidadeLogica:
 class Juramento extends HabilidadeLogica:
 	const DURACAO := 8.0
 
+	func linhas_efeito(_hab: HabilidadeData) -> Array[String]:
+		return ["%s%% do dano dos aliados num raio de %s vem para você" % [TextoHabilidade.numero(PassivasGuerreiro.JURAMENTO_PARTE * 100.0), TextoHabilidade.blocos(PassivasGuerreiro.RAIO_JURAMENTO)],
+				"Você não cai abaixo de 1 de vida", "Dura %s s" % TextoHabilidade.numero(DURACAO)]
+
 	func executar(quem: Player, _hab: HabilidadeData, _dir: Vector2, _alvo: Vector2, _carga: float) -> void:
 		quem.set_meta(PassivasGuerreiro.META_JURAMENTO, Time.get_ticks_msec() + int(DURACAO * 1000.0))
 		World.efeito_preso_todos(quem, &"escudo", DURACAO, Vector2(0, -9))
@@ -100,6 +121,9 @@ class Juramento extends HabilidadeLogica:
 class Machadada extends HabilidadeLogica:
 	const DISTANCIA := 16.0
 	const RAIO := 24.0
+
+	func linhas_efeito(_hab: HabilidadeData) -> Array[String]:
+		return ["Área na frente: raio de %s" % TextoHabilidade.blocos(RAIO), "Derruba árvore e quebra pedra num golpe só"]
 
 	func executar(quem: Player, hab: HabilidadeData, dir: Vector2, _alvo: Vector2, _carga: float) -> void:
 		var centro := quem.global_position + dir * DISTANCIA
@@ -124,6 +148,10 @@ class SaltoEsmagador extends HabilidadeLogica:
 	const RAIO := 36.0
 	const DERRUBAR := 1.0
 
+	func linhas_efeito(hab: HabilidadeData) -> Array[String]:
+		return ["Pula até %s" % TextoHabilidade.blocos(hab.alcance), "Na queda: área de raio %s" % TextoHabilidade.blocos(RAIO),
+				"Derruba os inimigos por %s s" % TextoHabilidade.numero(DERRUBAR)]
+
 	func executar(quem: Player, hab: HabilidadeData, _dir: Vector2, alvo: Vector2, _carga: float) -> void:
 		var destino := LogicasGuerreiro.ponto_no_alcance(quem, alvo, hab.alcance)
 		var dano := dano_de(quem, hab)
@@ -146,6 +174,9 @@ class Redemoinho extends HabilidadeLogica:
 	const DURACAO := 3.0
 	const INTERVALO := 0.5
 
+	func linhas_efeito(_hab: HabilidadeData) -> Array[String]:
+		return ["Área em volta: raio de %s" % TextoHabilidade.blocos(RAIO), "Acerta a cada %s s por %s s, andando" % [TextoHabilidade.numero(INTERVALO), TextoHabilidade.numero(DURACAO)]]
+
 	func executar(quem: Player, hab: HabilidadeData, _dir: Vector2, _alvo: Vector2, _carga: float) -> void:
 		# Folga de um quadro: o tique dos 3 s não se perde no arredondamento do relógio.
 		var z := Zona.criar(quem, quem.global_position, RAIO, DURACAO + 0.05, INTERVALO)
@@ -162,6 +193,10 @@ class FuriaTitanica extends HabilidadeLogica:
 	const DURACAO := 10.0
 	const TAMANHO := 1.35
 
+	func linhas_efeito(_hab: HabilidadeData) -> Array[String]:
+		return ["Não é empurrado", "Golpe físico: %s%% do dano em quem está a até %s do alvo" % [TextoHabilidade.numero(PassivasGuerreiro.TITANICA_DANO * 100.0), TextoHabilidade.blocos(PassivasGuerreiro.TITANICA_RAIO)],
+				"Dura %s s" % TextoHabilidade.numero(DURACAO)]
+
 	func executar(quem: Player, _hab: HabilidadeData, _dir: Vector2, _alvo: Vector2, _carga: float) -> void:
 		quem.set_meta(PassivasGuerreiro.META_TITANICA, Time.get_ticks_msec() + int(DURACAO * 1000.0))
 		quem.crescer(TAMANHO, DURACAO)
@@ -176,6 +211,10 @@ class Estandarte extends HabilidadeLogica:
 	const DURACAO := 8.0
 	const BONUS := 0.15
 	const CURA := 2.0
+
+	func linhas_efeito(hab: HabilidadeData) -> Array[String]:
+		return ["Alcance: %s; área de raio %s por %s s" % [TextoHabilidade.blocos(hab.alcance), TextoHabilidade.blocos(RAIO), TextoHabilidade.numero(DURACAO)],
+				"Aliados na área: dano +%s%%" % TextoHabilidade.numero(BONUS * 100.0), "Recuperam %s de vida por segundo" % TextoHabilidade.numero(CURA)]
 
 	func executar(quem: Player, hab: HabilidadeData, _dir: Vector2, alvo: Vector2, _carga: float) -> void:
 		var ponto := LogicasGuerreiro.ponto_no_alcance(quem, alvo, hab.alcance)
@@ -195,6 +234,9 @@ class Corrente extends HabilidadeLogica:
 	const PUXA := 120.0
 	const DURACAO := 0.7
 
+	func linhas_efeito(_hab: HabilidadeData) -> Array[String]:
+		return ["Puxa o primeiro inimigo até você (até %s)" % TextoHabilidade.blocos(PUXA)]
+
 	func executar(quem: Player, hab: HabilidadeData, dir: Vector2, _alvo: Vector2, _carga: float) -> void:
 		var p := Logicas.lancar(LogicasGuerreiro.CORRENTE, quem, dir, dano_de(quem, hab))
 		p.duracao = DURACAO
@@ -210,6 +252,9 @@ class OrdemDeAtaque extends HabilidadeLogica:
 	const DURACAO := 8.0
 	const BONUS := 0.30
 
+	func linhas_efeito(hab: HabilidadeData) -> Array[String]:
+		return ["Alcance: %s" % TextoHabilidade.blocos(hab.alcance), "Todos dão +%s%% de dano no marcado" % TextoHabilidade.numero(BONUS * 100.0), "Dura %s s" % TextoHabilidade.numero(DURACAO)]
+
 	func executar(quem: Player, hab: HabilidadeData, _dir: Vector2, alvo: Vector2, _carga: float) -> void:
 		var e := Logicas.inimigo_na_mira(quem, alvo, hab.alcance, RAIO_MIRA)
 		if e == null:
@@ -224,6 +269,9 @@ class OrdemDeAtaque extends HabilidadeLogica:
 class Avancar extends HabilidadeLogica:
 	const RAIO_ALIADOS := 80.0
 	const LARGURA := 14.0
+
+	func linhas_efeito(hab: HabilidadeData) -> Array[String]:
+		return ["Avança %s com os aliados num raio de %s" % [TextoHabilidade.blocos(hab.alcance), TextoHabilidade.blocos(RAIO_ALIADOS)], "Acerta tudo no caminho de cada um"]
 
 	func executar(quem: Player, hab: HabilidadeData, dir: Vector2, _alvo: Vector2, _carga: float) -> void:
 		var dano := dano_de(quem, hab)

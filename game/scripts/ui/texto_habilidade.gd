@@ -137,6 +137,12 @@ static func efeitos(hab: HabilidadeData, ficha: Ficha = null) -> Array[String]:
 		&"Cambalhota":
 			l.append("Avança %s" % blocos(hab.alcance))
 			l.append("O dash (Shift) fica pronto na hora")
+	if l.is_empty():
+		# Lógicas da árvore (logicas_<classe>.gd): a própria lógica escreve as linhas.
+		var classe := Logicas.classe_da_logica(hab.logica)
+		var logica: Object = classe.new() if classe else null
+		if logica and logica.has_method(&"linhas_efeito"):
+			l.append_array(logica.linhas_efeito(hab))
 	return l
 
 
