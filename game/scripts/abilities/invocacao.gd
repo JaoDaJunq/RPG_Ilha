@@ -11,7 +11,7 @@ extends CharacterBody2D
 ##
 ## Uso (numa HabilidadeLogica):
 ##   var g := Invocacao.criar(quem, ponto)
-##   g.textura_caminho = "res://assets/sprites/tiny/pedras_slime.png"  # arte (placeholder)
+##   g.desenho(["golem"], 6.0, "golem_soco")  # arte (pasta ARTE); ou textura_caminho + quadro
 ##   g.duracao = 15.0
 ##   g.dano = dano_de(quem, hab)
 ##   g.alcance = 18.0          # soco (perto) ou 100 (torre que atira)
@@ -20,10 +20,41 @@ extends CharacterBody2D
 ##   g.iniciar()
 
 const CENA := "res://scenes/abilities/invocacao.tscn"  # carregada na hora (a cena usa este script)
+## Pasta da arte das invocações e objetos das habilidades (pedido L33).
+const ARTE := "res://assets/sprites/tiny/habilidades/"
+
+
+## Usa desenhos inteiros da pasta ARTE: `nomes` são os quadros (sem ".png"; 2 ou mais
+## animam a `quadros_por_segundo`), `ataque` o desenho do golpe. `subir`: px do mundo acima
+## do chão (o falcão voando). Chame antes de `iniciar()`.
+func desenho(nomes: Array[String], quadros_por_segundo := 6.0, ataque := "", subir := 0.0) -> Invocacao:
+	var caminhos: PackedStringArray = []
+	for n in nomes:
+		caminhos.append(ARTE + n + ".png")
+	textura_caminho = ";".join(caminhos)
+	textura_ataque = ARTE + ataque + ".png" if ataque != "" else ""
+	quadro = Vector2i.ZERO
+	quadro_inicial = 0
+	quadros = nomes.size()
+	fps = quadros_por_segundo
+	escala = 0.25
+	deslocamento = Vector2(0, -subir)
+	return self
 
 # --- Arte (sincronizada ao nascer) ---------------------------------------------------------
 ## Folha da arte, quadro (tamanho), primeiro quadro e quantos quadros a animação tem.
+## Com `quadro` = (0, 0), cada arquivo é um desenho inteiro: `textura_caminho` pode trazer
+## vários, separados por ";" (os quadros da animação, ex.: o falcão batendo asa), e os pés
+## ficam no ponto sozinhos (o `deslocamento` vira só um ajuste, ex.: voando mais alto).
 @export var textura_caminho := "res://assets/sprites/tiny/pedras_slime.png"
+## Desenho inteiro mostrado por um instante a cada ataque (o soco do golem). Vazio = nenhum.
+@export var textura_ataque := ""
+## Ataques feitos (o anfitrião conta; todos mostram o desenho do ataque quando muda).
+@export var golpes := 0:
+	set(v):
+		if v != golpes and is_node_ready():
+			_mostrar_ataque()
+		golpes = v
 @export var quadro := Vector2i(128, 128)
 @export var quadro_inicial := 0
 @export var quadros := 1
@@ -96,16 +127,36 @@ func _ready() -> void:
 	collision_mask = 1  # só o chão (água e paredes do mundo)
 	var f := SpriteFrames.new()
 	f.remove_animation(&"default")
-	var tex := load(textura_caminho) as Texture2D
-	if tex:
+	var pes := Vector2.ZERO
+	if quadro == Vector2i.ZERO:
+		# Desenhos inteiros (arte das habilidades, pedido L33).
 		var lista: Array[Texture2D] = []
-		for k in maxi(1, quadros):
-			lista.append(SpriteSheets.quadro(tex, quadro_inicial + k, quadro))
-		SpriteSheets.adicionar_quadros(f, &"parado", lista, fps)
+		for caminho in textura_caminho.split(";", false):
+			var t := load(caminho) as Texture2D
+			if t:
+				lista.append(t)
+		if not lista.is_empty():
+			SpriteSheets.adicionar_quadros(f, &"parado", lista, fps)
+			pes = Vector2(0, -lista[0].get_height() / 2.0)
+		var golpe := load(textura_ataque) as Texture2D if textura_ataque != "" else null
+		if golpe:
+			SpriteSheets.adicionar_quadros(f, &"ataque", [golpe] as Array[Texture2D], 1.0, false)
+			# O desenho do ataque é mais largo (o braço esticado): o corpo fica no mesmo lugar.
+			if not lista.is_empty():
+				set_meta(&"ataque_desvio", Vector2(golpe.get_width() - lista[0].get_width(), lista[0].get_height() - golpe.get_height()) / 2.0)
+	else:
+		var tex := load(textura_caminho) as Texture2D
+		if tex:
+			var lista: Array[Texture2D] = []
+			for k in maxi(1, quadros):
+				lista.append(SpriteSheets.quadro(tex, quadro_inicial + k, quadro))
+			SpriteSheets.adicionar_quadros(f, &"parado", lista, fps)
 	visual.sprite_frames = f
 	visual.scale = Vector2(escala, escala)
-	visual.offset = deslocamento / escala
-	visual.play(&"parado")
+	visual.offset = pes + deslocamento / escala
+	visual.set_meta(&"offset_parado", visual.offset)
+	if f.has_animation(&"parado"):
+		visual.play(&"parado")
 	if multiplayer.is_server():
 		vida.maximo = vida_maxima
 		vida.atual = vida_maxima
@@ -170,6 +221,26 @@ func atacar(alvo: Node2D) -> void:
 		Golpes.acertar(self, alvo, dano, elemento, estado, estado_segundos, estado_forca, efeito_ataque)
 	if ao_atacar.is_valid():
 		ao_atacar.call(self, alvo)
+	if textura_ataque != "":
+		golpes += 1  # sincronizado: todos mostram o desenho do ataque
+
+
+## Mostra o desenho do ataque por um instante (em todas as máquinas) e volta ao parado.
+func _mostrar_ataque() -> void:
+	if visual == null or visual.sprite_frames == null or not visual.sprite_frames.has_animation(&"ataque"):
+		return
+	var desvio: Vector2 = get_meta(&"ataque_desvio", Vector2.ZERO)
+	visual.flip_h = olhando_esquerda
+	visual.offset = visual.get_meta(&"offset_parado", Vector2.ZERO) + Vector2(-desvio.x if olhando_esquerda else desvio.x, desvio.y)
+	visual.play(&"ataque")
+	get_tree().create_timer(DURACAO_SOCO, false).timeout.connect(func() -> void:
+		if is_instance_valid(visual) and visual.animation == &"ataque":
+			visual.offset = visual.get_meta(&"offset_parado", Vector2.ZERO)
+			visual.play(&"parado"))
+
+
+## Segundos que o desenho do ataque fica na tela.
+const DURACAO_SOCO := 0.3
 
 
 ## Some (acabou o tempo ou a vida). Só o anfitrião.

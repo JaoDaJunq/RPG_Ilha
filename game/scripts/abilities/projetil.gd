@@ -28,6 +28,8 @@ extends Area2D
 @export var escala_impacto := 1.0
 ## Gira a arte enquanto voa (radianos por segundo; a bomba gira, as flechas não).
 @export var girar := 0.0
+## Vira a arte para a direção do voo (a rede não vira: voa aberta, de frente).
+@export var alinhar_arte := true
 
 ## O projétil acabou: onde parou e se acertou algo (a bomba explode aqui). Só no anfitrião.
 signal terminou(pos: Vector2, acertou: bool)
@@ -74,7 +76,7 @@ func _ready() -> void:
 	visual.sprite_frames = f
 	visual.scale = Vector2(escala_arte, escala_arte)
 	visual.play(&"voando")
-	visual.rotation = direcao.angle() - angulo_da_arte
+	visual.rotation = direcao.angle() - angulo_da_arte if alinhar_arte else 0.0
 
 
 func _physics_process(delta: float) -> void:

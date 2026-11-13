@@ -317,31 +317,93 @@ func _efeito_preso(caminho: NodePath, nome: StringName, segundos: float, pos_loc
 	if not Net.veio_do_anfitriao() or dono == null:
 		return
 	var e := Efeito.criar(nome, pos_local, true)
-	dono.add_child(e)
+	e.name = String(nome)  # a marca do alvo some enquanto a caveira (marca_morte) estiver lá
+	dono.add_child(e, true)
 	get_tree().create_timer(segundos, false).timeout.connect(func() -> void:
 		if is_instance_valid(e):
-			e.queue_free())
+			e.sumir())
 
 
 ## Efeito em laço parado num ponto do chão por `segundos` (zonas: Círculo de cura, Nuvem
-## tóxica...), em todos os jogadores. `escala` multiplica o tamanho da tabela do Efeito.
-static func efeito_laco_todos(quem: Node, nome: StringName, pos: Vector2, segundos: float, escala := 1.0) -> void:
+## tóxica...), em todos os jogadores. `escala` multiplica o tamanho da tabela do Efeito;
+## `rotacao` gira o desenho (a Fenda e a Barreira seguem a direção da mira). `dono`: quem
+## pode tirá-lo antes da hora (tirar_laco_todos; ex.: a Nuvem tóxica que explodiu).
+static func efeito_laco_todos(quem: Node, nome: StringName, pos: Vector2, segundos: float, escala := 1.0, rotacao := 0.0, dono: Node = null) -> void:
 	var w: World = quem.get_tree().get_first_node_in_group(&"mundo")
 	if w:
-		w._efeito_laco.rpc(nome, pos, segundos, escala)
+		w._efeito_laco.rpc(nome, pos, segundos, escala, rotacao, dono.get_instance_id() if dono else 0)
+
+
+## Tira antes da hora os efeitos em laço de `dono` (passado em efeito_laco_todos).
+static func tirar_laco_todos(dono: Node) -> void:
+	var w: World = dono.get_tree().get_first_node_in_group(&"mundo")
+	if w:
+		w._tirar_laco.rpc(dono.get_instance_id())
+
+
+## Efeitos em laço que podem sair antes da hora: id do dono (no anfitrião) → [Efeito].
+var _lacos: Dictionary = {}
 
 
 @rpc("any_peer", "call_local", "reliable")
-func _efeito_laco(nome: StringName, pos: Vector2, segundos: float, escala: float) -> void:
+func _efeito_laco(nome: StringName, pos: Vector2, segundos: float, escala: float, rotacao: float, dono_id: int) -> void:
 	if not Net.veio_do_anfitriao():
 		return
 	var e := Efeito.criar(nome, pos, true)
-	e.scale *= escala
-	e.z_index = 0  # no chão, embaixo de quem pisa
+	e.rotation = rotacao
+	if Efeito.PECAS.has(nome):
+		e.ajustar_escala(escala)
+	else:
+		e.scale *= escala
+		e.z_index = 0  # no chão, embaixo de quem pisa
 	entidades.add_child(e)
+	if dono_id != 0:
+		var lista: Array = _lacos.get_or_add(dono_id, [])
+		lista.append(e)
 	get_tree().create_timer(segundos, false).timeout.connect(func() -> void:
+		if dono_id != 0:
+			_lacos.erase(dono_id)
 		if is_instance_valid(e):
-			e.queue_free())
+			e.sumir())
+
+
+@rpc("any_peer", "call_local", "reliable")
+func _tirar_laco(dono_id: int) -> void:
+	if not Net.veio_do_anfitriao():
+		return
+	for e in _lacos.get(dono_id, []):
+		if is_instance_valid(e):
+			(e as Efeito).sumir()
+	_lacos.erase(dono_id)
+
+
+## Peça que anda de `de` até `ate` em `ida` segundos, em todos os jogadores (o Tornado de
+## fogo, a Pedra viva, o meteoro caindo, a Forma de relâmpago). Fica `fica` segundos a mais
+## parada no fim e some aos poucos; ao chegar, toca o efeito `ao_chegar` (vazio = nenhum).
+static func efeito_movel_todos(quem: Node, nome: StringName, de: Vector2, ate: Vector2, ida: float, fica := 0.0, ao_chegar: StringName = &"", escala := 1.0) -> void:
+	var w: World = quem.get_tree().get_first_node_in_group(&"mundo")
+	if w:
+		w._efeito_movel.rpc(nome, de, ate, ida, fica, ao_chegar, escala)
+
+
+@rpc("any_peer", "call_local", "reliable")
+func _efeito_movel(nome: StringName, de: Vector2, ate: Vector2, ida: float, fica: float, ao_chegar: StringName, escala: float) -> void:
+	if not Net.veio_do_anfitriao():
+		return
+	var e := Efeito.criar(nome, de, true)
+	if Efeito.PECAS.has(nome):
+		e.ajustar_escala(escala)
+	else:
+		e.scale *= escala
+	entidades.add_child(e)
+	var t := e.create_tween()
+	t.tween_property(e, "position", ate, maxf(ida, 0.01))
+	t.tween_callback(func() -> void:
+		e.centro = ate
+		if ao_chegar != &"":
+			entidades.add_child(Efeito.criar(ao_chegar, ate)))
+	t.tween_interval(fica)
+	t.tween_callback(e.sumir)
 
 
 ## Chuva de flechas: as flechas do pacote caem do céu em volta do ponto e chegam ao chão

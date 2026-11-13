@@ -50,6 +50,24 @@ const PRIORIDADE: Array[StringName] = [CONGELADO, ATORDOADO, DERRUBADO, PRESO, Q
 var _estados: Dictionary = {}
 var _empurrao := Vector2.ZERO
 var _empurrao_t := 0.0
+## A mira vermelha em cima da cabeça enquanto o dono está Marcado (em todas as máquinas).
+var _marca: Efeito
+
+
+func _ready() -> void:
+	mudou.connect(_atualizar_marca)
+
+
+func _atualizar_marca() -> void:
+	var dono := get_parent() as Node2D
+	if dono == null:
+		return
+	if tem(MARCADO) and not is_instance_valid(_marca):
+		_marca = Efeito.criar(&"marca_alvo", Efeito.acima_da_cabeca(dono), true)
+		dono.add_child.call_deferred(_marca)
+	elif not tem(MARCADO) and is_instance_valid(_marca):
+		_marca.sumir(0.15)
+		_marca = null
 
 
 ## O componente de `alvo` (nulo se ele não tiver).
@@ -246,6 +264,9 @@ func cor() -> Color:
 func _physics_process(delta: float) -> void:
 	if _empurrao_t > 0.0:
 		_empurrao_t -= delta
+	if is_instance_valid(_marca):
+		# A caveira da Marca da morte (World._efeito_preso) toma o lugar da mira.
+		_marca.visible = get_parent().get_node_or_null(^"marca_morte") == null
 	if _estados.is_empty():
 		return
 	var servidor := multiplayer.is_server()

@@ -34,6 +34,12 @@ properties/7/replication_mode = 0
 properties/8/path = NodePath(".:olhando_esquerda")
 properties/8/spawn = true
 properties/8/replication_mode = 2
+properties/9/path = NodePath(".:textura_ataque")
+properties/9/spawn = true
+properties/9/replication_mode = 0
+properties/10/path = NodePath(".:golpes")
+properties/10/spawn = false
+properties/10/replication_mode = 2
 
 [node name="Companheiro" type="CharacterBody2D"]
 motion_mode = 1
