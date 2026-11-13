@@ -26,6 +26,7 @@ func _configurar() -> void:
 	nivel = 2
 	xp = 8
 	voa = true
+	peso = 0.6
 	saque = [[&"couro", 1, 1, 0.5], [&"carne_crua", 1, 1, 0.3]]
 	_fase = randf() * TAU
 
@@ -60,7 +61,7 @@ func _pensar(delta: float) -> Vector2:
 				golpear(_alvo, dano)
 			if _tempo_golpe >= TEMPO_MERGULHO or _mordeu:
 				_mudar_golpe(Golpe.RECUPERANDO)
-				_recarga = randf_range(1.4, 2.2)
+				_recarga = randf_range(1.4, 2.2) * Combate.ritmo_inimigo(self)
 			return _dir_mergulho * VEL_MERGULHO
 		Golpe.RECUPERANDO:
 			if _tempo_golpe >= TEMPO_FUGA:

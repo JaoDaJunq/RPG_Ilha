@@ -17,7 +17,7 @@ func _ready() -> void:
 	await esperar(0.4)
 	var andou := p.global_position.x - x0
 	checar(andou > 40.0, "investida avança o guerreiro (%.0f px)" % andou)
-	checar(not is_instance_valid(no_caminho) or no_caminho.vida.atual < 3.0, "investida acerta o slime no caminho")
+	checar(not is_instance_valid(no_caminho) or no_caminho.vida.atual < no_caminho.vida.maximo - 1.0, "investida acerta o slime no caminho")
 
 	var a: Slime = colocar(w, SLIME, p.global_position + Vector2(-18, 0))
 	var b: Slime = colocar(w, SLIME, p.global_position + Vector2(18, 0))
@@ -26,6 +26,6 @@ func _ready() -> void:
 	await get_tree().physics_frame
 	p.usar_habilidade_por_id(&"giro")
 	await get_tree().physics_frame
-	checar(a.vida.atual < 3.0 and b.vida.atual < 3.0, "giro acerta os dois lados (%.1f e %.1f)" % [a.vida.atual, b.vida.atual])
+	checar(a.vida.atual < a.vida.maximo - 1.0 and b.vida.atual < b.vida.maximo - 1.0, "giro acerta os dois lados (%.1f e %.1f)" % [a.vida.atual, b.vida.atual])
 
 	terminar()

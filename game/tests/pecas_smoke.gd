@@ -228,6 +228,7 @@ func _buffs(w: World, p: Player) -> void:
 	var ganharam := Golpes.buff_em_volta(p, 60.0, Buffs.DANO, 0.5, 2.0)
 	checar(ganharam.has(p) and is_equal_approx(p.buffs.mult(Buffs.DANO), 1.5), "buff em volta dá o buff ao jogador")
 	await esperar(0.4)
+	p.zerar_golpe()  # L40: recomeça o ritmo e o combo (número exato)
 	p.golpear()
 	await get_tree().physics_frame
 	var forte := _tirou(alvo) - normal
@@ -300,6 +301,7 @@ func _recursos(w: World, p: Player) -> void:
 	p.classe = &"ladino"
 	for k in 6:
 		await esperar(0.4)
+		p.zerar_golpe()  # L40: o ritmo do ladino não importa aqui, só a contagem
 		p.golpear()
 		await get_tree().physics_frame
 	checar(p.recursos.combo == RecursosClasse.COMBO_MAXIMO, "cada golpe dá 1 ponto de combo, até 5 (%d)" % p.recursos.combo)

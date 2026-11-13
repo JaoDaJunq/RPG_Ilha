@@ -21,9 +21,19 @@ const SONS := {
 	&"luz_sagrada": &"bola_de_fogo", &"bencao": &"subir_nivel",
 }
 
+## Dano base do golpe básico. O ritmo (recarga), o combo e o multiplicador de cada classe
+## estão em Combate.ESTILOS (L40).
 @export var dano_golpe := 1.0
 @export var alcance_golpe := 22.0
-@export var recarga_golpe := 0.35
+
+## Andar com aceleração e freada curtas (L40): segundos para chegar na velocidade cheia e
+## para parar. Curtos para continuar responsivo, mas sem o "liga e desliga" duro.
+const TEMPO_ACELERAR := 0.08
+const TEMPO_FREAR := 0.06
+## A câmera olha um pouco para onde se mira (px do mundo, no máximo) e chega lá suave.
+const CAMERA_A_FRENTE := 8.0
+const CAMERA_SUAVE := 6.0
+const CAMERA_BASE := Vector2(0, -14)
 
 ## Animação atual (sincronizada para os outros jogadores verem).
 @export var animacao: StringName = &"parado_direita"
@@ -67,6 +77,19 @@ var _direcao: StringName = &"baixo"
 var _progresso := 0.0
 var _recarga_golpe := 0.0
 var _atacando := 0.0
+## Golpe básico (L40): índice do último golpe do combo (-1 = nenhum), há quanto tempo foi,
+## comando guardado (buffer) e hit stop local.
+var _combo := -1
+var _desde_golpe := 99.0
+var _golpe_guardado := false
+var _hit_stop := 0.0
+## O mesmo no anfitrião (é ele quem confere o ritmo e decide o combo e a força).
+var _combo_anfitriao := -1
+var _ultimo_golpe_ms := -100000.0
+## Relógio do anfitrião para o golpe (ms do tempo de jogo, conta na física dele).
+var _relogio_ms := 0.0
+var _golpe_pronto_ms := 0.0
+var _golpe_rapido_anfitriao := false
 var _recargas: Dictionary = {}              # id da habilidade → segundos (local, para o HUD)
 var _prontas_no_anfitriao: Dictionary = {}  # id da habilidade → ms (o anfitrião confere)
 var _recarga_esquiva := 0.0
@@ -168,6 +191,7 @@ func ids_nas_teclas() -> Array[StringName]:
 func _physics_process(delta: float) -> void:
 	if multiplayer.is_server():
 		_regenerar_mana(delta)
+		_relogio_ms += delta * 1000.0
 		_processar_bencao()
 		_processar_passivas(delta)
 		_enviar_escudo()
@@ -182,6 +206,7 @@ func _physics_process(delta: float) -> void:
 		velocity = Vector2.ZERO
 		return
 	_recarga_golpe = maxf(0.0, _recarga_golpe - delta)
+	_desde_golpe += delta
 	_recarga_esquiva = maxf(0.0, _recarga_esquiva - delta)
 	_atacando = maxf(0.0, _atacando - delta)
 	for id in _recargas:
@@ -195,14 +220,27 @@ func _physics_process(delta: float) -> void:
 		_cancelar_ajuda()
 		return
 	_processar_ajuda(delta)
+	# Comando guardado (buffer): o golpe apertado pouco antes da hora sai assim que pode.
+	if _golpe_guardado and _recarga_golpe <= 0.0:
+		_golpe_guardado = false
+		golpear()
 
 	var entrada := Input.get_vector(&"mover_esquerda", &"mover_direita", &"mover_cima", &"mover_baixo")
+	if _hit_stop > 0.0:
+		# Hit stop (só nesta máquina): o personagem para alguns quadros no acerto.
+		_hit_stop = maxf(0.0, _hit_stop - delta)
+		visual.set_process(_hit_stop <= 0.0)
+		_animar(entrada)
+		return
 	if _impulso_restante > 0.0:
 		# O último passo é só o que falta (sem andar um quadro a mais que o pedido).
 		velocity = _impulso * minf(1.0, _impulso_restante / delta)
 		_impulso_restante -= delta
 	else:
-		velocity = entrada * ficha.velocidade() * multiplicador_velocidade() * conjuracao.velocidade()
+		var maxima := ficha.velocidade() * multiplicador_velocidade() * conjuracao.velocidade()
+		if _atacando > 0.0 and _animacao_hab == &"golpe":
+			maxima *= Combate.LENTIDAO_GOLPE  # golpeando, anda devagar (o golpe tem peso)
+		velocity = _andar(velocity, entrada * maxima, maxima, delta)
 	move_and_slide()
 
 	_atualizar_alvo()
@@ -211,6 +249,16 @@ func _physics_process(delta: float) -> void:
 	var na_mao := inventario.item_em(barra_escolhida)
 	if item_mao != na_mao:
 		item_mao = na_mao
+
+
+## Velocidade nova andando: vai até `alvo` com aceleração (TEMPO_ACELERAR) e freia em
+## TEMPO_FREAR. Depois de um dash ou empurrão, a sobra acima da máxima some na hora.
+func _andar(atual: Vector2, alvo: Vector2, maxima: float, delta: float) -> Vector2:
+	if maxima <= 0.0:
+		return Vector2.ZERO
+	atual = atual.limit_length(maxima)
+	var tempo := TEMPO_FREAR if alvo == Vector2.ZERO or alvo.dot(atual) < 0.0 else TEMPO_ACELERAR
+	return atual.move_toward(alvo, maxima / tempo * delta)
 
 
 func _unhandled_input(event: InputEvent) -> void:
@@ -304,17 +352,63 @@ func avisar(texto: String, som: StringName = &"") -> void:
 
 # --- Ações (pedidos ao anfitrião) ---------------------------------------------
 
+## Golpe básico (L40): ritmo da classe, combo curto com o último golpe forte, um passinho
+## para a frente e comando guardado (buffer) se apertar pouco antes da hora. O dono só
+## prevê; o anfitrião confere o ritmo e decide o combo (_pedir_golpe).
 func golpear() -> void:
-	if _recarga_golpe > 0.0 or conjuracao.ativa():  # conjurando, as mãos estão ocupadas
+	if conjuracao.ativa():  # conjurando, as mãos estão ocupadas
 		return
-	_recarga_golpe = recarga_golpe * (0.5 if _golpe_rapido else 1.0)  # Ritmo: golpe depois do dash
+	if _recarga_golpe > 0.0:
+		if _recarga_golpe <= Combate.BUFFER:
+			_golpe_guardado = true
+		return
+	_combo = Combate.proximo_indice(classe, _combo, _desde_golpe)
+	_desde_golpe = 0.0
+	var final := Combate.eh_final(classe, _combo)
+	_recarga_golpe = Combate.recarga(classe, _combo) * (0.5 if _golpe_rapido else 1.0)  # Ritmo: golpe depois do dash
 	_golpe_rapido = false
 	_atacando = 0.25
 	_animacao_hab = &"golpe"
+	visual.play(&"parado_" + String(_direcao))  # recomeça o balanço do boneco a cada golpe
 	var dir := direcao_mira()
 	_direcao = SpriteSheets.direcao_de(dir)
-	Sfx.tocar(&"ataque", -12.0)
+	if _impulso_restante <= 0.0:
+		var avanco: float = Combate.estilo(classe).avanco * (2.0 if final else 1.0)
+		_impulso = dir * avanco / Combate.DURACAO_AVANCO
+		_impulso_restante = Combate.DURACAO_AVANCO
+	Sfx.tocar(&"ataque", -9.0 if final else -12.0, 0.8 if final else 1.0, 0.08)
 	_pedir_golpe.rpc_id(1, dir)
+
+
+## Recomeça o ritmo e o combo do golpe (os testes usam para números exatos).
+func zerar_golpe() -> void:
+	_recarga_golpe = 0.0
+	_combo = -1
+	_golpe_guardado = false
+	_combo_anfitriao = -1
+	_golpe_pronto_ms = 0.0
+
+
+func combo_atual() -> int:
+	return _combo
+
+
+## Dano do golpe `indice` do combo antes das passivas do alvo (anfitrião e testes).
+func dano_do_golpe(indice := 0) -> float:
+	return dano_golpe * float(Combate.estilo(classe).dano) * Combate.mult_combo(classe, indice) \
+			* ficha.multiplicador_fisico() * bonus_dano_fisico() * poder_da_mao(&"espada")
+
+
+## Treme a câmera deste jogador (só na máquina dele): golpes fortes e explosões.
+func tremer_camera(forca: float, segundos: float) -> void:
+	if eh_local() and forca * segundos >= _forca_tremor * _tremor:
+		_forca_tremor = forca
+		_duracao_tremor = segundos
+		_tremor = segundos
+
+
+func em_hit_stop() -> bool:
+	return _hit_stop > 0.0
 
 
 func esquivar() -> void:
@@ -409,7 +503,7 @@ func _impulsionar(deslocamento: Vector2, duracao: float) -> void:
 
 # --- Reação ao golpe de inimigo ou animal ---------------------------------------------
 ## Dar um passo para trás, mostrar a dor (corpo vermelho e encolhido, visível para todos) e
-## tremer de leve a tela de quem apanhou. A proteção de 0,5 s depois do golpe vem do
+## tremer de leve a tela de quem apanhou. A proteção de 0,4 s depois do golpe vem do
 ## HealthComponent (invulneravel_por), então inimigos amontoados não encadeiam golpes.
 const EMPURRAO_DANO := 9.0  # px, para longe de quem bateu
 const DURACAO_EMPURRAO := 0.12
@@ -417,6 +511,8 @@ const TREMOR_DANO := 0.75  # px do mundo (3 px na tela com o zoom 4)
 const DURACAO_TREMOR := 0.2
 
 var _tremor := 0.0
+var _forca_tremor := TREMOR_DANO
+var _duracao_tremor := DURACAO_TREMOR
 var _tween_dano: Tween
 var _vida_vista := -1.0
 
@@ -437,22 +533,40 @@ func _reagir_dor(dir: Vector2) -> void:
 		return
 	visual.dor(dir)
 	if eh_local():
-		_tremor = DURACAO_TREMOR
+		tremer_camera(TREMOR_DANO, DURACAO_TREMOR)
 
 
-## A câmera do dono treme de leve e vai parando.
+## A câmera do dono treme de leve e vai parando; e olha um pouco para onde se mira (L40).
 func _tremer(delta: float) -> void:
 	if _tremor > 0.0:
 		_tremor = maxf(0.0, _tremor - delta)
-		camera.offset = Vector2(randf_range(-1.0, 1.0), randf_range(-1.0, 1.0)) * TREMOR_DANO * (_tremor / DURACAO_TREMOR)
+		camera.offset = Vector2(randf_range(-1.0, 1.0), randf_range(-1.0, 1.0)) * _forca_tremor * (_tremor / maxf(_duracao_tremor, 0.01))
 	elif camera.offset != Vector2.ZERO:
 		camera.offset = Vector2.ZERO
+	var para_mira := posicao_mira() - global_position
+	var alvo := CAMERA_BASE
+	if not menu_aberto and para_mira.length() > 1.0:
+		alvo = CAMERA_BASE + para_mira.normalized() * minf(para_mira.length() * 0.15, CAMERA_A_FRENTE)
+	camera.position = camera.position.lerp(alvo, 1.0 - exp(-CAMERA_SUAVE * delta))
 
 
 @rpc("any_peer", "call_local", "reliable")
 func _pedir_golpe(dir: Vector2) -> void:
 	if not multiplayer.is_server() or not _pedido_do_dono() or caido:
 		return
+	# O anfitrião confere o ritmo pelo relógio dele (sem "metralhadora") e decide o combo.
+	var agora := _relogio_ms
+	if agora < _golpe_pronto_ms - Combate.FOLGA_ANFITRIAO_MS:
+		return
+	_combo_anfitriao = Combate.proximo_indice(classe, _combo_anfitriao, (agora - _ultimo_golpe_ms) / 1000.0)
+	_ultimo_golpe_ms = agora
+	var recarga := Combate.recarga(classe, _combo_anfitriao) * (0.5 if _golpe_rapido_anfitriao else 1.0)
+	_golpe_rapido_anfitriao = false
+	_golpe_pronto_ms = agora + recarga * 1000.0
+	var final := Combate.eh_final(classe, _combo_anfitriao)
+	var forca := Combate.FORCA_FINAL if final else Combate.FORCA_NORMAL
+	var dano := dano_do_golpe(_combo_anfitriao)
+	var acertou := false
 	dir = dir.normalized()
 	var forma := CircleShape2D.new()
 	forma.radius = alcance_golpe * 0.6
@@ -465,8 +579,26 @@ func _pedir_golpe(dir: Vector2) -> void:
 	for r in get_world_2d().direct_space_state.intersect_shape(consulta, 16):
 		var area := r.collider as Hurtbox
 		if area and area != hurtbox and not area.get_parent() is Player:
-			area.receber(dano_golpe * ficha.multiplicador_fisico() * bonus_dano_fisico() * poder_da_mao(&"espada"), &"fisico", self)
+			area.receber(dano, &"fisico", self, forca)
 			envenenar_atingido(area)
+			var dono := area.get_parent()
+			acertou = acertou or (dono != null and (dono.is_in_group(&"inimigos") or dono.is_in_group(&"animais")))
+	if acertou:
+		if eh_local():
+			_acertou_golpe(final)
+		else:
+			_acertou_golpe.rpc_id(id_rede(), final)
+
+
+## O anfitrião avisa o dono que o golpe acertou uma criatura: hit stop e, no golpe forte,
+## a câmera treme. Só nesta máquina (o tempo do jogo não para).
+@rpc("any_peer", "reliable")
+func _acertou_golpe(forte: bool) -> void:
+	if not Net.veio_do_anfitriao() or not eh_local():
+		return
+	_hit_stop = Combate.HIT_STOP_FORTE if forte else Combate.HIT_STOP
+	if forte:
+		tremer_camera(Combate.TREMOR_FORTE, Combate.DURACAO_TREMOR)
 
 
 @rpc("any_peer", "call_local", "reliable")
@@ -474,6 +606,8 @@ func _pedir_esquiva() -> void:
 	if not multiplayer.is_server() or not _pedido_do_dono() or caido:
 		return
 	vida.proteger(DURACAO_ESQUIVA + 0.1)
+	if tem(&"ritmo"):
+		_golpe_rapido_anfitriao = true  # Ritmo: o golpe depois do dash volta na metade do tempo
 	World.efeito_todos(self, &"poeira", global_position)
 	PassivasLadino.esquivou(self)  # Esquiva perfeita e Tempestade de aço
 

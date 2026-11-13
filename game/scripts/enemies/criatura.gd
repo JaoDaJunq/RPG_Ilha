@@ -35,8 +35,8 @@ var xp := 12
 var saque: Array = []
 ## Multiplicador do dano por tipo (fogo 2,0 = toma o dobro; físico 0,5 = metade).
 var resistencias: Dictionary = {}
-## Não é empurrado ao apanhar (o golenzinho).
-var pesado := false
+## Peso no empurrão do golpe (ReacaoGolpe; 1 = slime): o golenzinho é bem pesado.
+var peso := 1.0
 ## Voa: passa por cima da água e das paredes baixas.
 var voa := false
 
@@ -44,8 +44,9 @@ var _alvo: Node2D
 var _casa := Vector2.INF
 var _destino := Vector2.INF
 var _tempo_passeio := 0.0
-var _empurrao := Vector2.ZERO
 var _dano_visivel := 0.0
+## Reação ao apanhar (piscar branco, empurrão, número, hit stop): o padrão de design/combate.md.
+var reacao: ReacaoGolpe
 var _ultimo_tipo: StringName = &""
 
 # --- Ataque corpo a corpo (máquina simples que as subclasses usam) ---------------------
@@ -80,6 +81,9 @@ func _ready() -> void:
 	vida.atual = vida.maximo
 	barra.definir_nivel(nivel + (2 if noturno else 0) + World.nivel_extra(self))
 	barra.ajustar_ao_sprite(visual)
+	reacao = ReacaoGolpe.em(self, peso)
+	reacao.altura_numero = 22.0 if voa else 18.0
+	reacao.reagiu.connect(func(_q: float, _c: bool, _f: float) -> void: _dano_visivel = 0.25)
 	if multiplayer.is_server():
 		vida.maximo *= World.mult_dificuldade(self, &"vida_inimigo")
 		vida.atual = vida.maximo
@@ -177,9 +181,10 @@ func _physics_process(delta: float) -> void:
 	if mult <= 0.0 and animacao == &"andar":
 		animacao = &"parado"
 	if efeitos.impulso() != Vector2.ZERO:
-		_empurrao = Vector2.ZERO
-	velocity = dir * velocidade * mult + _empurrao + efeitos.impulso()
-	_empurrao = _empurrao.move_toward(Vector2.ZERO, 400.0 * delta)
+		reacao.parar_empurrao()
+	# Atacando, o golpe do jogador não cancela o ataque (trocar golpes custa vida).
+	reacao.armadura = _golpe in [Golpe.PREPARANDO, Golpe.BATENDO]
+	velocity = dir * velocidade * mult + reacao.empurrao(delta) + efeitos.impulso()
 	move_and_slide()
 
 
@@ -257,7 +262,7 @@ func _corpo_a_corpo(delta: float, alcance: float, preparo: float, recarga: float
 			animacao = &"ataque"
 			if _tempo_golpe >= batendo:
 				_mudar_golpe(Golpe.RECUPERANDO)
-				_recarga = recarga
+				_recarga = recarga * Combate.ritmo_inimigo(self)
 			return Vector2.ZERO
 		Golpe.RECUPERANDO:
 			animacao = &"parado"
@@ -344,11 +349,8 @@ func _on_atingido(quantidade: float, tipo: StringName, origem: Node) -> void:
 	q = _ajustar_dano(q, tipo, origem)
 	parado = not efeitos.pode_mover()
 	_ultimo_tipo = tipo
-	if q <= 0.0 or not vida.tomar_dano(q, tipo):
-		return
-	if origem is Node2D and not parado and not pesado:
-		_empurrao = (global_position - (origem as Node2D).global_position).normalized() * 120.0
-	_piscar.rpc(vida.atual, vida.maximo)
+	if q > 0.0:
+		vida.tomar_dano(q, tipo)  # o ReacaoGolpe empurra, pisca e mostra o número
 
 
 ## Subclasse: muda o dano recebido (a defesa do bandido, a picareta no golem...).
@@ -356,17 +358,13 @@ func _ajustar_dano(q: float, _tipo: StringName, _origem: Node) -> float:
 	return q
 
 
+## A vida mudou sem golpe (o esqueleto levantou): todos atualizam a barra.
 @rpc("authority", "call_local", "reliable")
-func _piscar(atual: float, maximo: float) -> void:
+func _sincronizar_vida(atual: float, maximo: float) -> void:
 	if not multiplayer.is_server():
 		vida.maximo = maximo
 		vida.atual = atual
-	barra.mostrar_dano()
-	Sfx.tocar(&"acerto", -10.0)
-	_dano_visivel = 0.25
-	var t := create_tween()
-	t.tween_property(visual, "self_modulate", Color(1.0, 0.5, 0.5), 0.05)
-	t.tween_property(visual, "self_modulate", Color.WHITE, 0.2)
+	vida.mudou.emit(vida.atual, vida.maximo)
 
 
 func _on_morreu() -> void:

@@ -21,7 +21,7 @@ func _configurar() -> void:
 	dano = 18.0
 	nivel = 4
 	xp = 30
-	pesado = true
+	peso = 3.0  # pesado: quase não é empurrado
 	saque = [[&"pedra", 2, 4], [&"minerio_cobre", 0, 2], [&"minerio_ferro", 1, 1, 0.5], [&"cristal", 1, 1, 0.2]]
 	resistencias = {&"fogo": 0.5, &"veneno": 0.0}
 

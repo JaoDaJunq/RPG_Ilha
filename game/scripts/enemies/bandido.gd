@@ -23,6 +23,7 @@ var _acertou_investida := false
 
 
 func _configurar() -> void:
+	peso = 1.3
 	if especie == &"":
 		especie = &"guerreiro"
 	if especie == &"lanceiro":
@@ -112,7 +113,7 @@ func _pensar_lanceiro(delta: float) -> Vector2:
 					break
 			if _tempo_golpe >= TEMPO_INVESTIDA:
 				_mudar_golpe(Golpe.RECUPERANDO)
-				_recarga = 1.6
+				_recarga = 1.6 * Combate.ritmo_inimigo(self)
 			return _dir_investida * VEL_INVESTIDA
 		Golpe.RECUPERANDO:
 			animacao = &"parado"

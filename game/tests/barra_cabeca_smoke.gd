@@ -33,7 +33,7 @@ func _barras(w: World, p: Player) -> void:
 	s.hurtbox.receber(1.0, &"fisico", p)
 	await esperar(0.1)
 	checar(s.barra.barra_visivel(), "depois do golpe a barra aparece")
-	checar(absf(s.barra._barra.value - 75.0) < 0.5, "a barra mostra a vida que sobrou (%.0f%%)" % s.barra._barra.value)
+	checar(absf(s.barra._barra.value - (1.0 - 1.0 / s.vida.maximo) * 100.0) < 0.5, "a barra mostra a vida que sobrou (%.0f%%)" % s.barra._barra.value)
 	await esperar(1.0)
 	checar(s.barra.barra_visivel(), "1 s depois a barra ainda está lá")
 	# Encurta o tempo para o teste não esperar 4 s: outro golpe reinicia a contagem.

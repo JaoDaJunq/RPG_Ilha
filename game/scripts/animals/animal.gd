@@ -40,6 +40,8 @@ const TEMPO_RECUO := 0.2
 const PAUSA_CABECADA := 1.0
 ## Nível mostrado em cima da cabeça de cada espécie.
 const NIVEIS := {&"galinha": 1, &"coelho": 1, &"ovelha": 1, &"javali": 2, &"cervo": 2, &"caranguejo": 2, &"sapo": 1, &"cabra": 2}
+## Peso no empurrão do golpe (ReacaoGolpe): o javali é pesado.
+const PESOS := {&"galinha": 0.8, &"coelho": 0.8, &"ovelha": 1.2, &"javali": 1.6, &"cervo": 1.1, &"caranguejo": 1.0, &"sapo": 0.7, &"cabra": 1.3}
 
 @export var especie: StringName = &"galinha"
 @export var animacao: StringName = &"parado"
@@ -55,6 +57,9 @@ var _de_quem: Node2D
 var _recarga := 0.0
 var _recuo := 0.0
 var _dir_recuo := Vector2.ZERO
+## Reação ao apanhar (empurrão, piscar, número, hit stop): ReacaoGolpe, comum a todos.
+var reacao: ReacaoGolpe
+var _investindo := false
 
 @onready var visual: AnimatedSprite2D = $Visual
 @onready var vida: HealthComponent = $HealthComponent
@@ -97,6 +102,8 @@ func _ready() -> void:
 	vida.atual = vida.maximo
 	barra.definir_nivel(NIVEIS.get(especie, 1) + World.nivel_extra(self))
 	barra.ajustar_ao_sprite(visual)
+	reacao = ReacaoGolpe.em(self, PESOS.get(especie, 1.0))
+	reacao.altura_numero = 12.0
 	if multiplayer.is_server():
 		# Dificuldade do mundo (os outros veem a vida pelos avisos de golpe, _piscar).
 		vida.maximo *= World.mult_dificuldade(self, &"vida_inimigo")
@@ -150,6 +157,7 @@ func _physics_process(delta: float) -> void:
 	var dir := Vector2.ZERO
 	var rapidez: float = dados.vel
 	var recuando := false
+	_investindo = false
 	# Provocado: vai atrás de quem provocou (o javali investe; os outros só se aproximam).
 	var provocador := efeitos.alvo_provocado()
 	if provocador:
@@ -179,8 +187,10 @@ func _physics_process(delta: float) -> void:
 			else:
 				dir = para.normalized()  # o javali investe
 				rapidez *= 1.6
+				# Investindo de perto, o golpe do jogador não o para: trocar golpes custa vida.
+				_investindo = para.length() < 40.0
 				if para.length() < 14.0 and efeitos.pode_atacar():
-					_recarga = TEMPO_RECUO + PAUSA_CABECADA
+					_recarga = TEMPO_RECUO + PAUSA_CABECADA * Combate.ritmo_inimigo(self)
 					_forcar_anim(&"ataque", 0.3)
 					if _cabecada(_de_quem):
 						_dir_recuo = -para.normalized() if para.length() > 0.1 else -dir
@@ -236,7 +246,10 @@ func _physics_process(delta: float) -> void:
 		animacao = &"correr" if correndo and dados.has("folha") else &"andar"
 	else:
 		animacao = &"parado"
-	velocity = dir * rapidez + efeitos.impulso()
+	if efeitos.impulso() != Vector2.ZERO:
+		reacao.parar_empurrao()
+	reacao.armadura = _investindo
+	velocity = dir * rapidez + reacao.empurrao(delta) + efeitos.impulso()
 	move_and_slide()
 
 
@@ -296,21 +309,8 @@ func _on_atingido(quantidade: float, tipo: StringName, origem: Node) -> void:
 	if origem is Node2D:
 		_de_quem = origem
 		_assustado = 4.0
-	if vida.tomar_dano(quantidade, tipo):
+	if vida.tomar_dano(quantidade, tipo):  # o ReacaoGolpe empurra, pisca e mostra o número
 		_forcar_anim(&"dor", 0.25)
-		_piscar.rpc(vida.atual)
-
-
-## Todos veem o golpe; a vida vai junto para a barra em cima da cabeça aparecer nos clientes.
-@rpc("authority", "call_local", "reliable")
-func _piscar(atual: float) -> void:
-	if not multiplayer.is_server():
-		vida.atual = atual
-	barra.mostrar_dano()
-	Sfx.tocar(&"acerto", -10.0)
-	var t := create_tween()
-	t.tween_property(visual, "self_modulate", Color(1.0, 0.5, 0.5), 0.05)
-	t.tween_property(visual, "self_modulate", Color.WHITE, 0.2)
 
 
 func _on_morreu() -> void:

@@ -91,6 +91,6 @@ func _on_morreu() -> void:
 func _levantar() -> void:
 	desmontado = false
 	vida.reviver(VIDA_AO_LEVANTAR)
-	_piscar.rpc(vida.atual, vida.maximo)
+	_sincronizar_vida.rpc(vida.atual, vida.maximo)
 	animacao = &"parado"
 	World.efeito_todos(self, &"poeira", global_position)

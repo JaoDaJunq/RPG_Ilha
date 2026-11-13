@@ -52,7 +52,7 @@ shape = SubResource("Shape_corpo")
 
 [node name="HealthComponent" type="Node" parent="."]
 script = ExtResource("2_vida")
-invulneravel_por = 0.5
+invulneravel_por = 0.4
 
 [node name="Inventory" type="Node" parent="."]
 script = ExtResource("3_inv")

@@ -33,12 +33,15 @@ func tocar_musica() -> void:
 		_musica.play()
 
 
-func tocar(nome: StringName, volume_db := -8.0) -> void:
+## `tom`: 1 = normal; menos é mais grave. `variar`: sorteia o tom em ±variar (golpes e
+## acertos não soam sempre iguais).
+func tocar(nome: StringName, volume_db := -8.0, tom := 1.0, variar := 0.0) -> void:
 	if not ligado or not SONS.has(nome):
 		return
 	var p := AudioStreamPlayer.new()
 	p.stream = SONS[nome]
 	p.volume_db = volume_db
+	p.pitch_scale = maxf(0.1, tom + randf_range(-variar, variar))
 	p.finished.connect(p.queue_free)
 	add_child(p)
 	p.play()
