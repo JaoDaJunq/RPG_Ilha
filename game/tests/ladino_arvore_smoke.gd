@@ -106,7 +106,7 @@ func _arvore() -> void:
 		ativas_ok = ativas_ok and n.usavel() and n.rank_maximo() == 1 + NoArvore.MELHORIAS \
 				and Logicas.classe_da_logica(n.habilidade.logica) != null and n.habilidade.id == id
 	checar(ativas_ok, "as 12 ativas novas têm .tres, lógica registrada e aceitam 3 melhorias")
-	checar(not ArvoreData.no(&"ladino", &"dedos_leves").descricao.contains("baú"), "Dedos leves não promete mais abrir baús trancados (não existem)")
+	checar(ArvoreData.no(&"ladino", &"dedos_leves").descricao.contains("baús trancados"), "Dedos leves volta a abrir os baús trancados (agora existem)")
 	p.aprender_de_graca(&"sumir")
 	checar(&"sumir" in p.ids_nas_teclas() and p.habilidades().size() == 3, "aprendida, a ativa nova vai para uma tecla livre (Q R T E)")
 

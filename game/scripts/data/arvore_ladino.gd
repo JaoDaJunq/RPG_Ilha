@@ -14,7 +14,7 @@ const DADOS := {
 	passivas = [
 		[&"pelas_costas", "Pelas costas", "Sempre +50% de dano em golpes pelas costas.", "forca", ""],
 		[&"passos_de_gato", "Passos de gato", "Os inimigos só te notam quando você chega 30% mais perto.", "agilidade", ""],
-		[&"dedos_leves", "Dedos leves", "Animais e slimes deixam 1 item a mais.", "agilidade", ""],
+		[&"dedos_leves", "Dedos leves", "Inimigos e animais deixam 1 item a mais; abre os baús trancados da ilha sem chave.", "agilidade", ""],
 	],
 	iniciais = [
 		[&"golpe_furtivo", "Golpe furtivo", "Avança até o alvo; dano dobrado se ele não te via.", "", "", [&"sombra"]],
@@ -25,7 +25,7 @@ const DADOS := {
 	],
 	ramos = [
 		[&"sombra", "Sombra", [
-			[&"emboscada", "Emboscada", "O primeiro golpe depois de sair da fumaça é crítico (dano dobrado).", "forca", ""],
+			[&"emboscada", "Emboscada", "O primeiro golpe depois de sair da fumaça é sempre crítico (dano dobrado).", "forca", ""],
 			[&"sumir", "Sumir", "Fica invisível por 4 s (atacar quebra o efeito).", "", ""],
 			[&"passo_das_sombras", "Passo das sombras", "Teleporta para as costas do alvo e golpeia (vale o Pelas costas).", "", ""],
 			[&"execucao", "Execução", "+100% de dano em inimigo com menos de 30% de vida.", "forca", ""],
@@ -44,7 +44,7 @@ const DADOS := {
 			[&"ritmo", "Ritmo", "Cada dash deixa o próximo golpe mais rápido e dá +10% de velocidade por 2 s.", "agilidade", ""],
 			[&"danca_das_laminas", "Dança das lâminas", "Salta entre até 4 inimigos acertando cada um.", "", ""],
 			[&"bumerangue_de_adaga", "Bumerangue de adaga", "A adaga acerta na ida e na volta.", "", ""],
-			[&"esquiva_perfeita", "Esquiva perfeita", "Esquivar no último instante (até 0,3 s antes do golpe) recarrega o dash e o próximo golpe é crítico.", "agilidade", ""],
+			[&"esquiva_perfeita", "Esquiva perfeita", "Esquivar no último instante (até 0,3 s antes do golpe) recarrega o dash e dá um crítico (o próximo golpe causa dano dobrado).", "agilidade", ""],
 			[&"leque_giratorio", "Leque giratório", "Finalizador: 3 adagas por ponto de combo, em círculo.", "", ""],
 			[&"tempestade_de_aco", "Tempestade de aço", "Suprema. Por 6 s, cada dash solta adagas em volta.", "", ""],
 		]],
