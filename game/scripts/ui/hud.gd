@@ -47,7 +47,7 @@ var _slots: Array[Dictionary] = []  # {fundo, selecionado, icone, sombra}
 var _slot_esquiva: Dictionary
 var _carga: ProgressBar
 var _ficha: FichaTela
-var _nomes: Dictionary[Node, Label] = {}
+var _nomes: Dictionary[int, Label] = {}  # id do jogador (instância) → nome em cima dele
 var _dica: PanelContainer  # janelinha da habilidade (botão direito)
 var _dica_slot: Control  # o botão em que ela está aberta
 var _dica_titulo: Label
@@ -144,8 +144,26 @@ func _input(event: InputEvent) -> void:
 		fechar_descricao()
 
 
+## O mapa da ilha (M).
+func mapa() -> Mapa:
+	if _mapa == null:
+		_mapa = Mapa.new()
+		_mapa.name = "Mapa"
+		add_child(_mapa)
+	return _mapa
+
+
+var _mapa: Mapa
+
+
 func _unhandled_input(event: InputEvent) -> void:
-	if event.is_action_pressed(&"ui_cancel") and _dica.visible:
+	if event.is_action_pressed(&"mapa") and jogador and not jogador.criando:
+		mapa().alternar()
+		get_viewport().set_input_as_handled()
+	elif event.is_action_pressed(&"ui_cancel") and _mapa and _mapa.visible:
+		_mapa.fechar()
+		get_viewport().set_input_as_handled()
+	elif event.is_action_pressed(&"ui_cancel") and _dica.visible:
 		fechar_descricao()
 		get_viewport().set_input_as_handled()
 	elif event.is_action_pressed(&"mochila") and jogador and not jogador.criando:
@@ -293,16 +311,16 @@ func _atualizar_tecla_e() -> void:
 
 ## Nome (nível, raça e classe) em cima dos outros jogadores.
 func _atualizar_nomes() -> void:
-	var vistos: Array[Node] = []
+	var vistos: Array[int] = []
 	for p in get_tree().get_nodes_in_group(&"jogadores"):
 		if p == jogador or (p as Player).ficha == null or (p as Player).criando:
 			continue
-		vistos.append(p)
-		if not _nomes.has(p):
+		vistos.append(p.get_instance_id())
+		if not _nomes.has(p.get_instance_id()):
 			var l := _rotulo("", 16)
 			_raiz.add_child(l)
-			_nomes[p] = l
-		var rotulo := _nomes[p]
+			_nomes[p.get_instance_id()] = l
+		var rotulo := _nomes[p.get_instance_id()]
 		rotulo.text = "Nv %d · %s" % [(p as Player).nivel, (p as Player).ficha.titulo()]
 		var tela := get_viewport().get_canvas_transform() * ((p as Node2D).global_position + Vector2(0, -40))
 		rotulo.position = (tela - Vector2(rotulo.size.x / 2.0, rotulo.size.y)).round()
