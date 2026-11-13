@@ -46,4 +46,50 @@ func _ready() -> void:
 				ok = ok and m._maos.get(v, []).size() == 6
 			checar(ok, "%s %s usa o sprite completo nas 3 vistas" % [raca, classe])
 			m.free()
+	await _armas_l37()
 	terminar()
+
+
+## L37: armas com desenho próprio na mão, as 2 adagas do Ladino e o arco puxando em cada vista.
+func _armas_l37() -> void:
+	var g := Boneco.new()
+	add_child(g)
+	g.vestir({"raca": &"humano", "pele": 0, "classe": &"guerreiro"}, {})
+	for arma in [&"espada_ferro", &"cajado", &"maca"]:
+		g.item = arma
+		await get_tree().process_frame
+		await get_tree().process_frame
+		checar(g._item.visible and g._item.texture == Boneco.ARMAS_MAO[arma][0], "%s usa o desenho da mão (não o ícone)" % arma)
+	g.queue_free()
+	for raca in RacaData.TODAS:
+		var l := Boneco.new()
+		add_child(l)
+		l.vestir({"raca": raca, "pele": 0, "classe": &"ladino"}, {})
+		l.item = &"adagas"
+		for v in [["parado_direita", ""], ["parado_baixo", "_frente"], ["parado_cima", "_costas"]]:
+			l.play(StringName(v[0]))
+			await get_tree().process_frame
+			var q := l.quadro_atual()
+			var tras: Vector2 = l._maos_tras[v[1]][q] - Boneco.PES_COMPLETO
+			var frente: Vector2 = l._maos[v[1]][q] - Boneco.PES_COMPLETO
+			checar(l._item.visible and l._item_tras.visible and l._item.texture == Boneco.ADAGA_MAO and l._item_tras.texture == Boneco.ADAGA_MAO,
+				"%s ladino%s: uma adaga em cada mão" % [raca, v[1]])
+			checar(l._item_tras.position.distance_to(tras) < 0.5 and frente.distance_to(tras) > 10.0,
+				"%s ladino%s: a 2ª adaga fica na mão de trás marcada" % [raca, v[1]])
+		l.queue_free()
+	var a := Boneco.new()
+	add_child(a)
+	a.vestir({"raca": &"humano", "pele": 0, "classe": &"arqueiro"}, {})
+	a.item = &"arco"
+	for v in [["parado_direita", ""], ["parado_baixo", "_frente"], ["parado_cima", "_costas"]]:
+		a.play(StringName(v[0]))
+		a.carga = -1.0
+		await get_tree().process_frame
+		checar(a._item.texture == Boneco.ARCO_VISTAS[""] and a._item.region_rect.position.x == 0.0, "arco%s sem puxar: em pé, em repouso" % v[1])
+		var quadros := []
+		for c in [0.1, 0.5, 0.9]:
+			a.carga = c
+			await get_tree().process_frame
+			quadros.append(int(a._item.region_rect.position.x / Boneco.QUADRO_ARCO))
+		checar(a._item.texture == Boneco.ARCO_VISTAS[v[1]] and quadros == [1, 2, 3], "arco%s puxando: a tira da vista, 3 tempos (%s)" % [v[1], quadros])
+	a.queue_free()

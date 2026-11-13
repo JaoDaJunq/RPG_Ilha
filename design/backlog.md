@@ -52,7 +52,9 @@ Tudo o que foi pedido para testar funcionou. Observações:
 
 ## Etapa 4: a ilha cresce
 
-- [ ] T40 Mapa maior com 2–3 biomas.
+- [x] T40 Mapa maior com 2–3 biomas → virou a **etapa 1 do mundo maior** (`design/proposta_mundo.md`, L36, 13/11/2026): ilha de 190 x 130 blocos, 6 regiões com chão, decoração e recursos próprios, trilhas, rio com ponte e muralha de raízes (abertas por enquanto), bichos por região (dia e noite, limite por jogadores, fora da tela, voltam com o tempo, mais fortes longe), árvores e pedras que crescem de novo, "só ativo perto" (Soneca) e mapa (M) que se revela ao andar. Testes: `regioes_smoke`, `povoamento_smoke`, `soneca_smoke`, `mapa_smoke`. Aguardando o João.
+- [ ] T40b Etapa 2 do mundo maior: bichos e inimigos de cada região (cervo, caranguejo, sapo, cabra, slimes de elemento, bandidos, cogumelo andante, golenzinho, esqueleto de musgo), itens de região (frutas, coco, conchas, cogumelos, minérios), fornalha e ferramentas de cobre e ferro.
+- [ ] T40c Etapa 3: Brasinha, Sementes, passagens fechando e abrindo de verdade, pedras de lore.
 - [ ] T41 Primeiro boss guardião.
 - [ ] T42 Ruína ou caverna com segredo.
 

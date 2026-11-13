@@ -38,13 +38,16 @@ Co-op online de sobrevivência e exploração numa ilha de fantasia que reage ao
 - Reações: gelo congela (e um golpe estilhaça com dano dobrado), lança de gelo sobre a água vira ponte que derrete, fogo passa devagar para árvores vizinhas.
 - Jogar sozinho, hospedar ou entrar pelo IP do anfitrião (até 4 jogadores).
 - Multiplayer: cada um com a sua câmera; o anfitrião cuida do mundo (árvores, slimes, dano, inventário, dia e noite) e quem entra depois vê o que já mudou.
-- Ilha gerada (sempre a mesma), com água que bloqueia, areia, grama, árvores, pedras, plantas e slimes.
+- Ilha grande (L36, 190 x 130 blocos, sempre a mesma) com 6 regiões ligadas por trilhas: Clareira (o acampamento, no centro), Bosque Florido (árvores rosas, flores), Praia das Conchas (areia, coqueiros, conchas), Pântano dos Cogumelos (lama, lagoinhas, cogumelos que brilham à noite, névoa), Colinas de Pedra (muitas pedras, rochedos) e Ruínas dos Guardiões (piso antigo, colunas, estátua). Um rio separa o norte: a ponte (Pântano → Colinas) e a muralha de raízes (Bosque → Ruínas) vão abrir com as Sementes; por enquanto estão abertas. Detalhes em `design/proposta_mundo.md`.
+- Bichos por região (`world/povoamento.gd`, tabelas em `world/regioes.gd`): cada região enche até o limite (que cresce com os jogadores) com os bichos dela, de dia e de noite; nascem fora da tela e longe da fogueira e de construções; morto volta depois de 2 minutos; longe do centro são mais fortes. Árvores e pedras crescem de novo (5 e 8 minutos).
+- Só fica ativo o que está perto (`world/soneca.gd`): bichos, árvores e a espuma longe de todos dormem, e a rede manda para cada jogador só os bichos e itens perto dele.
+- Mapa (M): a ilha de cima com as regiões, o acampamento e os jogadores; o que ainda não foi visto fica coberto e vai aparecendo ao andar (salvo com o mundo).
 - Acampamento com fogueira e barraca; a fogueira ilumina à noite.
 - Mouse seleciona o objeto; a caixa em cima dele diz o que fazer e se está perto o bastante.
 - Segurar E corta árvore (3 golpes = 3 de madeira, vira toco) e minera pedra (4 golpes = 3 de pedra, some).
 - Bola de fogo (Mago): acerta slime (dano dobrado) e incendeia árvore; a árvore queimada rende **carvão** em vez de madeira.
 - Golpe com clique esquerdo; slimes perseguem e machucam; com a vida em 0 o jogador cai no chão e vê a tela de morte (volta no acampamento sozinho aos 8 s, ou pelo botão "Reviver agora" depois de 4 s); o Levantar do Clérigo ou um aliado segurando E por 3 s o levantam ali mesmo.
-- N alterna dia e noite; M liga/desliga o som.
+- N alterna dia e noite; M abre o mapa; P liga/desliga o som.
 
 **Ainda não tem:** o efeito das habilidades novas dos ramos (marcadas com "!" na árvore) e fonte pixel própria.
 
@@ -72,7 +75,8 @@ Atalhos para testar sem o menu: `-- --solo`, `-- --hospedar` ou `-- --entrar=IP`
 | Ficha do personagem | C |
 | Árvore de habilidades | K (clique num nó para ver e aprender; com ela aberta não há dash nem habilidades) |
 | Dia / noite | N |
-| Som | M |
+| Mapa da ilha | M |
+| Som | P |
 
 ## Gerar o jogo para enviar a amigos
 

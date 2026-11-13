@@ -3,8 +3,10 @@ extends Node2D
 ## A ilha: gera o chão, espalha árvores, pedras, plantas e slimes, monta o acampamento,
 ## cria o jogador e controla o dia e a noite (N).
 ##
-## O formato da ilha é gerado com uma semente fixa (sempre a mesma ilha).
-## O mapa feito à mão e os biomas vêm na Etapa 4.
+## A ilha grande (L36, design/proposta_mundo.md): 190 x 130 blocos, com semente fixa (sempre
+## a mesma ilha), 6 regiões (Regioes) e os caminhos entre elas (GeradorIlha). Os bichos nascem
+## por região (Povoamento); só fica acordado o que está perto de algum jogador (Soneca); o
+## mapa (M) vai se revelando ao andar.
 
 const ARVORE := preload("res://scenes/world/arvore.tscn")
 const PEDRA := preload("res://scenes/world/pedra.tscn")
@@ -41,13 +43,18 @@ const COR_NOITE := Color(0.24, 0.27, 0.46)
 
 enum Chao { AGUA, AREIA, GRAMA }
 
-@export var largura := 64
-@export var altura := 44
-@export var semente := 22117
-@export var arvores := 70
-@export var pedras := 16
-@export var plantas := 110
-@export var slimes := 5
+## O tamanho vem do GeradorIlha (190 x 130). A semente mudou com o mundo maior: um mundo
+## salvo da ilha antiga é de outra semente e começa de novo (com aviso).
+var largura := GeradorIlha.LARGURA
+var altura := GeradorIlha.ALTURA
+@export var semente := 36036
+## Densidade da decoração (flores, conchas, pedrinhas...), em %: 100 é o normal.
+@export var plantas := 100
+## Slimes postos em volta da Clareira ao abrir o mundo (os testes usam; no jogo, quem faz
+## nascer os bichos é o Povoamento).
+@export var slimes := 0
+## Liga o Povoamento (bichos por região, de dia e de noite). Só com gerar_recursos.
+@export var povoar := true
 ## Acampamentos de arqueiros inimigos (2 em cada), longe da fogueira. Os testes usam 0.
 @export var grupos_atiradores := 2
 ## Baús trancados espalhados longe da fogueira (só com gerar_recursos).
@@ -79,7 +86,9 @@ var nome_mundo := ""
 var centro := Vector2.ZERO
 var _tipo: Dictionary[Vector2i, int] = {}
 var _distancia: Dictionary[Vector2i, float] = {}
-var _ocupados: Array[Vector2] = []
+## Onde já tem coisa (para não empilhar): baldes de 32 px → pontos.
+var _ocupados: Dictionary[Vector2i, PackedVector2Array] = {}
+var gerador := GeradorIlha.new()
 var _removidos: Array[String] = []
 var _nascimentos: Dictionary[int, Vector2] = {}
 var _retornos: Dictionary[int, Vector2] = {}
@@ -104,12 +113,15 @@ var _bosque := FastNoiseLite.new()  # onde ficam os bosques
 func _ready() -> void:
 	add_to_group(&"mundo")
 	_rng.seed = semente
-	centro = Vector2(largura / 2 * T + T / 2, altura / 2 * T + T / 2)
+	centro = Vector2(GeradorIlha.CENTRO * T) + Vector2(T, T) / 2.0
 	# O cenário nasce igual em todos os jogadores (mesma semente, mesmos nomes).
+	gerador.gerar(semente)
 	_gerar_chao()
 	_montar_acampamento()
 	_espalhar()
+	_montar_passagens()
 	_aplicar_ciclo(false, true)
+	mapa_revelado.resize(MAPA_L * MAPA_A)
 	if somente_cenario:
 		arquivo_salvo = ""
 		hud.visible = false
@@ -133,13 +145,21 @@ func _ready() -> void:
 	multiplayer.connected_to_server.connect(func() -> void: _cliente_pronto.rpc_id(1, Net.raca, Net.classe, Net.id_jogador, Net.pular_criacao))
 	multiplayer.connection_failed.connect(_on_conexao_perdida.bind("Não foi possível conectar ao anfitrião."))
 	multiplayer.server_disconnected.connect(_on_conexao_perdida.bind("O anfitrião saiu do jogo."))
+	soneca = Soneca.new(self)
+	add_child(soneca)
+	for p in _pedacos_animados:
+		soneca.registrar_pedaco(p[0], p[1])
 	if multiplayer.is_server():
 		_carregar_mundo()
 		_criar_slimes()
-		_criar_animais()
 		_criar_atiradores()
 		if Net.modo != Net.Modo.ENTRAR:
 			_criar_jogador(1, Net.raca, Net.classe, Net.id_jogador, Net.pular_criacao)
+		# Depois do jogador: nada nasce na tela dele.
+		if gerar_recursos and povoar:
+			povoamento = Povoamento.new(self)
+			add_child(povoamento)
+			povoamento.encher()
 	else:
 		Events.aviso.emit("Conectando em %s..." % Net.endereco)
 	Sfx.tocar_musica()
@@ -175,7 +195,7 @@ func registrar_jogador_local(p: Player) -> void:
 		var ips := ", ".join(Net.enderecos_locais())
 		Events.aviso.emit("Você é o anfitrião. Seus amigos entram pelo IP: %s" % (ips if ips != "" else "?"))
 	else:
-		Events.aviso.emit("Explore a clareira: segure o clique nas árvores e pedras.")
+		Events.aviso.emit("Explore a ilha: segure o clique nas árvores e pedras. M abre o mapa.")
 
 
 func ponto_de_nascer(indice: int) -> Vector2:  # abaixo da fogueira, sem encostar nela
@@ -184,6 +204,8 @@ func ponto_de_nascer(indice: int) -> Vector2:  # abaixo da fogueira, sem encosta
 
 func registrar_removido(nome: String) -> void:
 	_removidos.append(nome)
+	if pedras_pos.has(nome):
+		_rebrotar[nome] = TEMPO_REBROTAR_PEDRA  # a pedra volta depois de um tempo
 
 
 ## Multiplicadores da dificuldade (fácil, normal, difícil): o dano que slime e javali causam
@@ -202,7 +224,37 @@ static func mult_dificuldade(quem: Node, tipo: StringName) -> float:
 	if w == null:
 		return 1.0
 	var tabela: Array = MULT_DIFICULDADE[tipo]
-	return float(tabela[clampi(w.dificuldade, 0, tabela.size() - 1)])
+	var base := float(tabela[clampi(w.dificuldade, 0, tabela.size() - 1)])
+	# Quanto mais longe do acampamento, mais forte (a dificuldade vem da região).
+	# Só quem o Povoamento fez nascer pelas regiões (os testes e os fixos ficam como antes).
+	var perigo := w.perigo_em((quem as Node2D).global_position) if quem is Node2D and Povoamento.nasceu_aqui(quem) else 0.0
+	return base * (1.0 + perigo * (1.5 if tipo == &"vida_inimigo" else 0.8))
+
+
+## Perigo de um ponto, de 0 (a Clareira) a 1 (o fundo das Ruínas): metade vem da região e
+## metade da distância até o acampamento.
+func perigo_em(pos: Vector2) -> float:
+	var cel := Vector2i((pos / T).floor())
+	if not gerador.dentro(cel):
+		return 0.0
+	var r := gerador.regiao_em(cel)
+	if r == Regioes.Id.CLAREIRA:
+		return 0.0
+	var longe := clampf(pos.distance_to(centro) / (largura * T * 0.5), 0.0, 1.0)
+	return clampf(float(Regioes.dados(r)["perigo"]) * 0.6 + longe * 0.4, 0.0, 1.0)
+
+
+## Níveis a mais que um inimigo ou bicho mostra na cabeça pelo perigo de onde nasceu.
+static func nivel_extra(quem: Node2D) -> int:
+	if not quem.is_inside_tree():
+		return 0
+	var w: World = quem.get_tree().get_first_node_in_group(&"mundo")
+	return 0 if w == null or not Povoamento.nasceu_aqui(quem) else roundi(w.perigo_em(quem.global_position) * 4.0)
+
+
+## A região de um ponto do mundo (Regioes.Id).
+func regiao_em(pos: Vector2) -> int:
+	return gerador.regiao_em(Vector2i((pos / T).floor()))
 
 
 ## Efeito visual em todos os jogadores (chamado pelo anfitrião).
@@ -270,7 +322,10 @@ func _process(delta: float) -> void:
 	if not multiplayer.has_multiplayer_peer() or not multiplayer.is_server():
 		return
 	_process_salvar(delta)
-	_process_noite(delta)
+	if povoamento == null:
+		_process_noite(delta)  # com o Povoamento, a noite vem das tabelas das regiões
+	_process_rebrotar(delta)
+	_process_mapa(delta)
 	if _gelo.is_empty():
 		return
 	for cel in _gelo.keys():
@@ -299,7 +354,8 @@ func _definir_gelo(cel: Vector2i, congelado: bool) -> void:
 		if not _gelo.has(cel):
 			_gelo[cel] = duracao_gelo
 	else:
-		chao.set_cell(cel, 0, TILE_AGUA)
+		# Na ponte aberta a água derrete mas continua dando para passar.
+		chao.set_cell(cel, 0, TILE_CHAO if _passavel_na_ponte(cel) else TILE_AGUA)
 		_camada_gelo.erase_cell(cel)
 		_gelo.erase(cel)
 
@@ -561,6 +617,9 @@ func _cliente_pronto(raca: StringName, classe: StringName, id_jogador: String, p
 		_definir_gelo.rpc_id(peer, cel, true)
 	if not _removidos.is_empty():
 		_remover_recursos.rpc_id(peer, _removidos)
+	for id in _passagens:
+		_definir_passagem_rede.rpc_id(peer, id, _passagens[id].aberta)
+	_mapa_inteiro.rpc_id(peer, mapa_revelado)
 	for r in get_tree().get_nodes_in_group(&"recursos"):
 		(r as ResourceNode).enviar_estado_para(peer)
 	for c in _lista_construcoes():
@@ -623,6 +682,9 @@ func salvar() -> bool:
 		"construcoes": _lista_construcoes(),
 		"bau_acampamento": bau_acampamento.conteudo,
 		"jogadores": _registros,
+		"rebrotar": _rebrotar.duplicate(),
+		"passagens": _estado_passagens(),
+		"mapa": Marshalls.raw_to_base64(mapa_revelado.compress(FileAccess.COMPRESSION_DEFLATE)),
 	}, arquivo_salvo)
 
 
@@ -634,6 +696,7 @@ func _carregar_mundo() -> void:
 	nome_mundo = String(dados.get("nome", nome_mundo))
 	if int(dados.get("semente", semente)) != semente:
 		push_warning("O mundo salvo é de outra semente; começando um novo.")
+		_aviso_mundo_novo.call_deferred()
 		return
 	_registros = dados.get("jogadores", {})
 	_aplicar_ciclo(bool(dados.get("noite", false)), true)
@@ -652,6 +715,23 @@ func _carregar_mundo() -> void:
 		if p and baus and c.size() > 3:
 			p.conteudo = c[3]
 	bau_acampamento.conteudo = dados.get("bau_acampamento", [])
+	var rebrotar: Dictionary = dados.get("rebrotar", {})
+	for nome in rebrotar:
+		_rebrotar[String(nome)] = float(rebrotar[nome])
+	var passagens: Dictionary = dados.get("passagens", {})
+	for id in passagens:
+		if _passagens.has(String(id)):
+			_definir_passagem(String(id), bool(passagens[id]))
+	var mapa := String(dados.get("mapa", ""))
+	if mapa != "":
+		var bytes := Marshalls.base64_to_raw(mapa).decompress(MAPA_L * MAPA_A, FileAccess.COMPRESSION_DEFLATE)
+		if bytes.size() == MAPA_L * MAPA_A:
+			mapa_revelado = bytes
+
+
+## O mundo salvo era da ilha antiga (outra semente): a ilha nasce de novo e o jogador é avisado.
+func _aviso_mundo_novo() -> void:
+	Events.aviso.emit("Este mundo era da ilha antiga, que mudou: uma ilha nova nasceu no lugar.")
 
 
 func _process_salvar(delta: float) -> void:
@@ -741,25 +821,15 @@ func _gerar_chao() -> void:
 	dados.set_collision_polygon_points(0, 0, PackedVector2Array([Vector2(-8, -8), Vector2(8, -8), Vector2(8, 8), Vector2(-8, 8)]))
 	chao.tile_set = ts
 
-	var ruido := FastNoiseLite.new()
-	ruido.seed = semente
-	ruido.frequency = 0.08
-	var c := Vector2i(largura / 2, altura / 2)
+	var c := GeradorIlha.CENTRO
 	for y in altura:
 		for x in largura:
 			var cel := Vector2i(x, y)
-			var nx := (x - largura / 2.0) / (largura * 0.44)
-			var ny := (y - altura / 2.0) / (altura * 0.42)
-			var d := sqrt(nx * nx + ny * ny) + ruido.get_noise_2d(x, y) * 0.16
-			_distancia[cel] = d
-			if d > 1.0:
-				_tipo[cel] = Chao.AGUA
-			elif d > 0.87:
-				_tipo[cel] = Chao.AREIA
-			else:
-				_tipo[cel] = Chao.GRAMA
-				if Vector2(cel - c).length() <= 2.6:
-					_terra[cel] = true  # clareira de areia em volta da fogueira
+			var i := y * largura + x
+			_tipo[cel] = gerador.tipo[i]
+			_distancia[cel] = gerador.distancia[i]
+			if _tipo[cel] == Chao.GRAMA and Vector2(cel - c).length() <= 2.6:
+				_terra[cel] = true  # clareira de areia em volta da fogueira
 			chao.set_cell(cel, 0, TILE_AGUA if _tipo[cel] == Chao.AGUA else TILE_CHAO)
 	_montar_terreno()
 
@@ -768,18 +838,35 @@ func _gerar_chao() -> void:
 ## A camada de tiles (Chao) fica invisível: só serve para a colisão da água e para saber o
 ## chão de cada tile. Quem desenha é o Terreno, com a arte do Tiny Swords (tile de 64 px,
 ## escala 0,25): água lisa no fundo, espuma animada embaixo da beira, a ilha inteira em
-## grama oliva (no lugar da areia, que o pacote não tem) e a grama por cima. Cada camada
-## escolhe o tile pelos 4 vizinhos: o terreno deles tem as 16 combinações (bloco 3x3,
-## tira vertical, tira horizontal e tile sozinho).
+## areia e, por cima, os chãos de cada região (de baixo para cima): lama do pântano, piso
+## das ruínas, trilha e a grama de cada região (um dos 5 tons do pacote). Cada camada
+## escolhe o tile pelos 4 vizinhos (o terreno deles tem as 16 combinações).
 const TS := 64
 const ESCALA_TS := 0.25
 const TEX_TS_AGUA := preload("res://assets/tiny_swords/terreno/agua.png")
 const TEX_TS_ESPUMA := preload("res://assets/tiny_swords/terreno/espuma.png")
 const TEX_TS_AREIA := preload("res://assets/sprites/tiny/areia.png")  # L12, feita sobre a grama deles
 const TEX_TS_GRAMA := preload("res://assets/tiny_swords/terreno/grama.png")
+## O chão de baixo para cima (L36): lama, piso de pedra antiga e trilha de terra.
+const TEX_PISOS := {
+	GeradorIlha.Piso.LAMA: preload("res://assets/sprites/tiny/mundo/lama.png"),
+	GeradorIlha.Piso.PEDRA: "res://assets/sprites/tiny/mundo/piso.png",
+	GeradorIlha.Piso.TRILHA: preload("res://assets/sprites/tiny/mundo/trilha.png"),
+}
+## A grama de cada região: os 5 tons do pacote (a Praia é só areia).
+const TEX_GRAMA_REGIAO := {
+	Regioes.Id.CLAREIRA: TEX_TS_GRAMA,
+	Regioes.Id.BOSQUE: preload("res://assets/tiny_swords/terreno/grama2.png"),
+	Regioes.Id.RUINAS: preload("res://assets/tiny_swords/terreno/grama3.png"),
+	Regioes.Id.COLINAS: preload("res://assets/tiny_swords/terreno/grama4.png"),
+	Regioes.Id.PANTANO: preload("res://assets/tiny_swords/terreno/grama5.png"),
+}
 
 var _terra: Dictionary[Vector2i, bool] = {}
 var _camada_gelo: TileMapLayer  # gelo da lança de gelo, por cima da água
+## Pedaços de decoração animada (espuma): [nó, centro], entregues à Soneca.
+const PEDACO := 16
+var _pedacos_animados: Array = []
 
 
 func _montar_terreno() -> void:
@@ -798,21 +885,57 @@ func _montar_terreno() -> void:
 	agua.position = Vector2(-20, -20) * TS
 	raiz.add_child(agua)
 
-	var terra := func(cel: Vector2i) -> bool: return tipo_do_chao(cel) != Chao.AGUA
-	var grama := func(cel: Vector2i) -> bool: return tipo_do_chao(cel) == Chao.GRAMA and not _terra.has(cel)
+	# Nível de cada bloco: 0 areia (ou água), 1..3 os pisos, 4 + região a grama.
+	var n := largura * altura
+	var terra := PackedByteArray()
+	terra.resize(n)
+	var nivel := PackedByteArray()
+	nivel.resize(n)
+	for y in altura:
+		for x in largura:
+			var i := y * largura + x
+			if gerador.tipo[i] == Chao.AGUA:
+				continue
+			terra[i] = 1
+			var piso := gerador.piso[i]
+			if piso != GeradorIlha.Piso.NADA:
+				nivel[i] = piso
+			elif gerador.tipo[i] == Chao.GRAMA and not _terra.has(Vector2i(x, y)):
+				nivel[i] = 4 + gerador.regiao[i]
+
 	var espuma := SpriteFrames.new()
 	espuma.remove_animation(&"default")
 	SpriteSheets.adicionar_tira(espuma, TEX_TS_ESPUMA, &"onda", Vector2i(192, 192), 16, 10.0)
-	for cel in _tipo:
-		if terra.call(cel) and _vizinhos(cel, terra) != 15:
-			var a := AnimatedSprite2D.new()
-			a.sprite_frames = espuma
-			a.play(&"onda")
-			a.frame = (cel.x * 7 + cel.y * 3) % 16
-			a.position = Vector2(cel * TS) + Vector2(TS, TS) / 2.0
-			raiz.add_child(a)
-	raiz.add_child(_camada_ts(TEX_TS_AREIA, terra))
-	raiz.add_child(_camada_ts(TEX_TS_GRAMA, grama))
+	# A espuma fica em pedaços de 16 x 16 blocos: longe de todos, o pedaço dorme (Soneca).
+	var espumas := Node2D.new()
+	espumas.name = "Espuma"
+	raiz.add_child(espumas)
+	var pedacos := {}
+	for y in altura:
+		for x in largura:
+			if terra[y * largura + x] == 1 and _vizinhos_mascara(terra, x, y, 1, false) != 15:
+				var chave := Vector2i(x / PEDACO, y / PEDACO)
+				if not pedacos.has(chave):
+					var p := Node2D.new()
+					espumas.add_child(p)
+					pedacos[chave] = p
+					_pedacos_animados.append([p, (Vector2(chave) + Vector2(0.5, 0.5)) * PEDACO * T])
+				var a := AnimatedSprite2D.new()
+				a.sprite_frames = espuma
+				a.play(&"onda")
+				a.frame = (x * 7 + y * 3) % 16
+				a.position = Vector2(x * TS, y * TS) + Vector2(TS, TS) / 2.0
+				(pedacos[chave] as Node2D).add_child(a)
+	raiz.add_child(_camada_mascara(TEX_TS_AREIA, terra, 1, false))
+	for piso in [GeradorIlha.Piso.LAMA, GeradorIlha.Piso.PEDRA, GeradorIlha.Piso.TRILHA]:
+		var tex: Variant = TEX_PISOS[piso]
+		if tex is String:
+			if not ResourceLoader.exists(tex):
+				continue  # a arte ainda não chegou: fica a areia
+			tex = load(tex)
+		raiz.add_child(_camada_mascara(tex, nivel, piso, true))
+	for r in TEX_GRAMA_REGIAO:
+		raiz.add_child(_camada_mascara(TEX_GRAMA_REGIAO[r], nivel, 4 + r, false))
 
 	# Gelo da lança de gelo (L16): bloco de 64 px no pixel do pacote, escala 0,25.
 	_camada_gelo = TileMapLayer.new()
@@ -829,7 +952,10 @@ func _montar_terreno() -> void:
 	move_child(_camada_gelo, raiz.get_index() + 1)
 
 
-func _camada_ts(textura: Texture2D, e_desta: Callable) -> TileMapLayer:
+## Uma camada do terreno: põe tile onde `mascara[i] == valor`. Os vizinhos que contam como
+## "do mesmo terreno" são os iguais ou, com `acima`, também os de nível maior (as camadas
+## de cima cobrem a emenda com a borda delas).
+func _camada_mascara(textura: Texture2D, mascara: PackedByteArray, valor: int, acima: bool) -> TileMapLayer:
 	var ts := TileSet.new()
 	ts.tile_size = Vector2i(TS, TS)
 	var src := TileSetAtlasSource.new()
@@ -841,20 +967,28 @@ func _camada_ts(textura: Texture2D, e_desta: Callable) -> TileMapLayer:
 			src.create_tile(Vector2i(x, y))
 	var camada := TileMapLayer.new()
 	camada.tile_set = ts
-	for cel in _tipo:
-		if e_desta.call(cel):
-			camada.set_cell(cel, 0, _tile_ts(_vizinhos(cel, e_desta)))
+	for y in altura:
+		for x in largura:
+			if mascara[y * largura + x] == valor:
+				camada.set_cell(Vector2i(x, y), 0, _tile_ts(_vizinhos_mascara(mascara, x, y, valor, acima)))
 	return camada
 
 
 ## Bits: 1 norte, 2 sul, 4 oeste, 8 leste (vizinho do mesmo terreno).
-func _vizinhos(cel: Vector2i, e_desta: Callable) -> int:
+func _vizinhos_mascara(mascara: PackedByteArray, x: int, y: int, valor: int, acima: bool) -> int:
 	var n := 0
-	if e_desta.call(cel + Vector2i.UP): n |= 1
-	if e_desta.call(cel + Vector2i.DOWN): n |= 2
-	if e_desta.call(cel + Vector2i.LEFT): n |= 4
-	if e_desta.call(cel + Vector2i.RIGHT): n |= 8
+	if _conta(mascara, x, y - 1, valor, acima): n |= 1
+	if _conta(mascara, x, y + 1, valor, acima): n |= 2
+	if _conta(mascara, x - 1, y, valor, acima): n |= 4
+	if _conta(mascara, x + 1, y, valor, acima): n |= 8
 	return n
+
+
+func _conta(mascara: PackedByteArray, x: int, y: int, valor: int, acima: bool) -> bool:
+	if x < 0 or y < 0 or x >= largura or y >= altura:
+		return false
+	var m := mascara[y * largura + x]
+	return m == valor or (acima and m > valor)
 
 
 ## Coluna: 0 começa à esquerda, 1 meio, 2 termina à direita, 3 tira vertical (sem lados).
@@ -869,6 +1003,7 @@ func _tile_ts(v: int) -> Vector2i:
 	return Vector2i(col, lin)
 
 
+
 func _montar_acampamento() -> void:
 	# A fogueira do acampamento: ilumina, protege da noite e assa carne (clique com carne
 	# crua na mão). Igual à fogueira construída, mas não quebra.
@@ -880,7 +1015,7 @@ func _montar_acampamento() -> void:
 	fogueira.position = centro + Vector2(0, 12)
 	entidades.add_child(fogueira)
 	fogueira.set_meta(&"raio_luz", 72.0)
-	_ocupados.append(fogueira.position)
+	_ocupar(fogueira.position)
 	_objeto_acampamento(Acamp.BARRACA, centro + Vector2(-50, -16), Vector2(22, 8))
 	_objeto_acampamento(Acamp.BANCADA, centro + Vector2(50, -16), Vector2(24, 8))
 	# O baú do acampamento guarda coisas (igual ao baú construído, mas não quebra).
@@ -891,7 +1026,7 @@ func _montar_acampamento() -> void:
 	bau.name = "BauAcampamento"
 	bau.position = centro + Vector2(48, 18)
 	entidades.add_child(bau)
-	_ocupados.append(bau.position)
+	_ocupar(bau.position)
 	bau_acampamento = bau
 	_objeto_acampamento(Acamp.BARRIL, centro + Vector2(-40, 20), Vector2(10, 5))
 	_objeto_acampamento(Acamp.VARAL, centro + Vector2(-84, 6), Vector2.ZERO)
@@ -900,7 +1035,7 @@ func _montar_acampamento() -> void:
 ## Um objeto do acampamento (sprite da folha L12). Com `colisao`, ninguém atravessa.
 func _objeto_acampamento(qual: int, pos: Vector2, colisao: Vector2) -> Node2D:
 	var regiao := Rect2(qual * QUADRO_NOSSO, 0, QUADRO_NOSSO, QUADRO_NOSSO)
-	_ocupados.append(pos)
+	_ocupar(pos)
 	if colisao == Vector2.ZERO:
 		return _sprite(TEX_ACAMPAMENTO, regiao, pos, null, ESCALA_TS, PE_NOSSO)
 	# A bancada abre a fabricação 3x3 (segurar E). Nome fixo: igual em todos os jogadores.
@@ -918,85 +1053,6 @@ func _objeto_acampamento(qual: int, pos: Vector2, colisao: Vector2) -> Node2D:
 	return corpo
 
 
-func _espalhar() -> void:
-	var celulas_grama: Array[Vector2i] = []
-	for cel in _tipo:
-		if _tipo[cel] == Chao.GRAMA and _distancia[cel] < 0.82:
-			celulas_grama.append(cel)
-
-	_bosque.seed = semente + 3
-	_bosque.frequency = 0.07
-	var colocadas := 0
-	for i in arvores * 6:
-		if colocadas >= arvores:
-			break
-		var p := _ponto_em(celulas_grama)
-		# Árvores em bosques (manchas de ruído), deixando campos abertos entre eles.
-		var cel_arvore := Vector2i(p / T)
-		if p.distance_to(centro) > RAIO_CLAREIRA and _bosque.get_noise_2d(cel_arvore.x, cel_arvore.y) > 0.0 and _livre(p, 30.0):
-			var tipo := _rng.randi() % ARVORES_TS.size()
-			_ocupados.append(p)
-			colocadas += 1
-			if gerar_recursos:
-				var a: ResourceNode = ARVORE.instantiate()
-				a.name = "Arvore%d" % colocadas
-				var quadro := Vector2(192, ARVORES_TS[tipo][0])
-				a.textura_inteiro = load("res://assets/tiny_swords/natureza/arvore%d.png" % (tipo + 1))
-				a.textura_esgotado = load("res://assets/tiny_swords/natureza/toco%d.png" % (tipo + 1))
-				a.regiao_inteiro = Rect2(Vector2.ZERO, quadro)
-				a.regiao_queimado = Rect2(Vector2.ZERO, quadro)
-				a.pe = ARVORES_TS[tipo][1]
-				a.position = p
-				entidades.add_child(a)
-
-	colocadas = 0
-	for i in pedras * 8:
-		if colocadas >= pedras:
-			break
-		var p := _ponto_em(celulas_grama)
-		if p.distance_to(centro) > 70.0 and _livre(p, 26.0):
-			_ocupados.append(p)
-			colocadas += 1
-			if gerar_recursos:
-				var pd: ResourceNode = PEDRA.instantiate()
-				pd.name = "Pedra%d" % colocadas
-				pd.position = p
-				entidades.add_child(pd)
-
-	var arbustos: Array[SpriteFrames] = []
-	for k in 4:
-		var f := SpriteFrames.new()
-		f.remove_animation(&"default")
-		SpriteSheets.adicionar_tira(f, load("res://assets/tiny_swords/natureza/arbusto%d.png" % (k + 1)), &"vento", Vector2i(128, 128), 8, 8.0)
-		arbustos.append(f)
-	for i in plantas:
-		var p := _ponto_em(celulas_grama)
-		if p.distance_to(centro) > 100.0 and _livre(p, 14.0):
-			_ocupados.append(p)
-			if _rng.randf() < CHANCE_COGUMELO:
-				# O cogumelo azul brilha à noite (conceito A).
-				var s := _sprite(TEX_NATUREZA, Rect2(COGUMELO_AZUL * QUADRO_NOSSO, 0, QUADRO_NOSSO, QUADRO_NOSSO), p, null, ESCALA_TS, PE_NOSSO)
-				var luz := PointLight2D.new()
-				luz.texture = LUZ
-				luz.color = Color(0.3, 0.95, 0.9)
-				luz.energy = 0.7
-				luz.texture_scale = 1.4  # o sprite do cogumelo tem escala 0,25
-				luz.position = Vector2(0, -24)
-				luz.add_to_group(&"luzes_noturnas")
-				s.add_child(luz)
-			else:
-				var a := AnimatedSprite2D.new()
-				a.sprite_frames = arbustos[_rng.randi() % arbustos.size()]
-				a.play(&"vento")
-				a.frame = _rng.randi() % 8
-				a.centered = false
-				a.offset = Vector2(-64, -128 + ARBUSTO_PE)
-				a.scale = Vector2(ESCALA_TS, ESCALA_TS)
-				a.position = p
-				entidades.add_child(a)
-
-	_espalhar_baus(celulas_grama)
-
 
 ## Baús trancados (BauTrancado): nascem iguais em todos (mesma semente, mesmos nomes), longe
 ## da fogueira. Vem por último em _espalhar para não mudar onde ficam as outras coisas.
@@ -1009,7 +1065,7 @@ func _espalhar_baus(celulas: Array[Vector2i]) -> void:
 			break
 		var p := _ponto_em(celulas)
 		if p.distance_to(centro) > 220.0 and _livre(p, 24.0):
-			_ocupados.append(p)
+			_ocupar(p)
 			colocados += 1
 			var b := BauTrancado.new()
 			b.name = "BauTrancado%d" % colocados
@@ -1019,9 +1075,13 @@ func _espalhar_baus(celulas: Array[Vector2i]) -> void:
 
 ## Só o anfitrião cria os slimes; o MultiplayerSpawner copia para os outros.
 func _criar_slimes() -> void:
+	if slimes <= 0:
+		return
+	# Em volta do acampamento, ainda na Clareira (os testes contam com eles perto).
 	var celulas_grama: Array[Vector2i] = []
-	for cel in _tipo:
-		if _tipo[cel] == Chao.GRAMA and _distancia[cel] < 0.82:
+	for cel in celulas_da_regiao(Regioes.Id.CLAREIRA):
+		var d := (Vector2(cel * T) - centro).length()
+		if _tipo[cel] == Chao.GRAMA and d > 160.0 and d < 330.0:
 			celulas_grama.append(cel)
 	var colocadas := 0
 	for i in slimes * 20:
@@ -1042,10 +1102,12 @@ func _criar_slimes() -> void:
 func _criar_atiradores() -> void:
 	if not gerar_recursos or grupos_atiradores <= 0:
 		return
+	# Os acampamentos dos arqueiros ficam na Praia e nas Colinas.
 	var celulas: Array[Vector2i] = []
-	for cel in _tipo:
-		if _tipo[cel] == Chao.GRAMA and _distancia[cel] > 0.45 and _distancia[cel] < 0.85:
-			celulas.append(cel)
+	for r in [Regioes.Id.PRAIA, Regioes.Id.COLINAS]:
+		for cel in celulas_da_regiao(r):
+			if _distancia[cel] < 0.85:
+				celulas.append(cel)
 	if celulas.is_empty():
 		return
 	var grupos := 0
@@ -1070,11 +1132,46 @@ func _ponto_em(celulas: Array[Vector2i]) -> Vector2:
 	return Vector2(cel * T) + Vector2(_rng.randf_range(2, 14), _rng.randf_range(6, 15))
 
 
+const BALDE := 32.0
+
+
+func _ocupar(p: Vector2) -> void:
+	var b := Vector2i((p / BALDE).floor())
+	var lista: PackedVector2Array = _ocupados.get(b, PackedVector2Array())
+	lista.append(p)
+	_ocupados[b] = lista
+
+
+## Nada já posto a menos de `raio` (até 64 px) deste ponto?
 func _livre(p: Vector2, raio: float) -> bool:
-	for o in _ocupados:
-		if o.distance_to(p) < raio:
-			return false
+	var b := Vector2i((p / BALDE).floor())
+	var alcance := ceili(raio / BALDE)
+	for dy in range(-alcance, alcance + 1):
+		for dx in range(-alcance, alcance + 1):
+			for o in _ocupados.get(b + Vector2i(dx, dy), PackedVector2Array()):
+				if o.distance_to(p) < raio:
+					return false
 	return true
+
+
+## Os blocos de terra firme (não água) de uma região, fora das trilhas.
+func celulas_da_regiao(r: int, com_trilha := false) -> Array[Vector2i]:
+	var lista: Array[Vector2i] = []
+	for y in altura:
+		for x in largura:
+			var i := y * largura + x
+			if gerador.regiao[i] == r and gerador.tipo[i] != Chao.AGUA and (com_trilha or gerador.piso[i] != GeradorIlha.Piso.TRILHA):
+				lista.append(Vector2i(x, y))
+	return lista
+
+
+func _espalhar() -> void:
+	var deco := DecoracaoIlha.new(self, _rng)
+	deco.espalhar()
+	var celulas: Array[Vector2i] = []
+	for r in [Regioes.Id.RUINAS, Regioes.Id.PANTANO, Regioes.Id.COLINAS, Regioes.Id.BOSQUE]:
+		celulas.append_array(celulas_da_regiao(r))
+	_espalhar_baus(celulas)
 
 
 func _sprite(textura: Texture2D, regiao: Rect2, pos: Vector2, pai: Node = null, escala := 1.0, pe := 4) -> Sprite2D:
@@ -1134,12 +1231,10 @@ func _process_noite(delta: float) -> void:
 			da_noite += 1
 	if da_noite >= LIMITE_NOITE + 2 * jogadores.size():
 		return
-	var celulas: Array[Vector2i] = []
-	for cel in _tipo:
-		if _tipo[cel] == Chao.GRAMA:
-			celulas.append(cel)
 	for tentativa in 20:
-		var p := _ponto_em(celulas)
+		var p := ponto_perto_de_jogador(jogadores, 160.0, 420.0)
+		if p == Vector2.INF:
+			continue
 		var longe := true
 		for j in jogadores:
 			if (j as Node2D).global_position.distance_to(p) < 150.0:
@@ -1157,6 +1252,19 @@ func _process_noite(delta: float) -> void:
 
 ## À noite, de vez em quando nasce um arqueiro da noite no escuro, longe de todos (no máximo
 ## 1 + 1 por jogador ao mesmo tempo). Ele foge da luz e vai embora quando amanhece.
+## Um ponto de terra firme a entre `de` e `ate` px de um jogador sorteado (o que nasce à
+## noite aparece em volta de quem está jogando, não do outro lado da ilha). INF se não achou.
+func ponto_perto_de_jogador(jogadores: Array, de: float, ate: float) -> Vector2:
+	if jogadores.is_empty():
+		return Vector2.INF
+	var j := jogadores[_rng.randi() % jogadores.size()] as Node2D
+	for k in 10:
+		var p := j.global_position + Vector2.from_angle(_rng.randf() * TAU) * _rng.randf_range(de, ate)
+		if pode_pisar(p):
+			return p
+	return Vector2.INF
+
+
 const CHANCE_ATIRADOR_NOITE := 0.35
 var _nascidos_atiradores := 0
 
@@ -1170,12 +1278,10 @@ func _atirador_da_noite(jogadores: Array[Node]) -> void:
 			vivos += 1
 	if vivos >= 1 + jogadores.size():
 		return
-	var celulas: Array[Vector2i] = []
-	for cel in _tipo:
-		if _tipo[cel] == Chao.GRAMA:
-			celulas.append(cel)
 	for tentativa in 20:
-		var p := _ponto_em(celulas)
+		var p := ponto_perto_de_jogador(jogadores, 180.0, 450.0)
+		if p == Vector2.INF:
+			continue
 		var longe := true
 		for j in jogadores:
 			if (j as Node2D).global_position.distance_to(p) < 170.0:
@@ -1309,29 +1415,219 @@ func _lista_construcoes() -> Array:
 	return lista
 
 
-# --- Animais -------------------------------------------------------------------------
-## Quantos de cada espécie nascem na ilha (só o anfitrião; o MultiplayerSpawner copia).
-@export var animais := {&"galinha": 4, &"coelho": 4, &"ovelha": 4, &"javali": 3}
-const ANIMAL := preload("res://scenes/animals/animal.tscn")
+# --- Mundo grande: sono, povoamento, passagens, rebrotar e mapa ------------------------
+
+## Põe para dormir o que está longe de todos os jogadores (ver Soneca).
+var soneca: Soneca
+## Faz nascer os bichos de cada região (só no anfitrião, com gerar_recursos e povoar).
+var povoamento: Povoamento
 
 
-func _criar_animais() -> void:
-	if not gerar_recursos:
-		return  # os testes com terreno limpo não querem bichos andando
-	var celulas: Array[Vector2i] = []
-	for cel in _tipo:
-		if _tipo[cel] == Chao.GRAMA and _distancia[cel] < 0.85:
-			celulas.append(cel)
-	var n := 0
-	for especie in animais:
-		for i in int(animais[especie]):
-			for tentativa in 20:
-				var p := _ponto_em(celulas)
-				if p.distance_to(centro) > 110.0 and _livre(p, 12.0):
-					n += 1
-					var a: Animal = ANIMAL.instantiate()
-					a.especie = especie
-					a.name = "Animal%d" % n
-					a.position = p
-					entidades.add_child(a, true)
-					break
+## Um ponto bom para algo nascer a pé: terra firme, fora da água e das passagens.
+func pode_pisar(pos: Vector2) -> bool:
+	var cel := Vector2i((pos / T).floor())
+	return gerador.dentro(cel) and gerador.tipo_em(cel) != Chao.AGUA and not cel in gerador.celulas_vau
+
+
+# --- Passagens ---------------------------------------------------------------------
+## Os caminhos que vão abrir com as Sementes (etapa 3): a ponte quebrada do rio (Pântano →
+## Colinas) e a muralha de raízes no vau (Bosque → Ruínas). Já existem e funcionam, mas
+## ficam ABERTAS por enquanto, para testar o mundo todo.
+const PASSAGENS_ABERTAS_NO_INICIO := true
+const PONTE := "ponte_colinas"
+const RAIZES := "raizes_ruinas"
+var _passagens: Dictionary[String, Passagem] = {}
+
+
+func _montar_passagens() -> void:
+	var ponte := Passagem.new()
+	ponte.name = "PassagemPonte"
+	ponte.id = PONTE
+	ponte.textura = "res://assets/sprites/tiny/mundo/ponte.png"
+	ponte.no_chao = true
+	var celulas := gerador.celulas_ponte
+	var caixa := Rect2(Vector2(celulas[0] * T), Vector2(T, T))
+	for c in celulas:
+		caixa = caixa.expand(Vector2(c * T)).expand(Vector2(c * T) + Vector2(T, T))
+	ponte.position = Vector2(caixa.get_center().x, caixa.end.y)
+	ponte.largura_bloqueio = 0.0  # quem bloqueia a ponte quebrada é a água
+	add_child(ponte)
+	move_child(ponte, entidades.get_index())
+	_passagens[PONTE] = ponte
+
+	var raizes := Passagem.new()
+	raizes.name = "PassagemRaizes"
+	raizes.id = RAIZES
+	raizes.textura = "res://assets/sprites/tiny/mundo/raizes.png"
+	raizes.position = Vector2(GeradorIlha.VAU * T) + Vector2(T / 2.0, T)
+	raizes.largura_bloqueio = (GeradorIlha.VAU_RAIO * 2 + 3) * T
+	entidades.add_child(raizes)
+	_passagens[RAIZES] = raizes
+	for id in _passagens:
+		_definir_passagem(id, PASSAGENS_ABERTAS_NO_INICIO)
+
+
+func passagem(id: String) -> Passagem:
+	return _passagens.get(id)
+
+
+## Só o anfitrião (as Sementes da etapa 3 vão chamar isto).
+func abrir_passagem(id: String, aberta := true) -> void:
+	if multiplayer.is_server() and _passagens.has(id):
+		_definir_passagem_rede.rpc(id, aberta)
+
+
+@rpc("any_peer", "call_local", "reliable")
+func _definir_passagem_rede(id: String, aberta: bool) -> void:
+	if Net.veio_do_anfitriao() and _passagens.has(id):
+		_definir_passagem(id, aberta)
+
+
+func _definir_passagem(id: String, aberta: bool) -> void:
+	_passagens[id].definir(aberta)
+	if id == PONTE:
+		for cel in gerador.celulas_ponte:
+			if not _gelo.has(cel):
+				chao.set_cell(cel, 0, TILE_CHAO if aberta else TILE_AGUA)
+
+
+func _passavel_na_ponte(cel: Vector2i) -> bool:
+	return _passagens.has(PONTE) and _passagens[PONTE].aberta and cel in gerador.celulas_ponte
+
+
+func _estado_passagens() -> Dictionary:
+	var d := {}
+	for id in _passagens:
+		d[id] = _passagens[id].aberta
+	return d
+
+
+# --- Árvores e pedras crescem de novo ---------------------------------------------------
+## Toco volta a ser árvore, e pedra minerada volta, depois de alguns minutos (só o
+## anfitrião conta; espera ninguém estar olhando de perto).
+const TEMPO_REBROTAR_ARVORE := 300.0
+const TEMPO_REBROTAR_PEDRA := 480.0
+const RAIO_NAO_REBROTA := 200.0
+## nome do recurso → segundos que faltam
+var _rebrotar: Dictionary[String, float] = {}
+## Onde fica cada pedra (as mineradas somem, mas voltam no mesmo lugar e com o mesmo nome).
+var pedras_pos: Dictionary[String, Vector2] = {}
+var _tempo_rebrotar := 0.0
+
+
+## A árvore virou toco (o ResourceNode avisa, só no anfitrião).
+func registrar_esgotado(nome: String) -> void:
+	if multiplayer.has_multiplayer_peer() and multiplayer.is_server():
+		_rebrotar[nome] = TEMPO_REBROTAR_ARVORE
+
+
+func _process_rebrotar(delta: float) -> void:
+	_tempo_rebrotar += delta
+	if _tempo_rebrotar < 1.0 or _rebrotar.is_empty():
+		return
+	var passou := _tempo_rebrotar
+	_tempo_rebrotar = 0.0
+	for nome in _rebrotar.keys():
+		_rebrotar[nome] -= passou
+		if _rebrotar[nome] > 0.0:
+			continue
+		var r := entidades.get_node_or_null(NodePath(nome)) as ResourceNode
+		var pos: Vector2 = r.global_position if r else pedras_pos.get(nome, Vector2.INF)
+		if pos == Vector2.INF:
+			_rebrotar.erase(nome)
+			continue
+		if _jogador_perto(pos, RAIO_NAO_REBROTA):
+			_rebrotar[nome] = 5.0  # tenta de novo quando ninguém estiver olhando
+			continue
+		_rebrotar.erase(nome)
+		if r:
+			if r.estado == ResourceNode.Estado.ESGOTADO:
+				r._definir_estado.rpc(ResourceNode.Estado.INTEIRO, r.golpes, false)
+		else:
+			_renascer_pedra.rpc(nome)
+
+
+## Faz o recurso crescer de novo agora (testes e a etapa 3).
+func rebrotar_ja(nome: String) -> void:
+	if _rebrotar.has(nome):
+		_rebrotar[nome] = 0.0
+		_tempo_rebrotar = 1.0
+
+
+func _jogador_perto(pos: Vector2, raio: float) -> bool:
+	for j in get_tree().get_nodes_in_group(&"jogadores"):
+		if (j as Node2D).global_position.distance_to(pos) < raio:
+			return true
+	return false
+
+
+@rpc("any_peer", "call_local", "reliable")
+func _renascer_pedra(nome: String) -> void:
+	if not Net.veio_do_anfitriao() or entidades.has_node(NodePath(nome)) or not pedras_pos.has(nome):
+		return
+	_removidos.erase(nome)
+	var pd: ResourceNode = PEDRA.instantiate()
+	pd.name = nome
+	pd.position = pedras_pos[nome]
+	entidades.add_child(pd)
+
+
+# --- Mapa (M) ------------------------------------------------------------------------
+## O que o grupo já viu da ilha: uma célula do mapa = 2 x 2 blocos. O anfitrião marca em
+## volta de cada jogador e manda o que mudou para todos; fica salvo com o mundo.
+const MAPA_BLOCO := 2
+const MAPA_L := GeradorIlha.LARGURA / MAPA_BLOCO
+const MAPA_A := GeradorIlha.ALTURA / MAPA_BLOCO
+const RAIO_REVELAR := 12.0  # em blocos (o que cabe na tela em volta do jogador)
+signal mapa_mudou
+var mapa_revelado := PackedByteArray()
+var _tempo_mapa := 0.0
+
+
+func revelado(celula_mapa: Vector2i) -> bool:
+	return celula_mapa.x >= 0 and celula_mapa.y >= 0 and celula_mapa.x < MAPA_L and celula_mapa.y < MAPA_A \
+		and mapa_revelado[celula_mapa.y * MAPA_L + celula_mapa.x] != 0
+
+
+## Quanto do mapa já foi visto (0 a 1).
+func fracao_revelada() -> float:
+	return float(mapa_revelado.count(1)) / mapa_revelado.size()
+
+
+func _process_mapa(delta: float) -> void:
+	_tempo_mapa += delta
+	if _tempo_mapa < 0.4:
+		return
+	_tempo_mapa = 0.0
+	var novos := PackedInt32Array()
+	var r := RAIO_REVELAR / MAPA_BLOCO
+	for j in get_tree().get_nodes_in_group(&"jogadores"):
+		var c := Vector2((j as Node2D).global_position / (T * MAPA_BLOCO))
+		for y in range(floori(c.y - r), ceili(c.y + r) + 1):
+			for x in range(floori(c.x - r), ceili(c.x + r) + 1):
+				if x < 0 or y < 0 or x >= MAPA_L or y >= MAPA_A:
+					continue
+				var i := y * MAPA_L + x
+				if mapa_revelado[i] == 0 and Vector2(x + 0.5, y + 0.5).distance_to(c) <= r:
+					mapa_revelado[i] = 1
+					novos.append(i)
+	if not novos.is_empty():
+		_revelar.rpc(novos)
+		mapa_mudou.emit()
+
+
+@rpc("authority", "call_remote", "reliable")
+func _revelar(indices: PackedInt32Array) -> void:
+	for i in indices:
+		if i >= 0 and i < mapa_revelado.size():
+			mapa_revelado[i] = 1
+	mapa_mudou.emit()
+
+
+@rpc("authority", "call_remote", "reliable")
+func _mapa_inteiro(dados: PackedByteArray) -> void:
+	if dados.size() == mapa_revelado.size():
+		mapa_revelado = dados
+		mapa_mudou.emit()
+
+

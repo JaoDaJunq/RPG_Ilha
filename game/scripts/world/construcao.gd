@@ -14,6 +14,27 @@ extends StaticBody2D
 const ARTE := "res://assets/sprites/tiny/construcao/"
 const ACAMPAMENTO := preload("res://assets/sprites/tiny/acampamento.png")
 const LUZ := preload("res://assets/luz/luz_radial.tres")
+## Fogueira animada (L37): as pedras e a lenha da arte do L12 sem as chamas
+## (tools/separar_fogueira.gd); por cima, as chamas em laço desenhadas pelo Codex
+## (l37_chamas_v1: 6 quadros de 40x40, a base das chamas em (20, 34)) e as faíscas subindo do
+## Pixelbolt (art/fx_receitas/faiscas.fluid.json: 24 quadros de 40x72). As chamas simuladas
+## (fogueira.fluid.json) perderam na comparação lado a lado (evidence/comparacao/fogueira_*).
+const FOGUEIRA_BASE := preload("res://assets/sprites/tiny/fogueira_base.png")
+const FOGUEIRA_CHAMAS := preload("res://assets/sprites/tiny/fx/fogueira_chamas.png")
+const FOGUEIRA_FAISCAS := preload("res://assets/sprites/tiny/fx/fogueira_faiscas.png")
+const QUADRO_CHAMAS := Vector2i(40, 40)
+const QUADROS_CHAMAS := 6
+const FPS_CHAMAS := 8.0
+const QUADRO_FAISCAS := Vector2i(40, 72)
+const QUADROS_FAISCAS := 24
+const FPS_FAISCAS := 9.0
+## Onde fica o canto de cima à esquerda, em pixels da arte (os pés da peça em 0,0): a base das
+## chamas cai em cima da lenha (y 98 da arte da fogueira) e as faíscas saem do meio das chamas.
+const CANTO_CHAMAS := Vector2(-20, -56)
+const CANTO_FAISCAS := Vector2(-20, -93)
+## A luz da fogueira tremula: energia e tamanho variam um pouco, sem parar.
+const TREMOR_LUZ := 0.12
+static var _quadros_chamas: SpriteFrames
 ## Golpes para quebrar cada peça.
 const GOLPES := {&"parede": 4, &"porta": 3, &"chao": 2, &"tocha": 1, &"fogueira": 2, &"bau": 3, &"bancada": 3}
 ## Camada só das portas: os slimes batem nela, os jogadores não.
@@ -32,6 +53,11 @@ var conteudo: Array = []
 var em_uso_por: Node
 ## Peça do acampamento: não quebra.
 var fixa := false
+var _chamas: AnimatedSprite2D
+var _luz_no: PointLight2D
+var _luz_energia := 0.0
+var _luz_escala := 0.0
+var _tempo := 0.0
 
 
 func _ready() -> void:
@@ -54,7 +80,7 @@ func _ready() -> void:
 			_mostrar(load(ARTE + "tocha.png"))
 			_luz(0.8, 0.8, 44.0)
 		&"fogueira":
-			_mostrar_acampamento(0)
+			_mostrar_fogueira()
 			_luz(3.6, 0.8, 60.0)
 			_area_de_uso()
 		&"bau":
@@ -83,6 +109,39 @@ func _mostrar_acampamento(quadro: int) -> void:
 	_sprite.offset = Vector2(-64, -128 + 8)
 
 
+## Pedras e lenha paradas e as chamas animadas por cima (cada fogueira começa num quadro
+## diferente, para duas fogueiras não piscarem juntas).
+func _mostrar_fogueira() -> void:
+	_sprite.texture = FOGUEIRA_BASE
+	_sprite.offset = Vector2(-64, -128 + 8)
+	if _quadros_chamas == null:
+		_quadros_chamas = SpriteFrames.new()
+		_quadros_chamas.remove_animation(&"default")
+		SpriteSheets.adicionar_tira(_quadros_chamas, FOGUEIRA_CHAMAS, &"fogo", QUADRO_CHAMAS, QUADROS_CHAMAS, FPS_CHAMAS)
+		SpriteSheets.adicionar_tira(_quadros_chamas, FOGUEIRA_FAISCAS, &"faiscas", QUADRO_FAISCAS, QUADROS_FAISCAS, FPS_FAISCAS)
+	_chamas = _animacao("Chamas", &"fogo", CANTO_CHAMAS)
+	_chamas.frame = absi(hash(name)) % QUADROS_CHAMAS
+	var faiscas := _animacao("Faiscas", &"faiscas", CANTO_FAISCAS)
+	faiscas.frame = absi(hash(name)) % QUADROS_FAISCAS
+
+
+func _animacao(nome: String, animacao: StringName, canto: Vector2) -> AnimatedSprite2D:
+	var a := AnimatedSprite2D.new()
+	a.sprite_frames = _quadros_chamas
+	a.centered = false
+	a.scale = Vector2(0.25, 0.25)
+	a.offset = canto
+	a.name = nome
+	add_child(a)
+	a.play(animacao)
+	return a
+
+
+## A fogueira está animada? (Para os testes.)
+func chamas() -> AnimatedSprite2D:
+	return _chamas
+
+
 func _colisao(tamanho: Vector2, camada: int) -> void:
 	collision_layer = camada
 	var forma := CollisionShape2D.new()
@@ -104,6 +163,9 @@ func _luz(escala: float, energia: float, raio_protecao: float) -> void:
 	var w := get_tree().get_first_node_in_group(&"mundo") as World
 	luz.enabled = w != null and w.noite
 	add_child(luz)
+	_luz_no = luz
+	_luz_energia = energia
+	_luz_escala = escala
 	add_to_group(&"luz_protege")
 	set_meta(&"raio_luz", raio_protecao)
 
@@ -177,7 +239,10 @@ func interagir(quem: Player) -> void:
 
 # --- Porta e quebrar ---------------------------------------------------------------
 
-func _process(_delta: float) -> void:
+func _process(delta: float) -> void:
+	if tipo == &"fogueira":
+		_tremer_luz(delta)
+		return
 	if tipo != &"porta":
 		return
 	var perto := false
@@ -187,6 +252,16 @@ func _process(_delta: float) -> void:
 	if perto != _aberta:
 		_aberta = perto
 		_mostrar(_arte("porta_aberta" if perto else "porta_fechada"))
+
+
+## A luz da fogueira tremula de leve: duas ondas de velocidades diferentes, como uma chama.
+func _tremer_luz(delta: float) -> void:
+	if _luz_no == null or not _luz_no.enabled:
+		return
+	_tempo += delta
+	var t := sin(_tempo * 7.3) * 0.6 + sin(_tempo * 13.1 + 1.7) * 0.4
+	_luz_no.energy = _luz_energia * (1.0 + TREMOR_LUZ * t)
+	_luz_no.texture_scale = _luz_escala * (1.0 + TREMOR_LUZ * 0.25 * t)
 
 
 ## Só o anfitrião: cada golpe de jogador tira um pouco; no último, a peça volta como item.

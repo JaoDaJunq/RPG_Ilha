@@ -1,0 +1,91 @@
+{
+  "format": "pixelforge-fluid",
+  "version": 1,
+  "name": "faiscas",
+  "width": 40,
+  "height": 72,
+  "palette": {
+    "R": "#cc5050",
+    "r": "#f6703e",
+    "y": "#ffdc00",
+    "W": "#f9f4a9",
+    "k": "#161c2e",
+    "b": "#5c3a2c",
+    "B": "#8a5a3c"
+  },
+  "symbols": {
+    "ground": [
+      "kkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkk",
+      "kkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkk"
+    ],
+    "lenha": [
+      "..kk........kk..",
+      ".kBBkk....kkBBk.",
+      "..kkbbBkkBbbkk..",
+      "....kkbbbbkk....",
+      "......kkkk......"
+    ]
+  },
+  "effects": {
+    "faiscas": {
+      "frames": 24,
+      "duration": 110,
+      "loop": true,
+      "seed": 9,
+      "walls": [
+        "bottom"
+      ],
+      "buoyancy": 0.6,
+      "vorticity": 0.65,
+      "dissipation": 0.09,
+      "cooling": 0.26,
+      "obstacles": [],
+      "emitters": [
+        {
+          "name": "faiscas",
+          "at": [
+            20,
+            58
+          ],
+          "radius": 4,
+          "rate": 1,
+          "sparks": {
+            "count": 0.15,
+            "life": [
+              10,
+              18
+            ],
+            "colors": [
+              "W",
+              "y",
+              "y",
+              "r"
+            ],
+            "trail": true,
+            "angle": [
+              258,
+              282
+            ],
+            "speed": [
+              2.2,
+              3.4
+            ],
+            "drag": 0.06
+          }
+        }
+      ],
+      "look": [
+        {
+          "field": "temperature",
+          "colors": [
+            "r"
+          ],
+          "thresholds": [
+            0.5
+          ],
+          "dither": 0
+        }
+      ]
+    }
+  }
+}

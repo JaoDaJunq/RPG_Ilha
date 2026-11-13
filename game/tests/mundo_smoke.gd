@@ -13,11 +13,11 @@ func _ready() -> void:
 				arvores += 1
 			else:
 				pedras += 1
-		elif n is Slime:
+		elif n is Slime and not Povoamento.nasceu_aqui(n):
 			slimes += 1
-	checar(arvores >= 55, "ilha tem árvores suficientes (%d)" % arvores)
-	checar(pedras >= 12, "ilha tem pedras (%d)" % pedras)
-	checar(slimes == 5, "ilha tem 5 slimes (%d)" % slimes)
+	checar(arvores >= 350, "ilha tem árvores suficientes (%d)" % arvores)
+	checar(pedras >= 60, "ilha tem pedras (%d)" % pedras)
+	checar(slimes == 5, "os 5 slimes pedidos estão em volta do acampamento (%d)" % slimes)
 	var p := w.jogador
 	var cel := w.chao.local_to_map(p.position)
 	checar(w.tipo_do_chao(cel) != World.Chao.AGUA, "jogador nasce em terra firme")

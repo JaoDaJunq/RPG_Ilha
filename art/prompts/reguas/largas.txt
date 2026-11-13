@@ -1,0 +1,4 @@
+# Régua das peças largas (pontes e muralhas): célula de 1536x512 (1 coluna x 2 linhas), ampliada 4x = 384x128 de jogo
+# Uso: montar_regua.gd --lista=../art/prompts/reguas/largas.txt --saida=../art/prompts/reguas/largas_4x.png --celula=1536x512
+../art/terceiros/tiny_swords/Tiny Swords (Free Pack)/Terrain/Resources/Wood/Wood Resource/Wood Resource.png | 0 0 64 64
+res://assets/tiny_swords/natureza/toco1.png | 0 0 192 256

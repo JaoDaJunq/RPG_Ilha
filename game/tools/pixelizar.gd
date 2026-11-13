@@ -15,7 +15,7 @@ extends SceneTree
 ##     --entrada=../art/sprites/desenho_hd/candidatos/hd_v1.png --celulas=0,1 --altura=88 \
 ##     --saida=../art/sprites/tiny/convertido/teste.png [--quadro=128] [--base=8] [--celula=512x512]
 ## Opções para efeitos e peças das habilidades (pedido L35):
-##   --sem_sombra    não põe a sombra do pacote (nuvem, tornado, poça...);
+##   --sem_sombra    não põe a sombra do pacote (nuvem, tornado, poça; item na mão);
 ##   --sem_contorno  não pinta a borda de #161c2e (luz: a parede de luz);
 ##   --luz=0.7      luz sobre o magenta: só o que é claro fica (ver _limiar_luz);
 ##   --separar=a,b   cada célula vira um PNG recortado (a.png, b.png) na pasta de --saida.

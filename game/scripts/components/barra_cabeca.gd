@@ -31,6 +31,17 @@ var _barra: ProgressBar
 var _restante := 0.0
 
 
+## A criatura dormiu (longe de todos, ver Soneca): a barra some, senão ficaria parada na tela.
+func _notification(what: int) -> void:
+	if _camada == null:
+		return
+	if what == NOTIFICATION_DISABLED:
+		_camada.visible = false
+	elif what == NOTIFICATION_ENABLED:
+		_camada.visible = true
+		_atualizar_posicao()
+
+
 func _ready() -> void:
 	_vida = get_parent().get_node_or_null("HealthComponent") as HealthComponent
 	_montar()
