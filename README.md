@@ -41,7 +41,7 @@ Co-op online de sobrevivência e exploração numa ilha de fantasia que reage ao
 - Mouse seleciona o objeto; a caixa em cima dele diz o que fazer e se está perto o bastante.
 - Segurar E corta árvore (3 golpes = 3 de madeira, vira toco) e minera pedra (4 golpes = 3 de pedra, some).
 - Bola de fogo (Mago): acerta slime (dano dobrado) e incendeia árvore; a árvore queimada rende **carvão** em vez de madeira.
-- Golpe com clique esquerdo; slimes perseguem e machucam; ao desmaiar, o jogador volta ao acampamento.
+- Golpe com clique esquerdo; slimes perseguem e machucam; com a vida em 0 o jogador cai no chão e vê a tela de morte (volta no acampamento sozinho aos 8 s, ou pelo botão "Reviver agora" depois de 4 s); o Levantar do Clérigo ou um aliado segurando E por 3 s o levantam ali mesmo.
 - N alterna dia e noite; M liga/desliga o som.
 
 **Ainda não tem:** o efeito das habilidades novas dos ramos (marcadas com "!" na árvore) e fonte pixel própria.
