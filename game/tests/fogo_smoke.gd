@@ -34,7 +34,7 @@ func _ready() -> void:
 	checar(inv.quantidade_de(&"madeira") == 0, "árvore queimada não rende madeira")
 	checar(arvore.estado == ResourceNode.Estado.ESGOTADO, "depois de recolher o carvão vira toco")
 
-	# Fogo no slime: tira 2 de 4 de vida.
+	# Fogo no slime: tira 2 de vida (o dobro de 1).
 	var slime: Slime = colocar(w, SLIME, p.global_position + Vector2(0, 50))
 	slime.set_physics_process(false)
 	await get_tree().physics_frame
@@ -42,6 +42,6 @@ func _ready() -> void:
 	await esperar(0.7)  # espera a recarga da bola de fogo
 	p.lancar_bola_de_fogo()
 	await esperar(0.6)
-	checar(is_instance_valid(slime) and slime.vida.atual <= 2.0, "bola de fogo tira o dobro no slime (vida %.1f de 4)" % (slime.vida.atual if is_instance_valid(slime) else -1.0))
+	checar(is_instance_valid(slime) and slime.vida.atual <= slime.vida.maximo - 2.0, "bola de fogo tira o dobro no slime (vida %.1f de %.0f)" % [slime.vida.atual if is_instance_valid(slime) else -1.0, slime.vida.maximo if is_instance_valid(slime) else 0.0])
 
 	terminar()

@@ -43,7 +43,7 @@ func _ready() -> void:
 	await esperar(0.3)
 	checar(s._estado != Slime.Estado.PREPARANDO and s._estado != Slime.Estado.PULANDO, "espera a recarga antes de atacar de novo")
 	checar(is_equal_approx(vida_antes - p.vida.atual, s.dano_contato), "sem dano extra enquanto espera")
-	checar(s.vida.maximo == 4.0, "vida do slime na dificuldade normal (%.1f)" % s.vida.maximo)
+	checar(s.vida.maximo == 6.0, "vida do slime na dificuldade normal (%.1f)" % s.vida.maximo)
 	s.queue_free()
 
 	# A proteção acaba em 0,5 s.
@@ -113,11 +113,11 @@ func _ready() -> void:
 	checar(is_equal_approx(World.mult_dificuldade(w, &"outra_coisa"), 1.0), "tipo desconhecido vale 1,0")
 	w.dificuldade = 2
 	var s2: Slime = colocar(w, SLIME, p.global_position + Vector2(300, 0))
-	checar(is_equal_approx(s2.vida.maximo, 5.2), "slime difícil nasce com mais vida (%.1f)" % s2.vida.maximo)
+	checar(is_equal_approx(s2.vida.maximo, 7.8), "slime difícil nasce com mais vida (%.1f)" % s2.vida.maximo)
 	s2.free()
 	w.dificuldade = 0
 	s2 = colocar(w, SLIME, p.global_position + Vector2(300, 0))
-	checar(is_equal_approx(s2.vida.maximo, 3.2), "slime fácil nasce com menos vida (%.1f)" % s2.vida.maximo)
+	checar(is_equal_approx(s2.vida.maximo, 4.8), "slime fácil nasce com menos vida (%.1f)" % s2.vida.maximo)
 	s2.free()
 	# O dano do slime no fácil: 12 x 0,6.
 	p.global_position = w.centro + Vector2(0, 80)
