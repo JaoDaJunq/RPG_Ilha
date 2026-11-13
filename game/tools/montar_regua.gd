@@ -20,6 +20,12 @@ func _init() -> void:
 		if a.begins_with("--") and a.contains("="):
 			_args[a.substr(2).get_slice("=", 0)] = a.get_slice("=", 1)
 	var vezes := int(_args.get("vezes", "4"))
+	# --celula=LxA: outra grade na mesma folha de 1536x1024 (ex.: 768x1024 para árvores altas,
+	# 1536x512 para pontes e muralhas largas).
+	var cel := Vector2i(CELULA, CELULA)
+	if _args.has("celula"):
+		cel = Vector2i(String(_args["celula"]).get_slice("x", 0).to_int(), String(_args["celula"]).get_slice("x", 1).to_int())
+	var colunas := (CELULA * 3) / cel.x
 	var out := Image.create(CELULA * 3, CELULA * 2, false, Image.FORMAT_RGBA8)
 	out.fill(MAGENTA)
 	var i := 0
@@ -35,8 +41,8 @@ func _init() -> void:
 		peca = peca.get_region(peca.get_used_rect())
 		peca.resize(peca.get_width() * vezes, peca.get_height() * vezes, Image.INTERPOLATE_NEAREST)
 		# A sombra do pacote é semitransparente: sobre o magenta ela vira a mistura das duas.
-		var celula := Vector2i((i % 3) * CELULA, (i / 3) * CELULA)
-		var destino := celula + Vector2i((CELULA - peca.get_width()) / 2, CELULA - 16 - peca.get_height())
+		var celula := Vector2i((i % colunas) * cel.x, (i / colunas) * cel.y)
+		var destino := celula + Vector2i((cel.x - peca.get_width()) / 2, cel.y - 16 - peca.get_height())
 		out.blend_rect(peca, Rect2i(Vector2i.ZERO, peca.get_size()), destino)
 		i += 1
 	var saida := _caminho(_args["saida"])

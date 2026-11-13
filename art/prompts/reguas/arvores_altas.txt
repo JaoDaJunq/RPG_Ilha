@@ -1,0 +1,4 @@
+# Régua das peças altas: árvores do pacote no quadro de 192x256 (ampliadas 4x = célula de 768x1024, 2 colunas)
+# Uso: montar_regua.gd --lista=../art/prompts/reguas/arvores_altas.txt --saida=../art/prompts/reguas/arvores_altas_4x.png --celula=768x1024
+res://assets/tiny_swords/natureza/arvore1.png | 0 0 192 256
+res://assets/tiny_swords/natureza/arvore3.png | 0 0 192 192
