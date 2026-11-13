@@ -319,9 +319,8 @@ func _efeito_preso(caminho: NodePath, nome: StringName, segundos: float, pos_loc
 	var e := Efeito.criar(nome, pos_local, true)
 	e.name = String(nome)  # a marca do alvo some enquanto a caveira (marca_morte) estiver lá
 	dono.add_child(e, true)
-	get_tree().create_timer(segundos, false).timeout.connect(func() -> void:
-		if is_instance_valid(e):
-			e.sumir())
+	# Ligado ao método (sem lambda): se o efeito sair antes (o dono sumiu), a ligação cai sozinha.
+	get_tree().create_timer(segundos, false).timeout.connect(e.sumir.bind(Efeito.SUMIR))
 
 
 ## Efeito em laço parado num ponto do chão por `segundos` (zonas: Círculo de cura, Nuvem
@@ -360,11 +359,12 @@ func _efeito_laco(nome: StringName, pos: Vector2, segundos: float, escala: float
 	if dono_id != 0:
 		var lista: Array = _lacos.get_or_add(dono_id, [])
 		lista.append(e)
-	get_tree().create_timer(segundos, false).timeout.connect(func() -> void:
-		if dono_id != 0:
-			_lacos.erase(dono_id)
-		if is_instance_valid(e):
-			e.sumir())
+		get_tree().create_timer(segundos, false).timeout.connect(_esquecer_laco.bind(dono_id))
+	get_tree().create_timer(segundos, false).timeout.connect(e.sumir.bind(Efeito.SUMIR))
+
+
+func _esquecer_laco(dono_id: int) -> void:
+	_lacos.erase(dono_id)
 
 
 @rpc("any_peer", "call_local", "reliable")
