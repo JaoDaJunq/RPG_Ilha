@@ -152,7 +152,7 @@ func _physics_process(delta: float) -> void:
 ## mais perto.
 func _escolher_alvo() -> Node2D:
 	var provocador := efeitos.alvo_provocado()
-	if provocador:
+	if provocador and not (provocador is Player and (provocador as Player).caido):
 		return provocador
 	return _jogador_mais_proximo()
 
@@ -161,8 +161,8 @@ func _jogador_mais_proximo() -> Player:
 	var melhor: Player = null
 	var menor := INF
 	for j in get_tree().get_nodes_in_group(&"jogadores"):
-		if (j as Player).escondido():
-			continue  # Bomba de fumaça ou Invisível: perdeu o jogador de vista
+		if (j as Player).escondido() or (j as Player).caido:
+			continue  # Bomba de fumaça ou Invisível: perdeu o jogador de vista; caído: ignora
 		var d := global_position.distance_to(j.global_position)
 		if d < menor:
 			menor = d

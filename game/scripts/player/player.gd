@@ -169,6 +169,7 @@ func _physics_process(delta: float) -> void:
 		_enviar_escudo()
 		if criando:
 			vida.proteger(1.0)  # criando o personagem, ninguém o machuca
+	_contar_queda(delta)
 	if not eh_local():
 		if visual.animation != animacao:
 			visual.play(animacao)
@@ -181,6 +182,15 @@ func _physics_process(delta: float) -> void:
 	_atacando = maxf(0.0, _atacando - delta)
 	for id in _recargas:
 		_recargas[id] = maxf(0.0, _recargas[id] - delta)
+	if caido:
+		# Caído: parado no chão, sem coletar nem golpear (a tela de morte está aberta).
+		velocity = Vector2.ZERO
+		_impulso_restante = 0.0
+		_carregando = -1
+		_progresso = 0.0
+		_cancelar_ajuda()
+		return
+	_processar_ajuda(delta)
 
 	var entrada := Input.get_vector(&"mover_esquerda", &"mover_direita", &"mover_cima", &"mover_baixo")
 	if _impulso_restante > 0.0:
@@ -200,7 +210,10 @@ func _physics_process(delta: float) -> void:
 
 
 func _unhandled_input(event: InputEvent) -> void:
-	if not eh_local() or criando:
+	if not eh_local() or criando or caido:
+		return
+	# E perto de um aliado caído: segurar levanta ele (_processar_ajuda), em vez da habilidade.
+	if event.is_action_pressed(&"habilidade_4") and not menu_aberto and comecar_ajuda():
 		return
 	# Barra de itens: teclas 1-9 e a rodinha do mouse escolhem o item da mão.
 	for k in Inventory.BARRA:
@@ -249,6 +262,8 @@ func direcao_mira() -> Vector2:
 
 ## 0 a 1: quanto falta para o próximo "golpe" de coleta (para a barrinha do HUD).
 func progresso_interacao() -> float:
+	if _ajudando != null:
+		return clampf(_tempo_ajuda / TEMPO_AJUDA, 0.0, 1.0)
 	if alvo == null:
 		return 0.0
 	return clampf(_progresso / _tempo_coleta(), 0.0, 1.0)
@@ -426,7 +441,7 @@ func _tremer(delta: float) -> void:
 
 @rpc("any_peer", "call_local", "reliable")
 func _pedir_golpe(dir: Vector2) -> void:
-	if not multiplayer.is_server() or not _pedido_do_dono():
+	if not multiplayer.is_server() or not _pedido_do_dono() or caido:
 		return
 	dir = dir.normalized()
 	var forma := CircleShape2D.new()
@@ -446,7 +461,7 @@ func _pedir_golpe(dir: Vector2) -> void:
 
 @rpc("any_peer", "call_local", "reliable")
 func _pedir_esquiva() -> void:
-	if not multiplayer.is_server() or not _pedido_do_dono():
+	if not multiplayer.is_server() or not _pedido_do_dono() or caido:
 		return
 	vida.proteger(DURACAO_ESQUIVA + 0.1)
 	World.efeito_todos(self, &"poeira", global_position)
@@ -455,7 +470,7 @@ func _pedir_esquiva() -> void:
 
 @rpc("any_peer", "call_local", "reliable")
 func _pedir_habilidade(hab_id: StringName, dir: Vector2, alvo_mira: Vector2, carga: float) -> void:
-	if not multiplayer.is_server() or not _pedido_do_dono():
+	if not multiplayer.is_server() or not _pedido_do_dono() or caido:
 		return
 	# Só vale a habilidade que está numa das teclas (aprendida na árvore).
 	var hab: HabilidadeData = null
@@ -485,7 +500,7 @@ func _pedir_habilidade(hab_id: StringName, dir: Vector2, alvo_mira: Vector2, car
 
 @rpc("any_peer", "call_local", "reliable")
 func _pedir_interacao(caminho_alvo: NodePath) -> void:
-	if not multiplayer.is_server() or not _pedido_do_dono():
+	if not multiplayer.is_server() or not _pedido_do_dono() or caido:
 		return
 	var no := get_node_or_null(caminho_alvo)
 	if no == null or not no.has_method("interagir"):
@@ -519,7 +534,8 @@ func ganhar_xp(quantidade: int) -> void:
 		xp = 0
 	_enviar_progresso()
 	if subiu > 0:
-		vida.curar_tudo()
+		if not caido:  # caído não levanta por subir de nível
+			vida.curar_tudo()
 		mana = ficha.mana_maxima()
 		_enviar_mana()
 		World.efeito_todos(self, &"subir_nivel", global_position + Vector2(0, -14))
@@ -555,6 +571,8 @@ func _enviar_progresso() -> void:
 func enviar_progresso_para(peer: int) -> void:
 	_progresso_sync.rpc_id(peer, nivel, xp, pontos_atributo, pontos_habilidade, distribuidos, arvore, teclas)
 	_enviar_aspecto(peer)
+	if caido:
+		_caido_sync.rpc_id(peer, true, tempo_caido)  # quem entrou agora vê o boneco caído
 
 
 @rpc("any_peer", "call_local", "reliable")
@@ -612,7 +630,7 @@ func registro() -> Dictionary:
 		"itens": inventario.para_salvar(),
 		"aparencia": aparencia.duplicate(),
 		"kit": true,
-		"pos": [global_position.x, global_position.y],
+		"pos": [_pos_salvar().x, _pos_salvar().y],
 		"salvo_em": Time.get_unix_time_from_system(),
 	}
 
@@ -716,21 +734,176 @@ func _receber_aviso(texto: String, som: StringName) -> void:
 	Events.aviso.emit(texto)
 
 
-@rpc("any_peer", "call_local", "reliable")
-func _renascer() -> void:
-	if not Net.veio_do_anfitriao():
-		return
-	global_position = ponto_de_retorno
-	camera.reset_smoothing()
-	Events.aviso.emit("Você desmaiou e acordou no acampamento.")
+# --- Caído e tela de morte ------------------------------------------------------------
+## Vida 0 = CAÍDO: o boneco deita no chão, não anda, não ataca, não usa habilidade nem item,
+## os inimigos o ignoram e ele não toma mais dano. Quem cai vê a tela de morte (TelaMorte):
+## volta sozinho no acampamento aos TEMPO_REVIVER s, ou antes pelo botão (liberado aos
+## TEMPO_BOTAO s). Um Clérigo (Levantar) ou um aliado segurando E perto levantam ali mesmo.
+## Quem manda é o anfitrião; todos recebem por _caido_sync.
+const TEMPO_REVIVER := 8.0
+const TEMPO_BOTAO := 4.0
+const PROTECAO_REVIVER := 2.0
+## Aliado segurando E perto do caído: levanta com pouca vida.
+const TEMPO_AJUDA := 3.0
+const RAIO_AJUDA := 28.0
+const VIDA_AJUDA := 0.25
+
+var caido := false
+## Segundos desde a queda (o anfitrião manda; as outras máquinas contam junto para a tela).
+var tempo_caido := 0.0
+var _tela_morte: TelaMorte
+var _ajudando: Player  # local: o aliado caído que este jogador está levantando (segurando E)
+var _tempo_ajuda := 0.0
 
 
 func _on_morreu() -> void:
-	vida.curar_tudo()
-	if eh_local():
-		_renascer()
+	if caido:
+		return
+	caido = true
+	tempo_caido = 0.0
+	_caido_sync.rpc(true, 0.0)
+
+
+## Todo quadro, em todas as máquinas: conta o tempo da queda; o anfitrião levanta aos 8 s.
+func _contar_queda(delta: float) -> void:
+	if not caido:
+		return
+	tempo_caido += delta
+	if multiplayer.is_server() and tempo_caido >= TEMPO_REVIVER:
+		reviver_no_acampamento()
+
+
+## Segundos que faltam para voltar sozinho.
+func falta_reviver() -> float:
+	return maxf(0.0, TEMPO_REVIVER - tempo_caido)
+
+
+## O botão "Reviver agora" já pode ser apertado?
+func pode_reviver_agora() -> bool:
+	return caido and tempo_caido >= TEMPO_BOTAO
+
+
+## O dono apertou "Reviver agora" (a tela de morte chama).
+func pedir_reviver() -> void:
+	if pode_reviver_agora():
+		_pedir_reviver.rpc_id(1)
+
+
+@rpc("any_peer", "call_local", "reliable")
+func _pedir_reviver() -> void:
+	# Folga de 0,2 s: o relógio do dono pode estar um pouco à frente do anfitrião.
+	if not multiplayer.is_server() or not _pedido_do_dono() or not caido or tempo_caido < TEMPO_BOTAO - 0.2:
+		return
+	reviver_no_acampamento()
+
+
+## Só o anfitrião: volta no acampamento, com a vida cheia e protegido por 2 s.
+func reviver_no_acampamento() -> void:
+	if levantar(ponto_de_retorno, 1.0, PROTECAO_REVIVER):
+		avisar("Você acordou no acampamento.")
+
+
+## Só o anfitrião: levanta o caído em `pos` com `fracao` da vida e `protecao` s sem tomar
+## dano. Fecha a tela de morte dele. Devolve se levantou (falso se não estava caído).
+func levantar(pos: Vector2, fracao: float, protecao: float) -> bool:
+	if not multiplayer.is_server() or not caido:
+		return false
+	caido = false
+	tempo_caido = 0.0
+	vida.reviver(fracao)
+	vida.proteger(protecao)
+	teleportar(pos)
+	_caido_sync.rpc(false, 0.0)
+	return true
+
+
+@rpc("any_peer", "call_local", "reliable")
+func _caido_sync(valor: bool, tempo: float) -> void:
+	if not Net.veio_do_anfitriao():
+		return
+	caido = valor
+	tempo_caido = tempo
+	visual.caido = valor
+	if not eh_local():
+		return
+	_carregando = -1
+	_impulso_restante = 0.0
+	velocity = Vector2.ZERO
+	if valor:
+		if _tela_morte == null:
+			_tela_morte = TelaMorte.new(self)
+			add_child(_tela_morte)
 	else:
-		_renascer.rpc_id(id_rede())
+		if _tela_morte:
+			_tela_morte.queue_free()
+			_tela_morte = null
+		camera.reset_smoothing()
+
+
+## A tela de morte aberta (nula se não caiu). Para os testes.
+func tela_morte() -> TelaMorte:
+	return _tela_morte
+
+
+## O aliado caído mais perto (a até RAIO_AJUDA), ou nulo.
+func aliado_caido_perto() -> Player:
+	var melhor: Player = null
+	var menor := RAIO_AJUDA
+	for n in get_tree().get_nodes_in_group(&"jogadores"):
+		var o := n as Player
+		if o and o != self and o.caido:
+			var d := o.global_position.distance_to(global_position)
+			if d <= menor:
+				menor = d
+				melhor = o
+	return melhor
+
+
+## Local: apertou E. Se há um aliado caído perto, começa a levantar ele (e devolve true).
+func comecar_ajuda() -> bool:
+	var o := aliado_caido_perto()
+	if o == null:
+		return false
+	_ajudando = o
+	_tempo_ajuda = 0.0
+	return true
+
+
+## O aliado caído que este jogador está levantando agora (nulo se nenhum). Para o HUD.
+func ajudando() -> Player:
+	return _ajudando
+
+
+func _cancelar_ajuda() -> void:
+	_ajudando = null
+	_tempo_ajuda = 0.0
+
+
+## Local, todo quadro: segurando E perto do caído por TEMPO_AJUDA s, pede ao anfitrião.
+func _processar_ajuda(delta: float) -> void:
+	if _ajudando == null:
+		return
+	if not is_instance_valid(_ajudando) or not _ajudando.caido or not Input.is_action_pressed(&"habilidade_4") \
+			or _ajudando.global_position.distance_to(global_position) > RAIO_AJUDA + 4.0:
+		_cancelar_ajuda()
+		return
+	_tempo_ajuda += delta
+	if _tempo_ajuda >= TEMPO_AJUDA:
+		_pedir_ajuda.rpc_id(1, _ajudando.get_path())
+		_cancelar_ajuda()
+
+
+@rpc("any_peer", "call_local", "reliable")
+func _pedir_ajuda(caminho: NodePath) -> void:
+	if not multiplayer.is_server() or not _pedido_do_dono() or caido:
+		return
+	var o := get_node_or_null(caminho) as Player
+	# Folga de 8 px: a posição que o anfitrião vê chega com um pouco de atraso.
+	if o == null or o == self or not o.caido or o.global_position.distance_to(global_position) > RAIO_AJUDA + 8.0:
+		return
+	if o.levantar(o.global_position, VIDA_AJUDA, PROTECAO_REVIVER):
+		World.efeito_todos(o, &"subir_nivel", o.global_position + Vector2(0, -14))
+		o.avisar("Um aliado levantou você!", &"subir_nivel")
 
 
 # --- Local: alvo, coleta e animação -------------------------------------------
@@ -1084,7 +1257,7 @@ func _aspecto_sync(raca_id: StringName, classe_id: StringName, ap: Dictionary, r
 ## Botão direito: usa o item da mão (por enquanto, só os que curam).
 @rpc("any_peer", "call_local", "reliable")
 func _pedir_usar(espaco: int) -> void:
-	if not multiplayer.is_server() or not _pedido_do_dono() or espaco < 0 or espaco >= Inventory.BARRA:
+	if not multiplayer.is_server() or not _pedido_do_dono() or caido or espaco < 0 or espaco >= Inventory.BARRA:
 		return
 	var id := inventario.item_em(espaco)
 	if not ItemData.existe(id):
@@ -1605,3 +1778,8 @@ func liberar_esquiva() -> void:
 func _liberar_esquiva() -> void:
 	if Net.veio_do_anfitriao():
 		_recarga_esquiva = 0.0
+
+
+## Onde salvar o jogador: caído, ele volta no acampamento (como se tivesse revivido).
+func _pos_salvar() -> Vector2:
+	return ponto_de_retorno if caido else global_position

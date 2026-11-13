@@ -99,7 +99,10 @@ func dar_escudo(quantidade: float, segundos: float) -> void:
 
 
 ## Cura e devolve quanto passou da vida máxima (a Fé transforma isso em escudo).
+## Quem está com a vida em 0 (jogador caído) não se cura: só volta por `reviver`.
 func curar(quantidade: float) -> float:
+	if not esta_vivo():
+		return 0.0
 	var sobra := maxf(0.0, atual + quantidade - maximo)
 	atual = minf(maximo, atual + quantidade)
 	mudou.emit(atual, maximo)
@@ -108,5 +111,12 @@ func curar(quantidade: float) -> float:
 
 func curar_tudo() -> void:
 	atual = maximo
+	_protecao = 0.0
+	mudou.emit(atual, maximo)
+
+
+## Volta da queda com `fracao` da vida máxima (pelo menos 1).
+func reviver(fracao: float) -> void:
+	atual = clampf(maximo * fracao, 1.0, maximo)
 	_protecao = 0.0
 	mudou.emit(atual, maximo)

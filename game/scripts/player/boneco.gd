@@ -175,6 +175,17 @@ var _tiras := {}  # vista ("", "_frente", "_costas") -> textura da tira de 6 qua
 var _maos := {}  # vista -> Array de Vector2 (mão da frente em cada quadro)
 var _quadro := 0
 
+## --- Caído (Player.caido) ---------------------------------------------------------------
+## Arte da queda: personagens/<raca>_<classe>/caido.png, tira de 2 quadros de 128 (0 = em pé,
+## 1 = caído), com os pés na mesma origem (64, 120) das outras tiras. Enquanto ela não existe,
+## o quadro 0 do perfil é só girado 90° e deitado no chão (placeholder, nada desenhado).
+const ARQUIVO_CAIDO := "caido.png"
+const QUADRO_CAIDO := 1
+## O jogador caiu (o Player define; vale em todas as máquinas).
+var caido := false
+var _tira_caido: Texture2D
+var _deitar_desvio := Vector2.ZERO  # placeholder: onde o perfil girado fica, para ficar no chão
+
 
 func _montar_completo(pasta: String) -> void:
 	for c in get_children():
@@ -196,22 +207,62 @@ func _montar_completo(pasta: String) -> void:
 	_item = _sprite(null)
 	_flecha = _sprite(FLECHA)
 	_flecha.visible = false
+	_tira_caido = load(pasta + ARQUIVO_CAIDO) if ResourceLoader.exists(pasta + ARQUIVO_CAIDO) else null
+	_deitar_desvio = _desvio_deitado(_tiras[""])
 	_vista = "?"
 	_quadro = 0
 	_animar_completo(0.0)
+
+
+## Placeholder do caído: o quadro 0 do perfil girado 90° (deitado de costas, a cabeça para
+## trás) fica com o meio do corpo em cima dos pés e as costas no chão. Pixels inteiros da arte.
+static func _desvio_deitado(tex: Texture2D) -> Vector2:
+	var r := tex.get_image().get_region(Rect2i(0, 0, QUADRO_COMPLETO, QUADRO_COMPLETO)).get_used_rect()
+	# Girando -90° em volta dos pés, o ponto (x, y) do quadro vai para (y - 120, 64 - x).
+	var x := -roundf((r.position.y + r.end.y) / 2.0 - PES_COMPLETO.y)
+	var y := r.position.x - PES_COMPLETO.x + 2.0
+	return Vector2(x, y)
+
+
+## Usa a arte da queda (caido.png) ou, sem ela, o perfil girado. Sem item na mão.
+func _deitar() -> void:
+	if _tira_caido:
+		_completo.texture = _tira_caido
+		_completo.rotation = 0.0
+		_completo.position = Vector2.ZERO
+		_completo.region_rect = Rect2(QUADRO_CAIDO * QUADRO_COMPLETO, 0, QUADRO_COMPLETO, QUADRO_COMPLETO)
+	else:
+		_completo.texture = _tiras[""]
+		_completo.rotation = -PI / 2.0
+		_completo.position = _deitar_desvio
+		_completo.region_rect = Rect2(0, 0, QUADRO_COMPLETO, QUADRO_COMPLETO)
+	_vista = "?"  # ao levantar, a vista volta a ser escolhida pela animação
+	_quadro = -2
+	_item.visible = false
+	_item_tras.visible = false
+	_flecha.visible = false
+
+
+## A arte da queda existe para este personagem? (Senão, o placeholder.) Para os testes.
+func tem_arte_caido() -> bool:
+	return _tira_caido != null
 
 
 ## Escolhe a vista e o quadro pela animação pedida e põe o item na mão marcada.
 func _animar_completo(delta: float) -> void:
 	_tempo += delta
 	var nome := String(animation)
+	scale.x = -absf(scale.x) if nome.ends_with("esquerda") else absf(scale.x)
+	if caido:
+		_deitar()
+		return
+	_completo.rotation = 0.0
 	var v := "_frente" if nome.ends_with("baixo") else ("_costas" if nome.ends_with("cima") else "")
 	if v != _vista:
 		_vista = v
 		_completo.texture = _tiras[v]
 		# De costas, a arma fica atrás do corpo; nas outras vistas, na frente.
 		move_child(_item, 0 if v == "_costas" else get_child_count() - 2)
-	scale.x = -absf(scale.x) if nome.ends_with("esquerda") else absf(scale.x)
 	_dor = maxf(0.0, _dor - delta)
 	var giro := 0.0
 	if _golpe >= 0.0:
@@ -288,6 +339,12 @@ func _process(delta: float) -> void:
 		if _golpe > 0.32:
 			_golpe = -1.0
 	_posar(passo, respira, _golpe)
+	# Boneco por peças (sem a arte completa): caído, o boneco inteiro deita de lado.
+	rotation = -PI / 2.0 if caido else 0.0
+	if caido:
+		_item.visible = false
+		_item_tras.visible = false
+		_flecha.visible = false
 
 
 ## Põe cada peça no lugar, com os desvios da animação (arredondados em pixels da arte).

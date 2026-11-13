@@ -128,7 +128,7 @@ func _physics_process(delta: float) -> void:
 		_de_quem = provocador
 		_assustado = maxf(_assustado, 0.5)
 	# Bomba de fumaça: quem some de vista deixa de ser perseguido (ou de assustar o bicho).
-	if _assustado > 0.0 and is_instance_valid(_de_quem) and _de_quem is Player and (_de_quem as Player).escondido():
+	if _assustado > 0.0 and is_instance_valid(_de_quem) and _de_quem is Player and ((_de_quem as Player).escondido() or (_de_quem as Player).caido):
 		_assustado = 0.0
 	var medo := efeitos.fugir_de()
 	if medo != Vector2.INF:

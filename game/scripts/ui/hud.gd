@@ -267,6 +267,16 @@ func _posicionar_dica() -> void:
 
 ## A teclinha E aparece em cima da árvore/pedra só quando dá para coletar.
 func _atualizar_tecla_e() -> void:
+	# Aliado caído perto: "segure E" em cima dele, com a barrinha de quanto falta para levantar.
+	var caido := jogador.aliado_caido_perto() if not jogador.caido else null
+	if caido:
+		_tecla_e.visible = true
+		_dica_alvo.text = "segure E"
+		_tecla_progresso.visible = jogador.ajudando() != null
+		_tecla_progresso.value = jogador.progresso_interacao() * 100.0
+		var acima := get_viewport().get_canvas_transform() * (caido.global_position - Vector2(0, 20))
+		_tecla_e.position = (acima - Vector2(_tecla_e.size.x / 2.0, _tecla_e.size.y)).round()
+		return
 	var alvo := jogador.alvo
 	if alvo == null or not is_instance_valid(alvo) or not jogador.alvo_ao_alcance():
 		_tecla_e.visible = false

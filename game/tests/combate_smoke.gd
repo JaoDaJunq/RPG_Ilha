@@ -1,5 +1,5 @@
 extends TesteBase
-## Slime machuca no contato, o golpe derrota o slime e o jogador volta ao acampamento ao desmaiar.
+## Slime machuca no contato, o golpe derrota o slime e o jogador cai ao desmaiar e revive no acampamento.
 
 const SLIME := preload("res://scenes/enemies/slime.tscn")
 
@@ -24,9 +24,13 @@ func _ready() -> void:
 	checar(not is_instance_valid(slime), "até 3 golpes derrotam o slime (com a espada de ferro: %d)" % golpes)
 
 	p.global_position += Vector2(40, 40)
+	var onde := p.global_position
 	p.vida.tomar_dano(500.0)
 	await get_tree().physics_frame
-	checar(p.global_position == p.ponto_de_retorno, "ao desmaiar volta ao acampamento")
+	checar(p.caido and p.global_position == onde, "ao desmaiar cai no lugar (a tela de morte conta até voltar)")
+	p.reviver_no_acampamento()
+	await get_tree().physics_frame
+	checar(p.global_position == p.ponto_de_retorno, "ao reviver volta ao acampamento")
 	checar(p.vida.atual == p.vida.maximo, "volta com a vida cheia")
 
 	terminar()
