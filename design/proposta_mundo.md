@@ -1,4 +1,4 @@
-# Proposta: o mundo maior (13/11/2026, aguardando o João)
+# Proposta: o mundo maior (13/11/2026, aprovada pelo João; etapa 1 feita no L36, aguardando a aprovação dele)
 
 Hoje a ilha tem 64 x 44 blocos (uma clareira com bordas). Há 4 animais (galinha, coelho, javali, ovelha), 2 inimigos (slime e arqueiro), 3 baús trancados e ~40 itens.
 

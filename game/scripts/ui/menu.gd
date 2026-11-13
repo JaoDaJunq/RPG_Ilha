@@ -51,11 +51,8 @@ func _montar_cenario() -> void:
 	_camera.zoom = Vector2(3, 3)
 	add_child(_camera)
 	_camera.make_current()
-	# Da praia (a primeira grama vindo do mar) até o acampamento e de volta, devagar.
-	var x := 0
-	while x < _cenario.largura and _cenario.tipo_do_chao(Vector2i(x, _cenario.altura / 2)) != World.Chao.GRAMA:
-		x += 1
-	var a := Vector2(x * World.T + 110, _cenario.centro.y - 24)
+	# Do Bosque Florido (árvores rosas) até o acampamento e de volta, devagar.
+	var a := Vector2(GeradorIlha.SEMENTES[Regioes.Id.BOSQUE][0] * World.T) + Vector2(-60, 0)
 	var b := _cenario.centro + Vector2(30, 20)
 	_camera.position = a
 	var t := create_tween().set_loops()

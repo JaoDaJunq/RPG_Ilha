@@ -39,6 +39,11 @@ const TEXTURA_CHAMAS := preload("res://assets/tiny_swords/fx/fogo.png")
 @export var textura_esgotado: Texture2D
 ## Sem arte de árvore queimada no pacote: por enquanto ela escurece (provisório).
 @export var cor_queimado := Color.WHITE
+## O toco tem outro `pe` quando vem de outra folha (ex.: o toco do coqueiro). -1 = o mesmo.
+@export var pe_esgotado := -1
+## Desenho torto (coqueiro inclinado): quanto o desenho anda para o lado, em px da arte,
+## para a base do tronco ficar em cima do ponto do chão.
+@export var desvio_x := 0.0
 ## Fogo: depois de quanto tempo queimando passa para as vizinhas, e até que distância.
 @export var espalhar_apos := 2.0
 @export var raio_do_fogo := 42.0
@@ -139,6 +144,19 @@ func _definir_estado(novo: Estado, restantes: int, com_golpe: bool) -> void:
 	if chamas:
 		chamas.visible = estado == Estado.QUEIMANDO
 	match estado:
+		Estado.INTEIRO:
+			# Cresceu de novo (World._process_rebrotar): volta a ser a árvore inteira.
+			hurtbox.set_deferred(&"monitorable", true)
+			sprite.self_modulate = Color.WHITE
+			sprite.texture = _textura_inteiro
+			if inflamavel:
+				inflamavel.queimado = false
+				inflamavel.queimando = false
+			set_process(quadros > 1)
+			_mostrar(regiao_inteiro)
+			var t := create_tween()
+			sprite.scale = Vector2(escala, escala) * 0.6
+			t.tween_property(sprite, "scale", Vector2(escala, escala), 0.6).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
 		Estado.QUEIMANDO:
 			Sfx.tocar(&"fogo")
 		Estado.QUEIMADO:
@@ -154,6 +172,8 @@ func _definir_estado(novo: Estado, restantes: int, com_golpe: bool) -> void:
 					get_tree().call_group(&"mundo", &"registrar_removido", name)
 				queue_free()
 			else:
+				if multiplayer.has_multiplayer_peer() and multiplayer.is_server():
+					get_tree().call_group(&"mundo", &"registrar_esgotado", String(name))  # cresce de novo
 				set_process(false)
 				sprite.self_modulate = Color.WHITE
 				if textura_esgotado:
@@ -204,8 +224,10 @@ func _mostrar(regiao: Rect2) -> void:
 	sprite.region_enabled = true
 	sprite.region_rect = regiao
 	sprite.centered = false
-	sprite.offset = Vector2(-regiao.size.x / 2.0, -regiao.size.y + pe)
-	_altura_visivel = (_medir_altura(sprite.texture, regiao) - pe) * escala
+	var p := pe_esgotado if estado == Estado.ESGOTADO and pe_esgotado >= 0 else pe
+	var dx := 0.0 if estado == Estado.ESGOTADO else desvio_x
+	sprite.offset = Vector2(-regiao.size.x / 2.0 + dx, -regiao.size.y + p)
+	_altura_visivel = (_medir_altura(sprite.texture, regiao) - p) * escala
 
 
 var _textura_inteiro: Texture2D

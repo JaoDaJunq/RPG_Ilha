@@ -64,7 +64,7 @@ func _ready() -> void:
 		dano_contato *= 1.5
 		velocidade *= 1.15
 		raio_visao *= 1.4
-	barra.definir_nivel(NIVEL_NOTURNO if noturno else NIVEL)
+	barra.definir_nivel((NIVEL_NOTURNO if noturno else NIVEL) + World.nivel_extra(self))
 	barra.ajustar_ao_sprite(visual)
 	if multiplayer.is_server():
 		# Dificuldade do mundo: a vida vai para os outros pelos avisos de golpe (_piscar).

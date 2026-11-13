@@ -35,6 +35,7 @@ func _init() -> void:
 			else:
 				var c := ia.get_pixel(x, y)
 				saida.set_pixel(x, y, Color(c.r, c.g, c.b, m.a))
+	_tirar_magenta(saida)
 	if _args.has("liso"):
 		_alisar(saida, molde)
 	var destino := _caminho(_args["saida"])
@@ -63,6 +64,38 @@ func _alisar(img: Image, molde: Image) -> void:
 			var c := img.get_pixel(x, y)
 			if _eh_chao(molde.get_pixel(x, y)) and absf(c.r - base.r) + absf(c.g - base.g) + absf(c.b - base.b) > 0.22:
 				img.set_pixel(x, y, Color(base.r, base.g, base.b, c.a))
+
+
+## O fundo magenta da IA entra onde a borda dela não bate com a do molde: cada pixel
+## magenta (ou rosado de franja) pega a cor do pixel bom mais perto.
+func _tirar_magenta(img: Image) -> void:
+	var ruins: Array[Vector2i] = []
+	for y in img.get_height():
+		for x in img.get_width():
+			if _magenta(img.get_pixel(x, y)):
+				ruins.append(Vector2i(x, y))
+	var original := img.duplicate() as Image
+	for p in ruins:
+		var achou := false
+		for r in range(1, 12):
+			for dy in range(-r, r + 1):
+				for dx in range(-r, r + 1):
+					if achou or maxi(absi(dx), absi(dy)) != r:
+						continue
+					var q := p + Vector2i(dx, dy)
+					if q.x < 0 or q.y < 0 or q.x >= img.get_width() or q.y >= img.get_height():
+						continue
+					var c := original.get_pixel(q.x, q.y)
+					if c.a > 0.0 and not _magenta(c):
+						img.set_pixel(p.x, p.y, Color(c.r, c.g, c.b, img.get_pixel(p.x, p.y).a))
+						achou = true
+			if achou:
+				break
+	print("pixels magenta trocados: ", ruins.size())
+
+
+static func _magenta(c: Color) -> bool:
+	return c.a > 0.0 and c.r - c.g > 0.3 and c.b - c.g > 0.3
 
 
 func _eh_chao(m: Color) -> bool:

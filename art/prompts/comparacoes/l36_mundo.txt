@@ -1,0 +1,14 @@
+# L36: peças do pacote (em cima) e as nossas do mundo maior (embaixo), no tamanho do jogo
+pacote | res://assets/tiny_swords/natureza/arvore1.png | 0 0 192 256 | 0.25
+pacote | res://assets/tiny_swords/natureza/arvore3.png | 0 0 192 192 | 0.25
+pacote | res://assets/tiny_swords/natureza/arbusto2.png | 0 0 128 128 | 0.25
+pacote | res://assets/tiny_swords/natureza/pedrinha3.png | 0 0 64 64 | 0.25
+nosso | res://assets/sprites/tiny/mundo/coqueiros.png | 0 0 256 256 | 0.25
+nosso | res://assets/sprites/tiny/mundo/arvores.png | 0 0 256 256 | 0.25
+nosso | res://assets/sprites/tiny/mundo/arvores.png | 256 0 256 256 | 0.25
+nosso | res://assets/sprites/tiny/mundo/ruinas_altas.png | 0 0 256 256 | 0.25
+nosso | res://assets/sprites/tiny/mundo/ruinas_altas.png | 256 0 256 256 | 0.25
+nosso | res://assets/sprites/tiny/mundo/pantano.png | 0 0 128 128 | 0.25
+nosso | res://assets/sprites/tiny/mundo/bosque.png | 384 0 128 128 | 0.25
+nosso | res://assets/sprites/tiny/mundo/colinas_ruinas.png | 0 0 128 128 | 0.25
+nosso | res://assets/sprites/tiny/mundo/praia.png | 0 0 128 128 | 0.25

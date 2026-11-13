@@ -80,7 +80,7 @@ func _ready() -> void:
 		vida.atual = vida.maximo
 		dano_flecha *= 1.4
 		raio_visao *= 1.2
-	barra.definir_nivel(NIVEL_NOTURNO if noturno else NIVEL)
+	barra.definir_nivel((NIVEL_NOTURNO if noturno else NIVEL) + World.nivel_extra(self))
 	barra.ajustar_ao_sprite(visual)
 	if multiplayer.is_server():
 		vida.maximo *= World.mult_dificuldade(self, &"vida_inimigo")
