@@ -14,6 +14,7 @@ extends SceneTree
 ##   godot --headless --path game --script res://tools/pixelizar.gd -- \
 ##     --entrada=../art/sprites/desenho_hd/candidatos/hd_v1.png --celulas=0,1 --altura=88 \
 ##     --saida=../art/sprites/tiny/convertido/teste.png [--quadro=128] [--base=8] [--celula=512x512]
+##     [--sem_sombra]  (item que vai na mão: sem a sombra no chão)
 
 const MAGENTA := Color(1, 0, 1)
 const CONTORNO := Color("161c2e")
@@ -71,7 +72,8 @@ func _init() -> void:
 			destino = Vector2i(i * quadro + quadro / 2 + roundi(rel.x), quadro - base + roundi(rel.y))
 		var dentro := Rect2i(destino, Vector2i(w, h)).intersection(Rect2i(i * quadro, 0, quadro, quadro))
 		tira.blit_rect(parte, Rect2i(dentro.position - destino, dentro.size), dentro.position)
-		SombraTiny.por(tira, dentro)
+		if not _args.has("sem_sombra"):
+			SombraTiny.por(tira, dentro)
 		print("célula %d: %dx%d%s" % [c, w, h, "" if dentro.size == Vector2i(w, h) else " (CORTADO: não coube no quadro)"])
 	var saida := _caminho(_args["saida"])
 	DirAccess.make_dir_recursive_absolute(saida.get_base_dir())
