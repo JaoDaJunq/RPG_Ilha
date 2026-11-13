@@ -23,6 +23,7 @@ var _fogueira: TextureRect
 var _rotulos: Array = []  # [Label, posição no mundo]
 var _jogadores: Dictionary = {}  # Player → TextureRect
 var _rodape: Label
+var _alfinete: Label
 var _mascara_suja := true
 var foto_tirada := false
 
@@ -97,6 +98,16 @@ func _ready() -> void:
 	# O acampamento (a fogueira da folha do acampamento).
 	_fogueira = _icone(_atlas(TEX_ACAMPAMENTO, Rect2(0, 0, 128, 128)), Vector2(30, 30))
 	_marcas.add_child(_fogueira)
+	# Alfinete da missão do Brasinha: aponta a região do objetivo (letra de interface).
+	_alfinete = Label.new()
+	_alfinete.text = "!"
+	_alfinete.add_theme_font_override(&"font", Tema.fonte_negrito())
+	_alfinete.add_theme_font_size_override(&"font_size", 22)
+	_alfinete.add_theme_color_override(&"font_color", Color("f3c53a"))
+	_alfinete.add_theme_color_override(&"font_outline_color", Color("2a1a14"))
+	_alfinete.add_theme_constant_override(&"outline_size", 6)
+	_alfinete.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_marcas.add_child(_alfinete)
 	_rodape = Label.new()
 	_rodape.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	_rodape.add_theme_color_override(&"font_color", Color("3b2a1e"))
@@ -148,6 +159,9 @@ func _atualizar() -> void:
 		l.position = pos * ESCALA - l.size / 2.0
 	_fogueira.position = w.centro * ESCALA - _fogueira.size / 2.0 + Vector2(0, -6)
 	_fogueira.visible = _visto(w.centro)
+	if _alfinete and w.missoes:
+		_alfinete.visible = true
+		_alfinete.position = w.missoes.posicao_do_objetivo() * ESCALA - Vector2(_alfinete.size.x / 2.0, _alfinete.size.y + 2.0)
 	# Jogadores (todos; o daqui fica por cima).
 	for j in get_tree().get_nodes_in_group(&"jogadores"):
 		var p := j as Player

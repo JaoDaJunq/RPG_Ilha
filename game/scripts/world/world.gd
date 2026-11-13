@@ -38,6 +38,11 @@ const COGUMELO_AZUL := 3  # quadro na folha de pedras e criaturas
 enum Acamp { FOGUEIRA, BARRACA, BAU, BARRIL, BANCADA, VARAL }
 ## Raio sem árvores em volta da fogueira.
 const RAIO_CLAREIRA := 120.0
+## Zona segura da fogueira do acampamento com o Brasinha acordado (fraquinho é a metade).
+const RAIO_FOGUEIRA := 72.0
+## O Brasinha e as missões (todas as máquinas têm; o anfitrião é quem decide).
+var missoes: Missoes
+var brasinha: Brasinha
 const COR_DIA := Color(1, 1, 1)
 const COR_NOITE := Color(0.24, 0.27, 0.46)
 
@@ -120,6 +125,7 @@ func _ready() -> void:
 	_montar_acampamento()
 	_espalhar()
 	_montar_passagens()
+	_montar_pedras_lore()
 	_aplicar_ciclo(false, true)
 	mapa_revelado.resize(MAPA_L * MAPA_A)
 	if somente_cenario:
@@ -147,6 +153,8 @@ func _ready() -> void:
 	multiplayer.server_disconnected.connect(_on_conexao_perdida.bind("O anfitrião saiu do jogo."))
 	soneca = Soneca.new(self)
 	add_child(soneca)
+	missoes = Missoes.new(self)
+	add_child(missoes)
 	for p in _pedacos_animados:
 		soneca.registrar_pedaco(p[0], p[1])
 	if multiplayer.is_server():
@@ -622,6 +630,8 @@ func _cliente_pronto(raca: StringName, classe: StringName, id_jogador: String, p
 	for id in _passagens:
 		_definir_passagem_rede.rpc_id(peer, id, _passagens[id].aberta)
 	_mapa_inteiro.rpc_id(peer, mapa_revelado)
+	if missoes:
+		missoes.enviar_para(peer)
 	for r in get_tree().get_nodes_in_group(&"recursos"):
 		(r as ResourceNode).enviar_estado_para(peer)
 	for c in _lista_construcoes():
@@ -686,6 +696,7 @@ func salvar() -> bool:
 		"jogadores": _registros,
 		"rebrotar": _rebrotar.duplicate(),
 		"passagens": _estado_passagens(),
+		"missoes": missoes.para_salvar() if missoes else {},
 		"mapa": Marshalls.raw_to_base64(mapa_revelado.compress(FileAccess.COMPRESSION_DEFLATE)),
 	}, arquivo_salvo)
 
@@ -724,6 +735,8 @@ func _carregar_mundo() -> void:
 	for id in passagens:
 		if _passagens.has(String(id)):
 			_definir_passagem(String(id), bool(passagens[id]))
+	if missoes and dados.has("missoes"):
+		missoes.carregar(dados["missoes"])
 	var mapa := String(dados.get("mapa", ""))
 	if mapa != "":
 		var bytes := Marshalls.base64_to_raw(mapa).decompress(MAPA_L * MAPA_A, FileAccess.COMPRESSION_DEFLATE)
@@ -961,7 +974,10 @@ func _montar_acampamento() -> void:
 	fogueira.name = "FogueiraAcampamento"
 	fogueira.position = centro + Vector2(0, 12)
 	entidades.add_child(fogueira)
-	fogueira.set_meta(&"raio_luz", 72.0)
+	fogueira.set_meta(&"raio_luz", RAIO_FOGUEIRA)
+	# O Brasinha mora nela: "!" e "?" em cima e o tamanho dele (ver Missoes).
+	brasinha = Brasinha.new()
+	fogueira.add_child(brasinha)
 	_ocupar(fogueira.position)
 	_objeto_acampamento(Acamp.BARRACA, centro + Vector2(-50, -16), Vector2(22, 8))
 	_objeto_acampamento(Acamp.BANCADA, centro + Vector2(50, -16), Vector2(24, 8))
@@ -1147,6 +1163,8 @@ func _aplicar_ciclo(para_noite: bool, imediato: bool) -> void:
 		(luz as PointLight2D).enabled = noite
 	if not imediato:
 		Events.aviso.emit("A noite caiu. Fique perto da fogueira." if noite else "Amanheceu.")
+	if not noite and not imediato and missoes and multiplayer.has_multiplayer_peer() and multiplayer.is_server():
+		missoes.ao_amanhecer()  # o pedido do dia do Brasinha
 	if not noite and multiplayer.has_multiplayer_peer() and multiplayer.is_server():
 		for s in get_tree().get_nodes_in_group(&"inimigos"):
 			if s is Slime and s.noturno:
@@ -1309,6 +1327,8 @@ func pedir_construir(cel: Vector2i, rot := 0) -> void:
 		return
 	quem.inventario.gastar(quem.barra_escolhida, 1)
 	_construir.rpc(String(item_id), cel, rot)
+	if missoes:
+		missoes.notificar_construiu(item_id)
 
 
 @rpc("any_peer", "call_local", "reliable")
@@ -1377,10 +1397,10 @@ func pode_pisar(pos: Vector2) -> bool:
 
 
 # --- Passagens ---------------------------------------------------------------------
-## Os caminhos que vão abrir com as Sementes (etapa 3): a ponte quebrada do rio (Pântano →
-## Colinas) e a muralha de raízes no vau (Bosque → Ruínas). Já existem e funcionam, mas
-## ficam ABERTAS por enquanto, para testar o mundo todo.
-const PASSAGENS_ABERTAS_NO_INICIO := true
+## Os caminhos que abrem com a história: a ponte quebrada do rio (Pântano → Colinas), que
+## se conserta com a Semente (Missoes.entregar_semente), e a muralha de raízes no vau
+## (Bosque → Ruínas), que a Tocha do Brasinha queima. Começam FECHADOS de verdade (etapa 3).
+const PASSAGENS_ABERTAS_NO_INICIO := false
 const PONTE := "ponte_colinas"
 const RAIZES := "raizes_ruinas"
 var _passagens: Dictionary[String, Passagem] = {}
@@ -1412,6 +1432,47 @@ func _montar_passagens() -> void:
 	_passagens[RAIZES] = raizes
 	for id in _passagens:
 		_definir_passagem(id, PASSAGENS_ABERTAS_NO_INICIO)
+
+
+# --- Pedras de lore ---------------------------------------------------------------------
+## Uma pedra com uma lembrança em cada região, menos a Clareira. Nascem iguais em todos
+## (nome e lugar vêm só da ilha, sem sorteio). Perto do coração de cada região, num bloco
+## livre.
+var _pedras_lore: Dictionary[int, PedraLore] = {}
+
+
+func _montar_pedras_lore() -> void:
+	for r in GeradorIlha.SEMENTES:
+		var alvo := Vector2i(GeradorIlha.SEMENTES[r][0])
+		var achou := false
+		for raio in range(0, 14):
+			for dy in range(-raio, raio + 1):
+				for dx in range(-raio, raio + 1):
+					if achou or maxi(absi(dx), absi(dy)) != raio:
+						continue
+					var cel := alvo + Vector2i(dx, dy)
+					if not gerador.dentro(cel) or gerador.regiao_em(cel) != r or not pode_pisar(Vector2(cel * T)):
+						continue
+					if gerador.piso_em(cel) == GeradorIlha.Piso.TRILHA or cel in gerador.celulas_ponte:
+						continue
+					var pos := Vector2(cel * T) + Vector2(T / 2.0, T - 2)
+					if not _livre(pos, 18.0):
+						continue
+					achou = true
+					_ocupar(pos)
+					var pedra := PedraLore.new()
+					pedra.name = "PedraLore%d" % r
+					pedra.regiao = r
+					pedra.position = pos
+					entidades.add_child(pedra)
+					_pedras_lore[r] = pedra
+		if not achou:
+			push_warning("Sem lugar para a pedra de lore da região %d." % r)
+
+
+## A pedra de lore de uma região (null na Clareira).
+func pedra_lore(regiao: int) -> PedraLore:
+	return _pedras_lore.get(regiao)
 
 
 func passagem(id: String) -> Passagem:
