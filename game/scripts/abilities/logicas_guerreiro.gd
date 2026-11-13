@@ -72,8 +72,8 @@ class Provocar extends HabilidadeLogica:
 		World.efeito_todos(quem, &"furia", quem.global_position)
 
 
-## Guardião: cúpula no chão por 5 s. Os aliados dentro tomam 50% menos dano e os inimigos
-## que entram são empurrados para fora.
+## Guardião: cúpula no chão por 5 s que para todos os projéteis inimigos (Projetil.bloqueado).
+## Os aliados dentro tomam 50% menos dano e os inimigos que entram são empurrados para fora.
 class Bastiao extends HabilidadeLogica:
 	const RAIO := 40.0
 	const DURACAO := 5.0
@@ -83,6 +83,7 @@ class Bastiao extends HabilidadeLogica:
 
 	func linhas_efeito(_hab: HabilidadeData) -> Array[String]:
 		return ["Cúpula com raio de %s por %s s" % [TextoHabilidade.blocos(RAIO), TextoHabilidade.numero(DURACAO)],
+				"Para todos os projéteis inimigos",
 				"Dentro: dano recebido -%s%%" % TextoHabilidade.numero(REDUCAO * 100.0),
 				"Empurra os inimigos para fora"]
 
@@ -93,6 +94,8 @@ class Bastiao extends HabilidadeLogica:
 		z.buff_segundos = 0.4
 		z.efeito_visual = &"escudo"
 		z.escala_visual = 3.0
+		z.add_to_group(&"bloqueia_projeteis")
+		z.set_meta(&"bloqueio_raio", RAIO * 0.8)  # a borda da cúpula desenhada (escala 3 do escudo)
 		z.ao_tique = func(zona: Zona, inimigos: Array[Node2D], _j: Array[Player]) -> void:
 			for e in inimigos:
 				if is_instance_valid(e):

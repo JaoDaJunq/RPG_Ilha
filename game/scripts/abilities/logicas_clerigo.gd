@@ -38,7 +38,7 @@ static func aliado_na_mira(quem: Player, mira: Vector2) -> Player:
 
 ## Slime da noite (o sol e a luz forte derretem).
 static func noturno(e: Node) -> bool:
-	return e is Slime and (e as Slime).noturno
+	return e != null and e.is_in_group(&"inimigos") and e.get(&"noturno") == true
 
 
 ## Derrete o slime da noite com luz: um golpe de luz do tamanho da vida dele (assim quem
@@ -198,11 +198,9 @@ class Barreira extends HabilidadeLogica:
 					var e2 := EfeitosEstado.de(e)
 					if e2:
 						e2.empurrar(sentido * (GROSSURA + 2.0 - fora.length()), 0.05)
-			for n in zona.get_tree().get_nodes_in_group(&"projeteis"):
-				var pr := n as Projetil
-				if pr and not pr.is_queued_for_deletion() and not pr.lancador is Player \
-						and Geometry2D.get_closest_point_to_segment(pr.global_position, a, b).distance_to(pr.global_position) < GROSSURA:
-					pr.queue_free()
+		# Os projéteis inimigos param na parede (Projetil.bloqueado).
+		z.add_to_group(&"bloqueia_projeteis")
+		z.set_meta(&"bloqueio_segmento", [a, b, GROSSURA])
 		z.iniciar()
 		for k in PEDACOS:
 			World.efeito_laco_todos(quem, &"escudo", a.lerp(b, k / float(PEDACOS - 1)), segundos)
@@ -349,16 +347,18 @@ class Aurora extends HabilidadeLogica:
 class Amanhecer extends HabilidadeLogica:
 	## Linhas de efeito da janelinha da habilidade (TextoHabilidade).
 	func textos(hab: HabilidadeData, ficha: Ficha) -> Array[String]:
-		var l: Array[String] = ["Vira dia num raio de %s em volta de você" % TextoHabilidade.blocos(RAIO), "Slimes da noite fogem da luz e derretem nela", "Dura %s s" % TextoHabilidade.numero(DURACAO)]
+		var l: Array[String] = ["Vira dia num raio de %s em volta de você" % TextoHabilidade.blocos(RAIO), "Slimes da noite fogem da luz e derretem nela", "Aliados dentro recuperam %s de vida por segundo" % TextoHabilidade.numero(CURA), "Dura %s s" % TextoHabilidade.numero(DURACAO)]
 		return l
 
 	const RAIO := 96.0
 	const DURACAO := 10.0
+	const CURA := 1.0  # por segundo, nos jogadores dentro
 
 	func executar(quem: Player, hab: HabilidadeData, _dir: Vector2, _alvo: Vector2, _carga: float) -> void:
 		var segundos := DURACAO * quem.mult_habilidade(hab)
 		var z := Zona.criar(quem, quem.global_position, RAIO, segundos)
 		z.seguir = quem
+		z.cura = CURA  # os aliados se curam na luz
 		z.set_meta(&"raio_luz", RAIO)
 		z.add_to_group(&"luz_protege")  # World.luz_que_protege: igual à fogueira
 		z.ao_tique = func(_z: Zona, inimigos: Array[Node2D], _j: Array[Player]) -> void:

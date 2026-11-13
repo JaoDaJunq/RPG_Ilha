@@ -207,6 +207,7 @@ func _barreira() -> void:
 	await _usar(&"barreira", p.global_position + Vector2(100, 0))
 	var flecha: Projetil = Logicas.FLECHA.instantiate()
 	flecha.lancador = s
+	flecha.do_inimigo = true  # flecha de inimigo (como a do Atirador)
 	flecha.direcao = Vector2.LEFT
 	flecha.position = Vector2(parede_x + 30, p.global_position.y + 10)
 	w.entidades.add_child(flecha, true)
@@ -311,16 +312,19 @@ func _amanhecer() -> void:
 
 func _passivas() -> void:
 	await _limpar()
-	# Luz própria (da classe): comida +50%.
+	# Luz própria (da classe): a comida que o Clérigo DÁ cura +50% (dar: vida cheia, aliado ferido perto).
 	p.inventario.adicionar(&"carne_assada", 1)
 	var espaco := -1
 	for k in Inventory.BARRA:
 		if p.inventario.item_em(k) == &"carne_assada":
 			espaco = k
 	var cura := ItemData.carregar(&"carne_assada").cura
-	p.vida.atual = p.vida.maximo - 60.0
+	p.vida.curar_tudo()
+	aliado.global_position = p.global_position + Vector2(20, 0)
+	aliado.vida.atual = aliado.vida.maximo - 60.0
 	p._pedir_usar(espaco)
-	checar(absf(p.vida.atual - (p.vida.maximo - 60.0 + cura * 1.5)) < 0.01, "Luz própria: a carne cura %.1f (era %.1f)" % [cura * 1.5, cura])
+	checar(absf(aliado.vida.atual - (aliado.vida.maximo - 60.0 + cura * 1.5)) < 0.01, "Luz própria: a carne dada ao aliado cura %.1f (era %.1f)" % [cura * 1.5, cura])
+	aliado.vida.curar_tudo()
 
 	# Mãos que curam: a cura tira Veneno e Queimadura.
 	p.aprender_de_graca(&"maos_que_curam")

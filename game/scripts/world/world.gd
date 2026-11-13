@@ -9,6 +9,7 @@ extends Node2D
 const ARVORE := preload("res://scenes/world/arvore.tscn")
 const PEDRA := preload("res://scenes/world/pedra.tscn")
 const SLIME := preload("res://scenes/enemies/slime.tscn")
+const ATIRADOR := preload("res://scenes/enemies/atirador.tscn")
 const JOGADOR := preload("res://scenes/player/player.tscn")
 const ITEM_CHAO := preload("res://scenes/world/item_chao.tscn")
 ## Nossas peças no estilo Tiny Swords (L14): acampamento e pedras/criaturas, quadros de
@@ -47,6 +48,10 @@ enum Chao { AGUA, AREIA, GRAMA }
 @export var pedras := 16
 @export var plantas := 110
 @export var slimes := 5
+## Acampamentos de arqueiros inimigos (2 em cada), longe da fogueira. Os testes usam 0.
+@export var grupos_atiradores := 2
+## Baús trancados espalhados longe da fogueira (só com gerar_recursos).
+@export var baus_trancados := 3
 ## Falso nos testes que precisam de terreno limpo (sem árvores e pedras geradas).
 @export var gerar_recursos := true
 ## Quanto tempo a água fica congelada pela lança de gelo.
@@ -132,6 +137,7 @@ func _ready() -> void:
 		_carregar_mundo()
 		_criar_slimes()
 		_criar_animais()
+		_criar_atiradores()
 		if Net.modo != Net.Modo.ENTRAR:
 			_criar_jogador(1, Net.raca, Net.classe, Net.id_jogador, Net.pular_criacao)
 	else:
@@ -927,6 +933,27 @@ func _espalhar() -> void:
 				a.position = p
 				entidades.add_child(a)
 
+	_espalhar_baus(celulas_grama)
+
+
+## Baús trancados (BauTrancado): nascem iguais em todos (mesma semente, mesmos nomes), longe
+## da fogueira. Vem por último em _espalhar para não mudar onde ficam as outras coisas.
+func _espalhar_baus(celulas: Array[Vector2i]) -> void:
+	if not gerar_recursos:
+		return
+	var colocados := 0
+	for i in baus_trancados * 30:
+		if colocados >= baus_trancados:
+			break
+		var p := _ponto_em(celulas)
+		if p.distance_to(centro) > 220.0 and _livre(p, 24.0):
+			_ocupados.append(p)
+			colocados += 1
+			var b := BauTrancado.new()
+			b.name = "BauTrancado%d" % colocados
+			b.position = p
+			entidades.add_child(b)
+
 
 ## Só o anfitrião cria os slimes; o MultiplayerSpawner copia para os outros.
 func _criar_slimes() -> void:
@@ -945,6 +972,35 @@ func _criar_slimes() -> void:
 			s.name = "Slime%d" % colocadas
 			s.position = p
 			entidades.add_child(s, true)
+
+
+
+## Arqueiros inimigos (Atirador): grupos de 2 longe da fogueira, nas bordas da ilha (só o
+## anfitrião; o MultiplayerSpawner copia). À noite nascem mais (_atirador_da_noite).
+func _criar_atiradores() -> void:
+	if not gerar_recursos or grupos_atiradores <= 0:
+		return
+	var celulas: Array[Vector2i] = []
+	for cel in _tipo:
+		if _tipo[cel] == Chao.GRAMA and _distancia[cel] > 0.45 and _distancia[cel] < 0.85:
+			celulas.append(cel)
+	if celulas.is_empty():
+		return
+	var grupos := 0
+	var n := 0
+	for tentativa in grupos_atiradores * 30:
+		if grupos >= grupos_atiradores:
+			break
+		var p := _ponto_em(celulas)
+		if p.distance_to(centro) < 260.0 or not _livre(p, 20.0):
+			continue
+		grupos += 1
+		for k in 2:
+			n += 1
+			var a: Atirador = ATIRADOR.instantiate()
+			a.name = "Atirador%d" % n
+			a.position = p + Vector2(18.0 * k, 6.0 * k)
+			entidades.add_child(a, true)
 
 
 func _ponto_em(celulas: Array[Vector2i]) -> Vector2:
@@ -1009,6 +1065,7 @@ func _process_noite(delta: float) -> void:
 		return
 	_tempo_noite = 0.0
 	var jogadores := get_tree().get_nodes_in_group(&"jogadores")
+	_atirador_da_noite(jogadores)
 	var da_noite := 0
 	for s in get_tree().get_nodes_in_group(&"inimigos"):
 		if s is Slime and s.noturno:
@@ -1032,6 +1089,42 @@ func _process_noite(delta: float) -> void:
 			s.noturno = true
 			s.position = p
 			entidades.add_child(s, true)
+			return
+
+
+
+## À noite, de vez em quando nasce um arqueiro da noite no escuro, longe de todos (no máximo
+## 1 + 1 por jogador ao mesmo tempo). Ele foge da luz e vai embora quando amanhece.
+const CHANCE_ATIRADOR_NOITE := 0.35
+var _nascidos_atiradores := 0
+
+
+func _atirador_da_noite(jogadores: Array[Node]) -> void:
+	if grupos_atiradores <= 0 or randf() > CHANCE_ATIRADOR_NOITE:
+		return
+	var vivos := 0
+	for a in get_tree().get_nodes_in_group(&"atiradores"):
+		if (a as Atirador).noturno:
+			vivos += 1
+	if vivos >= 1 + jogadores.size():
+		return
+	var celulas: Array[Vector2i] = []
+	for cel in _tipo:
+		if _tipo[cel] == Chao.GRAMA:
+			celulas.append(cel)
+	for tentativa in 20:
+		var p := _ponto_em(celulas)
+		var longe := true
+		for j in jogadores:
+			if (j as Node2D).global_position.distance_to(p) < 170.0:
+				longe = false
+		if longe and luz_que_protege(self, p) == Vector2.INF:
+			_nascidos_atiradores += 1
+			var a: Atirador = ATIRADOR.instantiate()
+			a.name = "AtiradorNoite%d" % _nascidos_atiradores
+			a.noturno = true
+			a.position = p
+			entidades.add_child(a, true)
 			return
 
 

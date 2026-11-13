@@ -29,7 +29,7 @@ const DADOS := {
 			[&"escudo_arremessado", "Escudo arremessado", "O escudo quica em até 3 inimigos e atordoa cada um por 0,5 s.", "", ""],
 			[&"provocar", "Provocar", "Puxa a atenção de todos os inimigos em volta para você por 4 s.", "", ""],
 			[&"contra_golpe", "Contra-golpe", "Bloquear no instante certo (até 0,6 s antes do golpe) devolve metade do dano ao atacante.", "forca", ""],
-			[&"bastiao", "Bastião", "Finca o escudo no chão: por 5 s, quem está na cúpula toma 50% menos dano e os inimigos são empurrados para fora.", "", ""],
+			[&"bastiao", "Bastião", "Finca o escudo no chão: por 5 s, uma cúpula para todos os projéteis inimigos; quem está nela toma 50% menos dano e os inimigos são empurrados para fora.", "", ""],
 			[&"juramento", "Juramento", "Suprema. Por 8 s, metade do dano dos aliados perto vem para você, e você não cai abaixo de 1 de vida.", "", ""],
 		]],
 		[&"berserker", "Berserker", [

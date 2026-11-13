@@ -36,6 +36,7 @@ func criar_mundo(slimes := 0, limpar := true, classe: StringName = &"mago", raca
 	var w: World = MUNDO.instantiate()
 	w.arquivo_salvo = ""  # testes não mexem no mundo salvo do João
 	w.slimes = slimes
+	w.grupos_atiradores = 0  # arqueiros inimigos só nos testes deles
 	w.gerar_recursos = not limpar
 	w.plantas = quantidade_plantas
 	add_child(w)
