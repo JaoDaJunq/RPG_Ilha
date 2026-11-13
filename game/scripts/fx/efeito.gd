@@ -22,6 +22,11 @@ const TABELA := {
 	&"furia": [preload("res://assets/sprites/tiny/fx/furia.png"), Vector2i(128, 128), 19, 15.8, 0.25, Vector2(0, -16)],
 	&"raio": [preload("res://assets/sprites/tiny/fx/raio.png"), Vector2i(144, 156), 12, 18.7, 0.25, Vector2(0, -50)],
 	&"nova_gelo": [preload("res://assets/sprites/tiny/fx/nova_gelo.png"), Vector2i(160, 160), 22, 16.8, 0.25, Vector2(0, -20)],
+	# Pedido L35: o estouro do acerto crítico (3 quadros) e as gotinhas do Molhado (laço).
+	&"critico": [preload("res://assets/sprites/tiny/fx/critico.png"), Vector2i(48, 48), 3, 14.0, 0.25],
+	&"gotas": [preload("res://assets/sprites/tiny/fx/gotas.png"), Vector2i(48, 48), 3, 6.0, 0.25],
+	# Respingo do pacote (Water Splash) ao entrar na água.
+	&"respingo": [preload("res://assets/tiny_swords/fx/respingo.png"), Vector2i(192, 192), 9, 18.0, 0.25, Vector2(0, -8)],
 }
 
 ## Pasta da arte das habilidades novas (pedido L33).
@@ -42,11 +47,13 @@ const PECAS := {
 	&"poca_acido": {t = [preload("res://assets/sprites/tiny/habilidades/poca_acido.png")], pe = 0.0, chao = true},
 	&"nuvem_toxica": {t = [preload("res://assets/sprites/tiny/habilidades/nuvem_toxica.png")], pe = 0.2, z = 2, alfa = 0.65},
 	&"circulo_cura": {t = [preload("res://assets/sprites/tiny/habilidades/circulo_cura.png")], pe = 0.0, chao = true},
+	&"circulo_cura_g": {t = [preload("res://assets/sprites/tiny/habilidades/circulo_cura_g.png")], pe = 0.0, chao = true},
 	&"espinhos": {t = [preload("res://assets/sprites/tiny/habilidades/espinhos.png")], pe = 0.45, dura = 1.2},
 	&"fenda": {t = [preload("res://assets/sprites/tiny/habilidades/fenda.png")], pe = 0.0, chao = true},
 	&"muralha_gelo": {t = [preload("res://assets/sprites/tiny/habilidades/muralha_gelo.png")], pe = 0.45},
-	&"cupula_luz": {t = [preload("res://assets/sprites/tiny/habilidades/cupula_luz.png")], pe = 0.3, z = 2, alfa = 0.55},
-	&"parede_luz": {t = [preload("res://assets/sprites/tiny/habilidades/parede_luz.png")], pe = 0.0, alfa = 0.85},
+	&"cupula_luz": {t = [preload("res://assets/sprites/tiny/habilidades/cupula_luz.png")], pe = 0.3, z = 2, alfa = 0.8},
+	&"cupula_luz_g": {t = [preload("res://assets/sprites/tiny/habilidades/cupula_luz_g.png")], pe = 0.3, z = 2, alfa = 0.8},
+	&"parede_luz": {t = [preload("res://assets/sprites/tiny/habilidades/parede_luz.png")], pe = 0.3, alfa = 0.9},
 	&"meteoro": {t = [preload("res://assets/sprites/tiny/habilidades/meteoro.png")], pe = 0.0, dura = 0.4},
 	&"tornado": {t = [preload("res://assets/sprites/tiny/habilidades/tornado_a.png"), preload("res://assets/sprites/tiny/habilidades/tornado_b.png")], fps = 10.0, pe = 0.48},
 	&"pedra_rolando": {t = [preload("res://assets/sprites/tiny/habilidades/pedra_rolando.png")], pe = 0.0, gira = 12.0},
@@ -134,15 +141,33 @@ static func _criar_peca(e: Efeito, dados: Dictionary, pos: Vector2, repetir: boo
 	return e
 
 
-## Multiplicador de escala para a peça `nome` cobrir uma área de raio `raio` (a largura do
-## desenho = o diâmetro × `fator`). Arredondado para um número inteiro: cada pixel da arte
-## vira um quadrado inteiro de pixels na tela (fica nítido).
-static func escala_para_raio(nome: StringName, raio: float, fator := 1.0) -> float:
+## Peças de área desenhadas em mais de um tamanho (pedido L35): todas entram com escala 1
+## (o pixel igual ao do resto do jogo, sem ampliar). Ver peca_para_raio.
+const TAMANHOS := {
+	&"cupula_luz": [&"cupula_luz", &"cupula_luz_g"],
+	&"circulo_cura": [&"circulo_cura", &"circulo_cura_g"],
+}
+
+
+## A peça (o tamanho de `nome`) cuja largura fica mais perto do diâmetro de uma área de raio
+## `raio`. A peça entra sem ampliar (escala 1): a arte já vem desenhada no tamanho da área.
+static func peca_para_raio(nome: StringName, raio: float) -> StringName:
+	var melhor := nome
+	var erro := INF
+	for n: StringName in TAMANHOS.get(nome, [nome]):
+		var e := absf(largura(n) - 2.0 * raio)
+		if e < erro:
+			erro = e
+			melhor = n
+	return melhor
+
+
+## Largura da peça no mundo (escala 1).
+static func largura(nome: StringName) -> float:
 	var dados: Dictionary = PECAS.get(nome, {})
 	if dados.is_empty():
-		return 1.0
-	var largura := (dados.t[0] as Texture2D).get_width() * 0.25
-	return maxf(1.0, roundf(2.0 * raio * fator / largura))
+		return 0.0
+	return (dados.t[0] as Texture2D).get_width() * 0.25
 
 
 ## Ponto (no espaço de `alvo`) logo acima da cabeça dele e do selo do nível: onde ficam a

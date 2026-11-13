@@ -94,8 +94,7 @@ class Bastiao extends HabilidadeLogica:
 		z.buff_segundos = 0.4
 		z.add_to_group(&"bloqueia_projeteis")
 		z.set_meta(&"bloqueio_raio", RAIO * 0.8)  # um pouco dentro da borda da cúpula desenhada
-		z.efeito_visual = &"cupula_luz"
-		z.escala_visual = Efeito.escala_para_raio(&"cupula_luz", RAIO)
+		z.efeito_visual = Efeito.peca_para_raio(&"cupula_luz", RAIO)  # desenhada no tamanho da área (escala 1)
 		z.ao_tique = func(zona: Zona, inimigos: Array[Node2D], _j: Array[Player]) -> void:
 			for e in inimigos:
 				if is_instance_valid(e):
