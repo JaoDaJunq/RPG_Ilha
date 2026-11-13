@@ -17,7 +17,7 @@ const DADOS := {
 		[&"rastreador", "Rastreador", "Acerta animais com dano dobrado (caça mais fácil) e, a cada 5 s, vê as pegadas (poeira) dos animais a até 10 blocos.", "forca", ""],
 	],
 	iniciais = [
-		[&"tiro_carregado", "Tiro carregado", "Quanto mais segura, mais forte e mais longe.", "", "", [&"atirador"]],
+		[&"tiro_carregado", "Tiro carregado", "Quanto mais segura, mais forte e mais longe; com a carga cheia, o tiro é crítico.", "", "", [&"atirador"]],
 		[&"armadilha", "Armadilha", "Uma armadilha que prende quem pisar.", "", "", [&"engenhoqueiro"]],
 		[&"chuva_flechas", "Chuva de flechas", "Flechas caem numa área.", "", "", [&"atirador"]],
 		[&"bomba", "Bomba", "Explode ao bater; queima árvores.", "", "", [&"engenhoqueiro"]],
@@ -28,7 +28,7 @@ const DADOS := {
 			[&"ponto_fraco", "Ponto fraco", "Acertos a mais de 6 blocos dão +25% de dano.", "forca", ""],
 			[&"flecha_perfurante", "Flecha perfurante", "Atravessa todos os inimigos em linha.", "", ""],
 			[&"marca_do_cacador", "Marca do caçador", "O alvo marcado toma +20% de dano de todo mundo.", "", ""],
-			[&"sangue_frio", "Sangue frio", "Cada acerto crítico (de mais de 6 blocos ou num alvo Marcado) devolve 3 de mana.", "espirito", ""],
+			[&"sangue_frio", "Sangue frio", "Cada acerto crítico (dano dobrado: 5% de chance em todo acerto, ou o Tiro carregado cheio) devolve 3 de mana.", "espirito", ""],
 			[&"rajada", "Rajada", "3 flechas seguidas, sem precisar carregar.", "", ""],
 			[&"flecha_do_horizonte", "Flecha do horizonte", "Suprema. Uma flecha gigante atravessa a tela inteira.", "", ""],
 		]],

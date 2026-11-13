@@ -7,7 +7,7 @@
 script = ExtResource("1_script")
 id = &"bastiao"
 nome = "Bastião"
-descricao = "Finca o escudo no chão: por 5 s, quem estiver na cúpula (2,5 blocos) toma 50% menos dano e os inimigos são empurrados para fora."
+descricao = "Finca o escudo no chão: por 5 s, uma cúpula (2,5 blocos) para todos os projéteis inimigos; quem estiver nela toma 50% menos dano e os inimigos são empurrados para fora."
 icone = ExtResource("2_icone")
 modo = 1
 custo_mana = 12.0

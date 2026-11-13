@@ -91,13 +91,29 @@ static func curou(de: Player, alvo: Player, quantidade: float) -> void:
 		_curando_elo = false
 
 
-## Luz própria: multiplicador da comida que `p` come (vale perto de um Clérigo com ela).
-static func comida(p: Player) -> float:
-	for n in p.get_tree().get_nodes_in_group(&"jogadores"):
-		var c := n as Player
-		if c and c.tem(&"luz_propria") and c.global_position.distance_to(p.global_position) <= LUZ_PROPRIA_COMIDA_RAIO:
-			return LUZ_PROPRIA_COMIDA
-	return 1.0
+## Luz própria: multiplicador da comida que `quem` dá a um aliado.
+static func comida(quem: Player) -> float:
+	return LUZ_PROPRIA_COMIDA if quem and quem.tem(&"luz_propria") else 1.0
+
+
+## Dar comida (anfitrião; Player._pedir_usar com a vida cheia): a comida do espaço `espaco`
+## vai para o aliado ferido mais perto (até LUZ_PROPRIA_COMIDA_RAIO). Qualquer um pode dar;
+## com a Luz própria, cura 50% a mais. Devolve se deu.
+static func dar_comida(quem: Player, espaco: int, dados: ItemData) -> bool:
+	var melhor: Player = null
+	for o in Passivas.outros_jogadores(quem, LUZ_PROPRIA_COMIDA_RAIO):
+		if o.vida.esta_vivo() and o.vida.atual < o.vida.maximo \
+				and (melhor == null or o.global_position.distance_to(quem.global_position) < melhor.global_position.distance_to(quem.global_position)):
+			melhor = o
+	if melhor == null:
+		return false
+	quem.inventario.gastar(espaco, 1)
+	var cura := dados.cura * comida(quem)
+	melhor.vida.curar(cura)
+	World.efeito_todos(melhor, &"subir_nivel", melhor.global_position)
+	quem.avisar("Deu %s para o aliado (+%d de vida)." % [dados.nome.to_lower(), int(cura)], &"item")
+	melhor.avisar("Um aliado te deu %s: +%d de vida." % [dados.nome.to_lower(), int(cura)], &"item")
+	return true
 
 
 # --- Elo vital ----------------------------------------------------------------------------

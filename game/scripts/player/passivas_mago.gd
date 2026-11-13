@@ -27,6 +27,8 @@ const FAISCA_TAMANHO := 1.0
 const FAISCA_RAIO := 24.0
 const LUZ_ENERGIA := 0.35
 const LUZ_TAMANHO := 0.6
+## Faísca: o que o mago fabrica sem gastar graveto (ele mesmo acende).
+const FAISCA_SEM_GRAVETO: Array[StringName] = [&"fogueira", &"tocha"]
 
 
 ## Multiplicador do dano que `p` causa em `alvo` (antes de aplicar).
@@ -117,3 +119,8 @@ static func fixas(p: Player) -> void:
 		p.set_meta(&"faisca_luz", true)
 	elif p.has_meta(&"faisca_luz"):
 		p.remove_meta(&"faisca_luz")
+
+
+## Faísca: `p` fabrica `resultado` (fogueira, tocha) sem gastar o graveto? (Inventory, anfitrião.)
+static func poupa_graveto(p: Player, resultado: StringName) -> bool:
+	return p != null and p.ficha != null and p.tem(&"faisca") and resultado in FAISCA_SEM_GRAVETO

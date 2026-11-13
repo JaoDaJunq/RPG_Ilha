@@ -1265,10 +1265,12 @@ func _pedir_usar(espaco: int) -> void:
 	var dados := ItemData.carregar(id)
 	if dados.cura > 0.0:
 		if vida.atual >= vida.maximo:
-			avisar("Sua vida já está cheia.")
+			# Vida cheia: dá a comida ao aliado ferido mais perto (Luz própria: cura +50%).
+			if not PassivasClerigo.dar_comida(self, espaco, dados):
+				avisar("Sua vida já está cheia.")
 			return
 		inventario.gastar(espaco, 1)
-		var cura := dados.cura * PassivasClerigo.comida(self)  # Luz própria: +50% perto do Clérigo
+		var cura := dados.cura
 		vida.curar(cura)
 		World.efeito_todos(self, &"subir_nivel", global_position)
 		avisar("+%d de vida" % int(cura), &"item")

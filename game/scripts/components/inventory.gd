@@ -219,12 +219,12 @@ func _pedido_resultado(rapido: bool) -> void:
 		if rapido:
 			if _cabe(r.resultado, r.quantidade, 0, GUARDAR) < r.quantidade:
 				break
-			_consumir_grade()
+			_consumir_grade(r)
 			_guardar(r.resultado, r.quantidade, 0, GUARDAR)
 		else:
 			if _ids[MAO] != &"" and (_ids[MAO] != r.resultado or _qtds[MAO] + r.quantidade > dados.pilha):
 				break
-			_consumir_grade()
+			_consumir_grade(r)
 			_ids[MAO] = r.resultado
 			_qtds[MAO] += r.quantidade
 		Events.item_fabricado.emit(r.resultado, r.quantidade, get_parent())
@@ -460,7 +460,10 @@ func _mover_rapido(i: int) -> void:
 	_qtds[i] = sobra
 
 
-func _consumir_grade() -> void:
+## Gasta 1 de cada espaço da grade. Faísca (Mago): a fogueira e a tocha não gastam o graveto.
+func _consumir_grade(r: ReceitaData = null) -> void:
+	# Pelo caminho (sem citar PassivasMago): a classe carrega as cenas dos feitiços (ciclo de preload).
+	var poupa := r != null and bool(load("res://scripts/player/passivas_mago.gd").call(&"poupa_graveto", get_parent() as Player, r.resultado))
 	var espacos: Array[int] = []
 	if na_bancada:
 		for k in 9:
@@ -468,7 +471,7 @@ func _consumir_grade() -> void:
 	else:
 		espacos = GRADE_2X2
 	for k in espacos:
-		if _ids[k] != &"":
+		if _ids[k] != &"" and not (poupa and _ids[k] == &"graveto"):
 			_tirar(k, 1)
 
 

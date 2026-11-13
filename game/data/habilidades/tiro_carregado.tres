@@ -7,7 +7,7 @@
 script = ExtResource("1_script")
 id = &"tiro_carregado"
 nome = "Tiro carregado"
-descricao = "Segure a tecla para puxar a corda e solte para atirar. Carregada por 1 s, a flecha vai 2 vezes mais rápida e machuca 3 vezes mais."
+descricao = "Segure a tecla para puxar a corda e solte para atirar. Carregada por 1 s, a flecha vai 2 vezes mais rápida e machuca 3 vezes mais; com a carga cheia, o acerto é crítico (dano dobrado)."
 icone = ExtResource("2_icone")
 modo = 2
 custo_mana = 3.0

@@ -50,6 +50,12 @@ var puxa := 0.0
 var estado: StringName = &""
 var estado_segundos := 1.0
 var estado_forca := 0.0
+## Projétil de INIMIGO (flecha do Atirador): acerta jogadores e invocações (nunca inimigos,
+## animais nem recursos) e para nas paredes e portas e no que estiver no grupo
+## "bloqueia_projeteis" (Barreira do Clérigo, cúpula do Bastião): ver `bloqueado()`.
+var do_inimigo := false
+## Força o próximo acerto deste projétil a ser crítico (Tiro carregado completo).
+var critico := false
 
 var _vida := 0.0
 var _acertou := false
@@ -82,7 +88,12 @@ func _physics_process(delta: float) -> void:
 		visual.rotation += girar * delta
 	if _acertou or not multiplayer.is_server():
 		return
+	var antes := global_position
 	position += direcao * velocidade * delta
+	if do_inimigo and Projetil.bloqueado(self, antes, global_position):
+		World.efeito_todos(self, &"poeira", global_position)
+		_parar(false)
+		return
 	if congela_agua:
 		World.congelar_agua_em(self, global_position + Vector2(0, 10))
 	_vida += delta
@@ -117,6 +128,9 @@ func _on_area_entered(area: Area2D) -> void:
 	if _acertou or not area is Hurtbox:
 		return
 	var dono := area.get_parent()
+	if do_inimigo:
+		_acerto_inimigo(area as Hurtbox, dono)
+		return
 	if dono == lancador or dono is Player or dono is Construcao:
 		return  # sem fogo amigo; flechas e magias passam por cima das construções
 	if dono is ResourceNode and not (dono as ResourceNode).para_projetil(elemento):
@@ -124,6 +138,9 @@ func _on_area_entered(area: Area2D) -> void:
 	if dono in _atingidos:
 		return
 	_atingidos.append(dono)
+	if critico and lancador is Player:
+		critico = false
+		lancador.set_meta(&"critico_pronto", true)  # = Passivas.forcar_critico (sem citar a classe: ciclo de preload)
 	(area as Hurtbox).receber(dano, elemento, lancador)
 	_no_alvo(dono)
 	acertou.emit(dono, global_position)
@@ -138,14 +155,69 @@ func _on_area_entered(area: Area2D) -> void:
 			_vida = 0.0
 			_virar.rpc((proximo.global_position + Vector2(0, -6) - global_position).normalized())
 			return
+	_parar(true)
+
+
+## Acaba o voo aqui (acertou algo ou foi bloqueado). Anfitrião.
+func _parar(acertou_algo: bool) -> void:
 	_acertou = true
 	set_deferred(&"monitoring", false)
-	terminou.emit(global_position, true)
+	terminou.emit(global_position, acertou_algo)
 	_impacto.rpc()
 	if visual.sprite_frames.has_animation(&"impacto"):
 		visual.animation_finished.connect(queue_free)
 	else:
 		queue_free()
+
+
+## Flecha inimiga: machuca jogador ou invocação (com as passivas de defesa e a dificuldade,
+## como a cabeçada do slime); para numa parede ou porta.
+func _acerto_inimigo(area: Hurtbox, dono: Node) -> void:
+	if dono is Construcao:
+		if (dono as Construcao).tipo in [&"parede", &"porta"]:
+			World.efeito_todos(self, &"poeira", global_position)
+			_parar(false)
+		return
+	if not (dono is Player or dono.is_in_group(&"invocacoes")) or dono in _atingidos:
+		return
+	var v := dono.get_node_or_null("HealthComponent") as HealthComponent
+	if v == null or not v.esta_vivo():
+		return
+	_atingidos.append(dono)
+	var atacante: Node = lancador if is_instance_valid(lancador) else self
+	# Passivas.ataque_inimigo (dificuldade, Frio que morde, Contra-golpe...). Pelo nome, sem
+	# citar a classe aqui: Passivas carrega as cenas dos projéteis (ciclo de preload).
+	var passivas: Script = load("res://scripts/player/passivas.gd")
+	area.receber(passivas.call(&"ataque_inimigo", atacante, dono, dano), elemento, atacante)
+	if dono is Player:
+		(dono as Player).reagir_ao_golpe(global_position - direcao * 8.0)
+	_no_alvo(dono)
+	acertou.emit(dono, global_position)
+	_parar(true)
+
+
+## Algo do grupo "bloqueia_projeteis" está no caminho de `de` até `ate`? (o projétil voa a
+## 10 px do chão: a conta usa o ponto no chão). Quem bloqueia guarda numa meta:
+##   bloqueio_segmento = [a, b, grossura]  parede (Barreira)
+##   bloqueio_raio = r                      cúpula (Bastião), em volta do nó
+static func bloqueado(quem: Node, de: Vector2, ate: Vector2) -> bool:
+	var chao := Vector2(0, 10)
+	de += chao
+	ate += chao
+	for n in quem.get_tree().get_nodes_in_group(&"bloqueia_projeteis"):
+		var b := n as Node2D
+		if b == null or b.is_queued_for_deletion():
+			continue
+		if b.has_meta(&"bloqueio_segmento"):
+			var s: Array = b.get_meta(&"bloqueio_segmento")
+			var a: Vector2 = s[0]
+			var c: Vector2 = s[1]
+			if Geometry2D.segment_intersects_segment(de, ate, a, c) != null \
+					or Geometry2D.get_closest_point_to_segment(ate, a, c).distance_to(ate) < float(s[2]):
+				return true
+		elif b.has_meta(&"bloqueio_raio") and b.global_position.distance_to(ate) <= float(b.get_meta(&"bloqueio_raio")):
+			return true
+	return false
 
 
 ## Estado e puxão no atingido (anfitrião).

@@ -1,7 +1,7 @@
 class_name EfeitosEstado
 extends Node
 ## Estados de quem tem vida (slimes, animais e jogadores): Queimadura, Veneno, Lentidão,
-## Congelado, Atordoado, Preso, Medo, Marcado, Derrubado, Cego, Provocado e Invisível.
+## Congelado, Atordoado, Preso, Medo, Marcado, Derrubado, Cego, Provocado, Invisível e Molhado.
 ## Fica como filho do dono, com o nome "EfeitosEstado".
 ##
 ## Rede: só o ANFITRIÃO aplica e tira estados (e dá o dano por segundo). A lista vai para
@@ -24,10 +24,15 @@ const DERRUBADO := &"derrubado"    ## desequilíbrio: não anda nem ataca
 const CEGO := &"cego"              ## força = chance de errar o ataque (0 usa 1 = erra sempre)
 const PROVOCADO := &"provocado"    ## persegue quem aplicou (a origem), mesmo um golem
 const INVISIVEL := &"invisivel"    ## jogadores: os inimigos não veem
-const TODOS: Array[StringName] = [QUEIMADURA, VENENO, LENTIDAO, CONGELADO, ATORDOADO, PRESO, MEDO, MARCADO, DERRUBADO, CEGO, PROVOCADO, INVISIVEL]
+const MOLHADO := &"molhado"        ## na água (ou no gelo) ou no gelo que derreteu: o Raio salta mais (Condução); a Queimadura não pega e apaga
+const TODOS: Array[StringName] = [QUEIMADURA, VENENO, LENTIDAO, CONGELADO, ATORDOADO, PRESO, MEDO, MARCADO, DERRUBADO, CEGO, PROVOCADO, INVISIVEL, MOLHADO]
 ## Com tique de dano a cada segundo.
 const COM_DANO: Array[StringName] = [QUEIMADURA, VENENO]
 const MARCADO_PADRAO := 0.2
+## Quanto tempo fica molhado depois de sair da água (ou do gelo derretido).
+const MOLHADO_SEGUNDOS := 4.0
+## De quanto em quanto tempo o anfitrião confere se o dono está na água.
+const INTERVALO_AGUA := 0.3
 
 ## Tom do desenho (modulate) de cada estado; vale o primeiro da lista PRIORIDADE.
 const COR := {
@@ -42,14 +47,16 @@ const COR := {
 	&"cego": Color(0.62, 0.62, 0.66),
 	&"marcado": Color(1.0, 0.6, 0.6),
 	&"lentidao": Color(0.75, 0.85, 1.0),
+	&"molhado": Color(0.62, 0.78, 1.0),
 }
-const PRIORIDADE: Array[StringName] = [CONGELADO, ATORDOADO, DERRUBADO, PRESO, QUEIMADURA, VENENO, MEDO, PROVOCADO, CEGO, MARCADO, LENTIDAO]
+const PRIORIDADE: Array[StringName] = [CONGELADO, ATORDOADO, DERRUBADO, PRESO, QUEIMADURA, VENENO, MEDO, PROVOCADO, CEGO, MARCADO, LENTIDAO, MOLHADO]
 
 ## tipo → {t: segundos que faltam, f: força, n: acúmulos, o: origem (Node ou nulo),
 ##         k: tiques de dano que faltam, e: segundos até o próximo tique}
 var _estados: Dictionary = {}
 var _empurrao := Vector2.ZERO
 var _empurrao_t := 0.0
+var _agua_t := 0.0
 
 
 ## O componente de `alvo` (nulo se ele não tiver).
@@ -79,6 +86,13 @@ func aplicar(tipo: StringName, segundos: float, forca := 0.0, origem: Node = nul
 	var vida := _vida()
 	if vida and not vida.esta_vivo():
 		return
+	# Molhado: a Queimadura não pega (o fogo só seca); ficar molhado apaga a Queimadura.
+	if tipo == QUEIMADURA and _estados.has(MOLHADO):
+		_estados.erase(MOLHADO)
+		_enviar()
+		return
+	if tipo == MOLHADO and _estados.has(QUEIMADURA):
+		_estados.erase(QUEIMADURA)
 	var e: Dictionary = _estados.get(tipo, {})
 	if e.is_empty():
 		e = {t = 0.0, f = 0.0, n = 0, o = null, k = 0, e = 1.0}
@@ -246,6 +260,7 @@ func cor() -> Color:
 func _physics_process(delta: float) -> void:
 	if _empurrao_t > 0.0:
 		_empurrao_t -= delta
+	_conferir_agua(delta)
 	if _estados.is_empty():
 		return
 	var servidor := multiplayer.is_server()
@@ -287,6 +302,34 @@ func _tique(tipo: StringName, dano: float, quem: Variant) -> void:
 	area.receber(dano, tipo, null)
 	if vivo and not vida.esta_vivo() and quem != null and is_instance_valid(quem) and quem is Player:
 		Passivas.derrotou(quem as Player, dono)
+
+
+## Anfitrião: quem está na água (ou em cima do gelo dela) fica Molhado.
+func _conferir_agua(delta: float) -> void:
+	_agua_t -= delta
+	if _agua_t > 0.0 or not multiplayer.has_multiplayer_peer() or not multiplayer.is_server():
+		return
+	_agua_t = INTERVALO_AGUA
+	# Renova no máximo uma vez por segundo (sem mandar aviso de rede a cada conferida).
+	if restante(MOLHADO) < MOLHADO_SEGUNDOS - 1.0 and na_agua(get_parent() as Node2D):
+		aplicar(MOLHADO, MOLHADO_SEGUNDOS)
+
+
+## `alvo` está em cima de água (ou do gelo feito na água)?
+static func na_agua(alvo: Node2D) -> bool:
+	if alvo == null or not is_instance_valid(alvo) or not alvo.is_inside_tree():
+		return false
+	var w := alvo.get_tree().get_first_node_in_group(&"mundo") as World
+	if w == null or w.chao == null:
+		return false
+	var cel := w.chao.local_to_map(w.chao.to_local(alvo.global_position))
+	return w.tipo_do_chao(cel) == World.Chao.AGUA or w.eh_gelo(cel)
+
+
+## Molhado agora (o estado, ou em cima da água neste instante).
+static func molhado(alvo: Node2D) -> bool:
+	var e := de(alvo)
+	return (e != null and e.tem(MOLHADO)) or na_agua(alvo)
 
 
 func _vida() -> HealthComponent:

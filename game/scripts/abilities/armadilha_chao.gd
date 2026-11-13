@@ -37,13 +37,13 @@ func disparou() -> bool:
 
 
 func _on_body_entered(corpo: Node2D) -> void:
-	if _disparou or not corpo is Slime:
+	# Slime ou arqueiro inimigo (todo inimigo que sabe ser preso).
+	if _disparou or not (corpo is Slime or corpo is Atirador):
 		return
 	_disparou = true
-	var slime := corpo as Slime
-	slime.global_position = global_position + Vector2(0, 3)  # puxado para dentro da armadilha
-	slime.prender(TEMPO_PRESO)
-	slime.hurtbox.receber(dano, &"fisico", null)
+	corpo.global_position = global_position + Vector2(0, 3)  # puxado para dentro da armadilha
+	corpo.call(&"prender", TEMPO_PRESO)
+	(corpo.get_node("Hurtbox") as Hurtbox).receber(dano, &"fisico", null)
 	_disparar.rpc()
 	get_tree().create_timer(TEMPO_PRESO + 0.8, false, true).timeout.connect(queue_free)
 

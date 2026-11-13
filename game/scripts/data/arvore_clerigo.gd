@@ -14,7 +14,7 @@ const DADOS := {
 	passivas = [
 		[&"aura_serena", "Aura serena", "Você e os aliados perto recuperam 1 de vida a cada 3 s.", "vitalidade", ""],
 		[&"fe", "Fé", "A cura que passaria da vida máxima vira escudo por 5 s.", "espirito", ""],
-		[&"luz_propria", "Luz própria", "Os slimes da noite evitam chegar perto de você; a comida que você e os aliados perto comem cura 50% a mais.", "espirito", ""],
+		[&"luz_propria", "Luz própria", "Os slimes da noite evitam chegar perto de você; a comida que você dá a um aliado cura 50% a mais (com a vida cheia, usar comida perto de um aliado ferido dá para ele).", "espirito", ""],
 	],
 	iniciais = [
 		[&"cura", "Cura", "Cura você e os aliados em volta.", "", "", [&"curandeiro"]],
@@ -34,7 +34,7 @@ const DADOS := {
 		]],
 		[&"protetor", "Protetor", [
 			[&"egide", "Égide", "Seus escudos ficam 30% mais fortes.", "vitalidade", ""],
-			[&"barreira", "Barreira", "Uma parede de luz que os inimigos (e os projéteis deles) não atravessam por 6 s.", "", ""],
+			[&"barreira", "Barreira", "Uma parede de luz que para os projéteis inimigos por 6 s (e os inimigos também não passam).", "", ""],
 			[&"santuario", "Santuário", "Área onde os inimigos não conseguem entrar por 4 s.", "", ""],
 			[&"vigilia", "Vigília", "Um aliado com pouca vida perto de você toma 15% menos dano.", "vitalidade", ""],
 			[&"intervencao", "Intervenção", "O aliado na mira (ou você) fica intocável por 2 s.", "", ""],
@@ -46,7 +46,7 @@ const DADOS := {
 			[&"martelo_giratorio", "Martelo giratório", "O martelo gira em volta de você por 5 s.", "", ""],
 			[&"julgamento", "Julgamento", "Inimigos acertados pela luz tomam +15% de dano de todo mundo por 5 s.", "intelecto", ""],
 			[&"aurora", "Aurora", "Um cone de luz que derrete os slimes da noite e cega os outros.", "", ""],
-			[&"amanhecer", "Amanhecer", "Suprema. Por 10 s, a área em volta vira dia.", "", ""],
+			[&"amanhecer", "Amanhecer", "Suprema. Por 10 s, a área em volta vira dia: os slimes da noite derretem e os aliados se curam.", "", ""],
 		]],
 	],
 }

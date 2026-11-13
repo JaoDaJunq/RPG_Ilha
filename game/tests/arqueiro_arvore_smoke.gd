@@ -142,20 +142,19 @@ func _atirador() -> void:
 	checar(absf(_tirou(perto) - _dano(&"flecha_do_horizonte")) < 0.01 and absf(_tirou(longe) - _dano(&"flecha_do_horizonte")) < 0.01, "Flecha do horizonte: %.1f de dano no de perto e %.1f no de 300 px" % [_tirou(perto), _tirou(longe)])
 	await _limpar()
 
-	# Sangue frio: acerto crítico (de mais de 6 blocos) devolve 3 de mana.
-	var gasto_sem := await _mana_gasta_tiro_longe()
+	# Sangue frio: acerto crítico devolve 3 de mana. O Tiro carregado cheio é crítico.
+	var gasto_sem := await _mana_gasta_tiro_longe(1.0)
 	p.aprender_de_graca(&"sangue_frio")
-	var gasto_com := await _mana_gasta_tiro_longe()
-	checar(absf((gasto_sem - gasto_com) - PassivasArqueiro.SANGUE_FRIO_MANA) < 0.05, "Sangue frio: o tiro de longe custou %.2f de mana (sem a passiva: %.2f)" % [gasto_com, gasto_sem])
-	# Num alvo Marcado (de perto) também é crítico.
-	var m := _slime(o + Vector2(40, 0))
-	EfeitosEstado.aplicar_em(m, EfeitosEstado.MARCADO, 5.0, 0.2, p)
-	checar(PassivasArqueiro.critico(p, m) and not PassivasArqueiro.critico(p, _slime(o + Vector2(-40, 0))), "Sangue frio: alvo Marcado conta como crítico; de perto sem marca, não")
+	var gasto_com := await _mana_gasta_tiro_longe(1.0)
+	checar(absf((gasto_sem - gasto_com) - PassivasArqueiro.SANGUE_FRIO_MANA) < 0.05, "Sangue frio: o tiro cheio (crítico) custou %.2f de mana (sem a passiva: %.2f)" % [gasto_com, gasto_sem])
+	var custo := p.custo_de(ArvoreData.no(&"arqueiro", &"tiro_carregado").habilidade)
+	var gasto_fraco := await _mana_gasta_tiro_longe(0.0)
+	checar(absf(gasto_fraco - custo) < 0.05, "Sangue frio: tiro sem carga (sem crítico) não devolve mana (%.2f de %.2f)" % [gasto_fraco, custo])
 	await _limpar()
 
 
-## Mana gasta por um Tiro carregado num slime a 120 px (sem regenerar no meio).
-func _mana_gasta_tiro_longe() -> float:
+## Mana gasta por um Tiro carregado (`carga`) num slime a 120 px (sem regenerar no meio).
+func _mana_gasta_tiro_longe(carga: float) -> float:
 	var s := _slime(p.global_position + Vector2(120, 0))
 	p.teclas = [&"tiro_carregado"] as Array[StringName]
 	p._recargas.clear()
@@ -166,7 +165,7 @@ func _mana_gasta_tiro_longe() -> float:
 	var antes := p.mana
 	var regen := p.ficha.regeneracao_mana() * Passivas.regeneracao_mana(p)
 	var t0 := Time.get_ticks_msec()
-	p.usar_habilidade_por_id(&"tiro_carregado", 0.0)
+	p.usar_habilidade_por_id(&"tiro_carregado", carga)
 	await esperar(1.0)
 	var depois := p.mana - regen * (Time.get_ticks_msec() - t0) / 1000.0
 	checar(_tirou(s) > 0.0, "o tiro de longe acertou")

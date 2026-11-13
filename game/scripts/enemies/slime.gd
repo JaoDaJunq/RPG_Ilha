@@ -179,6 +179,7 @@ func _on_atingido(quantidade: float, tipo: StringName, origem: Node) -> void:
 		&"fogo":
 			if congelado():
 				efeitos.remover(EfeitosEstado.CONGELADO)
+				efeitos.aplicar(EfeitosEstado.MOLHADO, EfeitosEstado.MOLHADO_SEGUNDOS)  # o gelo derreteu
 			else:
 				dano *= 2.0
 		&"luz":
