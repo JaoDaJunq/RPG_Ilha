@@ -59,12 +59,12 @@ func _ready() -> void:
 
 	checar(w._lista_construcoes().size() == 4, "a lista para salvar tem as 4 peças (%d)" % w._lista_construcoes().size())
 
-	# Fogueira do acampamento (L37): pedras paradas, chamas e faíscas em laço, luz que tremula.
+	# Fogueira do acampamento (L41): um desenho só, inteiro em cada quadro, em laço; luz que tremula.
 	var fog := w.entidades.get_node("FogueiraAcampamento") as Construcao
 	checar(fog.chamas() != null and fog.chamas().is_playing() and fog.chamas().sprite_frames.get_frame_count(&"fogo") == Construcao.QUADROS_CHAMAS,
-		"a fogueira tem as chamas animadas (%d quadros)" % Construcao.QUADROS_CHAMAS)
-	var faiscas := fog.get_node_or_null("Faiscas") as AnimatedSprite2D
-	checar(faiscas != null and faiscas.is_playing(), "a fogueira solta faíscas")
+		"a fogueira é animada (%d quadros)" % Construcao.QUADROS_CHAMAS)
+	checar(fog.find_children("*", "AnimatedSprite2D", true, false).size() == 1 and fog.chamas().sprite_frames.get_frame_texture(&"fogo", 0).get_width() == Construcao.QUADRO_FOGUEIRA.x,
+		"a fogueira é um desenho inteiro (sem chamas e faíscas postas por cima)")
 	w._aplicar_ciclo(true, true)
 	var luz: PointLight2D = null
 	for c in fog.get_children():

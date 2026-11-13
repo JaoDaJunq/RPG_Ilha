@@ -1,7 +1,7 @@
 extends TesteBase
-## Prints da fogueira animada do acampamento (L37), dentro do jogo (precisa de janela): uma
+## Prints da fogueira nova do acampamento (L41), dentro do jogo (precisa de janela): uma
 ## sequência de 3 de dia e 3 à noite (as chamas mudam de quadro e a luz tremula), no zoom
-## normal e 2x mais perto. Salva evidence/novidades/fogueira_<dia|noite>_<n>[_zoom].png.
+## normal e 2x mais perto. Salva evidence/novidades/fogueira_nova_<dia|noite>_<n>[_zoom].png.
 
 
 func _ready() -> void:
@@ -25,11 +25,11 @@ func _ready() -> void:
 		for i in 3:
 			await esperar(0.12)
 			quadros[fogueira.chamas().frame] = true
-			await salvar_print("novidades/fogueira_%s_%d.png" % [periodo, i + 1])
+			await salvar_print("novidades/fogueira_nova_%s_%d.png" % [periodo, i + 1])
 		checar(quadros.size() >= 2, "%s: as chamas trocam de quadro (%d quadros vistos)" % [periodo, quadros.size()])
 		cam.zoom *= 2.0
 		for i in 3:
 			await esperar(0.12)
-			await salvar_print("novidades/fogueira_%s_%d_zoom.png" % [periodo, i + 1])
+			await salvar_print("novidades/fogueira_nova_%s_%d_zoom.png" % [periodo, i + 1])
 		cam.zoom /= 2.0
 	terminar()

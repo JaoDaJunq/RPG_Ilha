@@ -14,24 +14,15 @@ extends StaticBody2D
 const ARTE := "res://assets/sprites/tiny/construcao/"
 const ACAMPAMENTO := preload("res://assets/sprites/tiny/acampamento.png")
 const LUZ := preload("res://assets/luz/luz_radial.tres")
-## Fogueira animada (L37): as pedras e a lenha da arte do L12 sem as chamas
-## (tools/separar_fogueira.gd); por cima, as chamas em laço desenhadas pelo Codex
-## (l37_chamas_v1: 6 quadros de 40x40, a base das chamas em (20, 34)) e as faíscas subindo do
-## Pixelbolt (art/fx_receitas/faiscas.fluid.json: 24 quadros de 40x72). As chamas simuladas
-## (fogueira.fluid.json) perderam na comparação lado a lado (evidence/comparacao/fogueira_*).
-const FOGUEIRA_BASE := preload("res://assets/sprites/tiny/fogueira_base.png")
-const FOGUEIRA_CHAMAS := preload("res://assets/sprites/tiny/fx/fogueira_chamas.png")
-const FOGUEIRA_FAISCAS := preload("res://assets/sprites/tiny/fx/fogueira_faiscas.png")
-const QUADRO_CHAMAS := Vector2i(40, 40)
+## Fogueira (L41): UM desenho inteiro por quadro (anel de pedras, lenha e chamas), 6 quadros
+## de 128x128 em laço, pedido do zero ao Codex (art/prompts/pedidos/L41_fogueira.md) e
+## terminado por tools/montar_fogueira.gd (pedras firmes entre os quadros e sombra do pacote).
+## As faíscas já vêm no desenho. Substitui a de remendo do L37 (pedras do L12 sem as chamas +
+## chamas por cima + faíscas do Pixelbolt).
+const FOGUEIRA := preload("res://assets/sprites/tiny/fogueira.png")
+const QUADRO_FOGUEIRA := Vector2i(128, 128)
 const QUADROS_CHAMAS := 6
 const FPS_CHAMAS := 8.0
-const QUADRO_FAISCAS := Vector2i(40, 72)
-const QUADROS_FAISCAS := 24
-const FPS_FAISCAS := 9.0
-## Onde fica o canto de cima à esquerda, em pixels da arte (os pés da peça em 0,0): a base das
-## chamas cai em cima da lenha (y 98 da arte da fogueira) e as faíscas saem do meio das chamas.
-const CANTO_CHAMAS := Vector2(-20, -56)
-const CANTO_FAISCAS := Vector2(-20, -93)
 ## A luz da fogueira tremula: energia e tamanho variam um pouco, sem parar.
 const TREMOR_LUZ := 0.12
 static var _quadros_chamas: SpriteFrames
@@ -109,32 +100,22 @@ func _mostrar_acampamento(quadro: int) -> void:
 	_sprite.offset = Vector2(-64, -128 + 8)
 
 
-## Pedras e lenha paradas e as chamas animadas por cima (cada fogueira começa num quadro
-## diferente, para duas fogueiras não piscarem juntas).
+## A fogueira inteira (pedras, lenha e chamas) num desenho animado só. Ele fica dentro do
+## sprite da peça (o brilho de "dá para usar" e o tremor do golpe valem para ele). Cada
+## fogueira começa num quadro diferente, para duas fogueiras não piscarem juntas.
 func _mostrar_fogueira() -> void:
-	_sprite.texture = FOGUEIRA_BASE
-	_sprite.offset = Vector2(-64, -128 + 8)
 	if _quadros_chamas == null:
 		_quadros_chamas = SpriteFrames.new()
 		_quadros_chamas.remove_animation(&"default")
-		SpriteSheets.adicionar_tira(_quadros_chamas, FOGUEIRA_CHAMAS, &"fogo", QUADRO_CHAMAS, QUADROS_CHAMAS, FPS_CHAMAS)
-		SpriteSheets.adicionar_tira(_quadros_chamas, FOGUEIRA_FAISCAS, &"faiscas", QUADRO_FAISCAS, QUADROS_FAISCAS, FPS_FAISCAS)
-	_chamas = _animacao("Chamas", &"fogo", CANTO_CHAMAS)
+		SpriteSheets.adicionar_tira(_quadros_chamas, FOGUEIRA, &"fogo", QUADRO_FOGUEIRA, QUADROS_CHAMAS, FPS_CHAMAS)
+	_chamas = AnimatedSprite2D.new()
+	_chamas.name = "Chamas"
+	_chamas.sprite_frames = _quadros_chamas
+	_chamas.centered = false
+	_chamas.offset = Vector2(-QUADRO_FOGUEIRA.x / 2.0, -QUADRO_FOGUEIRA.y + 8)
+	_sprite.add_child(_chamas)
+	_chamas.play(&"fogo")
 	_chamas.frame = absi(hash(name)) % QUADROS_CHAMAS
-	var faiscas := _animacao("Faiscas", &"faiscas", CANTO_FAISCAS)
-	faiscas.frame = absi(hash(name)) % QUADROS_FAISCAS
-
-
-func _animacao(nome: String, animacao: StringName, canto: Vector2) -> AnimatedSprite2D:
-	var a := AnimatedSprite2D.new()
-	a.sprite_frames = _quadros_chamas
-	a.centered = false
-	a.scale = Vector2(0.25, 0.25)
-	a.offset = canto
-	a.name = nome
-	add_child(a)
-	a.play(animacao)
-	return a
 
 
 ## A fogueira está animada? (Para os testes.)
