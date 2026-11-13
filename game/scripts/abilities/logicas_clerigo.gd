@@ -107,8 +107,8 @@ class CirculoDeCura extends HabilidadeLogica:
 	func executar(quem: Player, hab: HabilidadeData, _dir: Vector2, alvo: Vector2, _carga: float) -> void:
 		var z := Zona.criar(quem, LogicasClerigo.ponto_na_mira(quem, alvo, hab.alcance), RAIO, DURACAO)
 		z.cura = por_tique(quem, hab)
-		z.efeito_visual = &"subir_nivel"
-		z.escala_visual = 1.4
+		z.efeito_visual = &"circulo_cura"
+		z.escala_visual = Efeito.escala_para_raio(&"circulo_cura", RAIO)
 		z.iniciar()
 
 
@@ -174,8 +174,8 @@ class FonteDaVida extends HabilidadeLogica:
 	func executar(quem: Player, hab: HabilidadeData, _dir: Vector2, _alvo: Vector2, _carga: float) -> void:
 		var z := Zona.criar(quem, quem.global_position, RAIO, DURACAO)
 		z.cura = por_tique(quem, hab)
-		z.efeito_visual = &"subir_nivel"
-		z.escala_visual = 2.6
+		z.efeito_visual = &"circulo_cura"
+		z.escala_visual = Efeito.escala_para_raio(&"circulo_cura", RAIO)
 		z.ao_tique = func(_z: Zona, _i: Array[Node2D], jogadores: Array[Player]) -> void:
 			for j in jogadores:
 				j.efeitos.limpar_ruins()
@@ -197,7 +197,8 @@ class Barreira extends HabilidadeLogica:
 	const DISTANCIA := 28.0  # da parede até o Clérigo
 	const COMPRIMENTO := 64.0
 	const GROSSURA := 10.0
-	const PEDACOS := 5  # escudos de luz ao longo da parede
+	const PEDACOS := 4  # pedaços da parede de luz ao longo dela (17 px cada na escala 1)
+	const ESCALA_PEDACO := 1.0
 
 	func executar(quem: Player, hab: HabilidadeData, dir: Vector2, _alvo: Vector2, _carga: float) -> void:
 		var centro := quem.global_position + dir * DISTANCIA
@@ -220,8 +221,11 @@ class Barreira extends HabilidadeLogica:
 		z.add_to_group(&"bloqueia_projeteis")
 		z.set_meta(&"bloqueio_segmento", [a, b, GROSSURA])
 		z.iniciar()
+		# Pedaços da parede de luz lado a lado, cobrindo o comprimento (virados com a parede).
+		var giro := wrapf(lado.angle(), -PI / 2.0, PI / 2.0)
+		var passo := COMPRIMENTO / PEDACOS
 		for k in PEDACOS:
-			World.efeito_laco_todos(quem, &"escudo", a.lerp(b, k / float(PEDACOS - 1)), segundos)
+			World.efeito_laco_todos(quem, &"parede_luz", a + lado * passo * (k + 0.5), segundos, ESCALA_PEDACO, giro)
 
 
 ## Santuário: área em volta do Clérigo onde os inimigos não conseguem entrar por 4 s (quem
@@ -237,8 +241,8 @@ class Santuario extends HabilidadeLogica:
 
 	func executar(quem: Player, hab: HabilidadeData, _dir: Vector2, _alvo: Vector2, _carga: float) -> void:
 		var z := Zona.criar(quem, quem.global_position, RAIO, DURACAO * quem.mult_habilidade(hab), 0.05)
-		z.efeito_visual = &"escudo"
-		z.escala_visual = 3.2
+		z.efeito_visual = &"cupula_luz"
+		z.escala_visual = Efeito.escala_para_raio(&"cupula_luz", RAIO)
 		z.ao_tique = func(zona: Zona, inimigos: Array[Node2D], _j: Array[Player]) -> void:
 			for e in inimigos:
 				var v := e.global_position - zona.global_position
@@ -280,8 +284,8 @@ class MuralhaDaFe extends HabilidadeLogica:
 
 	func executar(quem: Player, hab: HabilidadeData, _dir: Vector2, _alvo: Vector2, _carga: float) -> void:
 		var z := Zona.criar(quem, quem.global_position, RAIO, DURACAO * quem.mult_habilidade(hab), 0.1)
-		z.efeito_visual = &"escudo"
-		z.escala_visual = 4.4
+		z.efeito_visual = &"cupula_luz"
+		z.escala_visual = Efeito.escala_para_raio(&"cupula_luz", RAIO)
 		z.ao_tique = func(_z: Zona, _i: Array[Node2D], jogadores: Array[Player]) -> void:
 			for j in jogadores:
 				j.vida.proteger(0.2)  # renovada a cada tique enquanto estiver dentro
@@ -307,7 +311,7 @@ class ColunaDeLuz extends HabilidadeLogica:
 		quem.get_tree().create_timer(ATRASO).timeout.connect(func() -> void:
 			if not is_instance_valid(quem):
 				return
-			World.efeito_todos(quem, &"raio", ponto)
+			World.efeito_todos(quem, &"coluna_luz", ponto)
 			for e in Golpes.inimigos_em_volta(quem, ponto, RAIO):
 				Golpes.acertar(quem, e, dano, &"luz"))
 
@@ -329,8 +333,9 @@ class MarteloGiratorio extends HabilidadeLogica:
 		z.seguir = quem
 		z.dano = dano_de(quem, hab)
 		z.elemento = &"luz"
-		z.efeito_tique = &"giro"
 		z.iniciar()
+		# O martelo de luz dá voltas em torno do Clérigo, girando, enquanto a zona dura.
+		World.efeito_preso_todos(quem, &"martelo_orbita", DURACAO, Vector2(0, -8))
 
 
 ## Aurora: um cone de luz na direção da mira. Derrete os slimes da noite e Cega os outros.

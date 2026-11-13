@@ -9,8 +9,8 @@ extends RefCounted
 ## Tudo roda no ANFITRIÃO. As melhorias valem pelo `dano_de` (dano) e pela recarga; nas
 ## habilidades sem dano, a força do efeito também cresce com `quem.mult_habilidade(hab)`.
 
-const ESCUDO := preload("res://scenes/abilities/adaga.tscn")  # placeholder: falta a arte do escudo
-const CORRENTE := preload("res://scenes/abilities/adaga.tscn")  # placeholder: falta a arte da corrente
+const ESCUDO := preload("res://scenes/abilities/escudo_arremesso.tscn")
+const CORRENTE := preload("res://scenes/abilities/corrente.tscn")
 
 
 ## Ponto da mira limitado ao alcance da habilidade.
@@ -92,10 +92,10 @@ class Bastiao extends HabilidadeLogica:
 		z.buff = Buffs.REDUCAO
 		z.buff_valor = minf(REDUCAO_MAXIMA, REDUCAO * quem.mult_habilidade(hab))
 		z.buff_segundos = 0.4
-		z.efeito_visual = &"escudo"
-		z.escala_visual = 3.0
 		z.add_to_group(&"bloqueia_projeteis")
-		z.set_meta(&"bloqueio_raio", RAIO * 0.8)  # a borda da cúpula desenhada (escala 3 do escudo)
+		z.set_meta(&"bloqueio_raio", RAIO * 0.8)  # um pouco dentro da borda da cúpula desenhada
+		z.efeito_visual = &"cupula_luz"
+		z.escala_visual = Efeito.escala_para_raio(&"cupula_luz", RAIO)
 		z.ao_tique = func(zona: Zona, inimigos: Array[Node2D], _j: Array[Player]) -> void:
 			for e in inimigos:
 				if is_instance_valid(e):
@@ -227,8 +227,8 @@ class Estandarte extends HabilidadeLogica:
 		z.buff_valor = BONUS * m
 		z.buff_segundos = 1.2
 		z.cura = CURA * m
-		z.efeito_visual = &"subir_nivel"  # placeholder: falta a arte da bandeira
-		z.escala_visual = 1.2
+		z.efeito_visual = &"estandarte"
+		z.escala_visual = 1.0
 		z.iniciar()
 
 

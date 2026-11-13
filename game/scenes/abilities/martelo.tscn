@@ -2,7 +2,7 @@
 
 [ext_resource type="Script" path="res://scripts/abilities/projetil.gd" id="1_projetil"]
 [ext_resource type="Texture2D" path="res://assets/luz/luz_radial.tres" id="2_luz"]
-[ext_resource type="Texture2D" path="res://assets/sprites/tiny/icones/item_maca.png" id="3_textura"]
+[ext_resource type="Texture2D" path="res://assets/sprites/tiny/habilidades/martelo_luz.png" id="3_textura"]
 
 
 [sub_resource type="CircleShape2D" id="Shape_proj"]
@@ -23,13 +23,12 @@ duracao = 0.45
 elemento = &"luz"
 congela_agua = false
 textura = ExtResource("3_textura")
-quadro = Vector2i(49, 48)
+quadro = Vector2i(85, 44)
 quadros = 1
 fps = 1.0
 angulo_da_arte = 0.0
-escala_arte = 0.32
+escala_arte = 0.25
 girar = 14.0
-modulate = Color(1, 0.95, 0.7, 1)
 
 
 [node name="Visual" type="AnimatedSprite2D" parent="."]

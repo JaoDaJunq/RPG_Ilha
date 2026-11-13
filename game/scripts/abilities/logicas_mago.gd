@@ -86,8 +86,10 @@ class PedraViva extends HabilidadeLogica:
 			ate = quem.global_position + dir * hab.alcance
 		var de := quem.global_position + (ate - quem.global_position).normalized() * 8.0
 		var dano := dano_de(quem, hab)
-		var z := Zona.criar(quem, de, RAIO, maxf(PASSO, de.distance_to(ate) / VELOCIDADE), PASSO)
+		var segundos := maxf(PASSO, de.distance_to(ate) / VELOCIDADE)
+		var z := Zona.criar(quem, de, RAIO, segundos, PASSO)
 		z.efeito_tique = &"poeira"
+		World.efeito_movel_todos(quem, &"pedra_rolando", de + Vector2(0, -4), ate + Vector2(0, -4), segundos)
 		var ja: Array[Node2D] = []
 		z.ao_tique = func(zona: Zona, inimigos: Array[Node2D], _j: Array[Player]) -> void:
 			for e in inimigos:
@@ -191,9 +193,11 @@ class TornadoDeFogo extends HabilidadeLogica:
 		var dps := LogicasMago.queima_dps(quem)
 		var z := Zona.criar(quem, quem.global_position, RAIO, DURACAO, INTERVALO)
 		z.efeito_tique = &"fogo"
+		# O funil de fogo (2 quadros girando) anda junto com a zona até a mira e fica lá.
+		var ida := minf(DURACAO, quem.global_position.distance_to(ate) / VELOCIDADE)
+		World.efeito_movel_todos(quem, &"tornado", quem.global_position, ate, ida, DURACAO - ida, &"", 2.0)
 		z.ao_tique = func(zona: Zona, inimigos: Array[Node2D], _j: Array[Player]) -> void:
 			var centro: Vector2 = zona.global_position
-			World.efeito_todos(zona, &"giro", centro + Vector2(0, -8))
 			for e in Golpes.inimigos_em_volta(zona, centro, RAIO_PUXAO):
 				if not e in inimigos:
 					Golpes.puxar(e, centro, PUXAO, 0.15)
@@ -228,7 +232,8 @@ class ChuvaDeMeteoros extends HabilidadeLogica:
 			if not inimigos.is_empty():
 				quedas.append(inimigos.pick_random().global_position)
 			for q in quedas:
-				World.efeito_todos(zona, &"explosao", q)
+				# O meteoro cai na diagonal e explode ao chegar (o dano é na hora do tique).
+				World.efeito_movel_todos(zona, &"meteoro", q + Vector2(-30, -45), q, 0.15, 0.0, &"explosao")
 				for e in Golpes.inimigos_em_volta(zona, q, RAIO_METEORO):
 					Golpes.acertar(zona.lancador, e, dano, &"fogo", EfeitosEstado.QUEIMADURA, LogicasMago.QUEIMA_SEGUNDOS, dps)
 		z.iniciar()
@@ -268,7 +273,7 @@ class MuralhaDeGelo extends HabilidadeLogica:
 		var lado := frente.orthogonal()
 		for k in BLOCOS:
 			var b := Zona.criar(quem, centro + lado * (k - (BLOCOS - 1) / 2.0) * ESPACO, RAIO_BLOCO, DURACAO, 0.1)
-			b.efeito_visual = &"congelar"
+			b.efeito_visual = &"muralha_gelo"
 			b.add_to_group(&"muralha_gelo")
 			b.ao_tique = func(zona: Zona, inimigos: Array[Node2D], _j: Array[Player]) -> void:
 				for e in inimigos:
@@ -306,6 +311,7 @@ class Nevasca extends HabilidadeLogica:
 	const LENTO_POR_TIQUE := 0.25
 	const TIQUES_PARA_CONGELAR := 3
 	const CONGELA := 2.0
+	const NUVENS: Array[Vector2] = [Vector2(-26, -16), Vector2(26, -12), Vector2(0, 20)]
 
 	func efeitos(_hab: HabilidadeData) -> Array[String]:
 		return [
@@ -319,9 +325,10 @@ class Nevasca extends HabilidadeLogica:
 		var dano := dano_de(quem, hab)
 		var conta := {}
 		var z := Zona.criar(quem, ponto, RAIO, DURACAO)
-		z.efeito_visual = &"nova_gelo"
-		z.escala_visual = 2.5
 		z.efeito_tique = &"nova_gelo"
+		# Três nuvens de neve cobrindo a área (uma só, do tamanho da área, ficaria grosseira).
+		for desvio in NUVENS:
+			World.efeito_laco_todos(quem, &"nevasca", ponto + desvio, DURACAO, 2.0)
 		z.ao_tique = func(zona: Zona, inimigos: Array[Node2D], _j: Array[Player]) -> void:
 			for e in inimigos:
 				var n: int = conta.get(e.get_instance_id(), 0) + 1
@@ -362,8 +369,6 @@ class CorrenteEletrica extends HabilidadeLogica:
 
 ## Totem tesla: uma torre na mira que dá choque nos inimigos perto por 8 s.
 class TotemTesla extends HabilidadeLogica:
-	const ARTE := "res://assets/sprites/tiny/construcao/tocha.png"  # placeholder: pedir arte ao Codex
-
 	func efeitos(_hab: HabilidadeData) -> Array[String]:
 		return [
 			"Torre por 8 s",
@@ -372,10 +377,8 @@ class TotemTesla extends HabilidadeLogica:
 
 	func executar(quem: Player, hab: HabilidadeData, _dir: Vector2, alvo: Vector2, _carga: float) -> void:
 		var t := Invocacao.criar(quem, LogicasMago.ponto_mira(quem, alvo, hab.alcance))
-		t.textura_caminho = ARTE
-		t.quadro = Vector2i(19, 79)
-		t.escala = 0.25
-		t.deslocamento = Vector2(0, -10)
+		t.desenho(["totem_tesla"])
+		t.escala = 0.5  # da altura de um jogador
 		t.duracao = 8.0
 		t.vida_maxima = 30.0
 		t.dano = dano_de(quem, hab)
@@ -405,7 +408,10 @@ class FormaDeRelampago extends HabilidadeLogica:
 		]
 
 	func executar(quem: Player, hab: HabilidadeData, _dir: Vector2, alvo: Vector2, _carga: float) -> void:
-		World.efeito_todos(quem, &"raio", quem.global_position)
+		var de := quem.global_position
+		World.efeito_todos(quem, &"raio", de)
+		# A silhueta de raios corre do mago até onde ele chega.
+		World.efeito_movel_todos(quem, &"forma_relampago", de, de + (alvo - de).limit_length(hab.alcance), 0.12, 0.1)
 		for e in Golpes.avancar(quem, alvo, hab.alcance, dano_de(quem, hab), &"raio", LARGURA, true, EfeitosEstado.ATORDOADO, ATORDOA):
 			if is_instance_valid(e):
 				World.efeito_todos(quem, &"raio", e.global_position)
@@ -456,8 +462,9 @@ class Espinhos extends HabilidadeLogica:
 		var dano := dano_de(quem, hab)
 		for e in Golpes.inimigos_em_volta(quem, ponto, RAIO):
 			Golpes.acertar(quem, e, dano, &"terra", EfeitosEstado.PRESO, PRENDE)
-		for desvio in [Vector2(-9, 3), Vector2(9, 3), Vector2(0, -6), Vector2.ZERO]:
-			World.efeito_todos(quem, &"poeira", ponto + desvio)
+		for desvio in [Vector2(-10, -4), Vector2(10, -4), Vector2(0, 6)]:
+			World.efeito_todos(quem, &"espinhos", ponto + desvio)
+		World.efeito_todos(quem, &"poeira", ponto)
 
 
 ## Golem de pedra: invoca um golem por 15 s que chama os inimigos e dá socos.
@@ -470,7 +477,8 @@ class GolemDePedra extends HabilidadeLogica:
 
 	func executar(quem: Player, hab: HabilidadeData, _dir: Vector2, alvo: Vector2, _carga: float) -> void:
 		var g := Invocacao.criar(quem, LogicasMago.ponto_mira(quem, alvo, hab.alcance))
-		g.textura_caminho = "res://assets/sprites/tiny/pedras_slime.png"  # placeholder: pedir arte ao Codex
+		g.desenho(["golem"], 6.0, "golem_soco")
+		g.escala = 0.5  # maior que o mago (a arte veio pequena para um golem)
 		g.duracao = 15.0
 		g.vida_maxima = 40.0
 		g.dano = dano_de(quem, hab)
@@ -508,10 +516,12 @@ class Fenda extends HabilidadeLogica:
 			if p.distance_to(de + caminho * t) <= LARGURA:
 				Golpes.acertar(quem, e, dano, &"terra", EfeitosEstado.DERRUBADO, DERRUBA)
 				EfeitosEstado.aplicar_em(e, EfeitosEstado.CEGO, LogicasMago.DESEQUILIBRIO_SEGUNDOS, LogicasMago.DESEQUILIBRIO_CHANCE, quem)
-		var d := 12.0
+		# A rachadura: pedaços da fenda em fila, virados para a direção da mira.
+		var d := 14.0
 		while d <= hab.alcance:
+			World.efeito_laco_todos(quem, &"fenda", de + dir.normalized() * d, 2.0, 1.0, dir.angle())
 			World.efeito_todos(quem, &"poeira", de + dir.normalized() * d)
-			d += 16.0
+			d += 24.0
 
 
 ## Despertar da ilha (suprema): por 8 s a ilha treme em volta do mago; os inimigos perto

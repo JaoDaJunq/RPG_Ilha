@@ -101,7 +101,8 @@ class MarcaDaMorte extends HabilidadeLogica:
 		var contar := func(qtd: float, _t: StringName) -> void: levou[0] += qtd
 		vida.dano_recebido.connect(contar)
 		EfeitosEstado.aplicar_em(inimigo, EfeitosEstado.MARCADO, DURACAO, 0.0, quem)
-		World.efeito_todos(quem, &"giro", inimigo.global_position + Vector2(0, -8))
+		# A caveira fica em cima da cabeça até a marca explodir (some se o alvo cair antes).
+		World.efeito_preso_todos(inimigo, &"marca_morte", DURACAO, Efeito.acima_da_cabeca(inimigo))
 		quem.avisar("Marca da morte (%d pontos): explode em %d s." % [pontos, roundi(DURACAO)])
 		quem.get_tree().create_timer(DURACAO, false).timeout.connect(func() -> void:
 			if not is_instance_valid(inimigo) or not is_instance_valid(vida):
@@ -169,8 +170,8 @@ class FrascoDeAcido extends HabilidadeLogica:
 		z.estado = EfeitosEstado.MARCADO
 		z.estado_forca = MARCA
 		z.estado_segundos = 1.2
-		z.efeito_visual = &"poeira"
-		z.escala_visual = 3.0  # a poeira (16 px) do tamanho da poça
+		z.efeito_visual = &"poca_acido"
+		z.escala_visual = Efeito.escala_para_raio(&"poca_acido", RAIO)
 		z.iniciar()
 
 
@@ -192,8 +193,8 @@ class NuvemToxica extends HabilidadeLogica:
 		z.estado = EfeitosEstado.VENENO
 		z.estado_forca = veneno
 		z.estado_segundos = Player.TEMPO_VENENO
-		z.efeito_visual = &"poeira"
-		z.escala_visual = 3.6  # a poeira (16 px) do tamanho da nuvem
+		z.efeito_visual = &"nuvem_toxica"
+		z.escala_visual = Efeito.escala_para_raio(&"nuvem_toxica", RAIO)
 		z.set_meta(&"nuvem_toxica", true)
 		z.iniciar()
 		# Confere o fogo a cada 0,1 s (um projétil passa rápido; o tique da zona é de 1 s).
@@ -357,4 +358,5 @@ static func explodir_nuvem(z: Zona, quem: Player, dano: float) -> void:
 		Golpes.acertar(dono, e, dano, &"fogo")
 	World.efeito_todos(z, &"explosao", z.global_position)
 	z.set_meta(&"explodiu", true)
+	World.tirar_laco_todos(z)  # a nuvem some na hora (não espera o fim dos 6 s)
 	z.queue_free()

@@ -81,7 +81,7 @@ func iniciar(pai: Node = null) -> Zona:
 		if seguir:
 			World.efeito_preso_todos(seguir, efeito_visual, duracao)
 		else:
-			World.efeito_laco_todos(self, efeito_visual, global_position, duracao, escala_visual)
+			World.efeito_laco_todos(self, efeito_visual, global_position, duracao, escala_visual, 0.0, self)
 	return self
 
 
