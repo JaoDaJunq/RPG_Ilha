@@ -183,3 +183,24 @@ Com o personagem reduzido a raça + classe, não há mais o que trocar. Por isso
 - Um arquivo de pontos marca onde fica a mão da frente em cada quadro. O item da barra é desenhado ali e gira no golpe.
 
 **Pedidos:** L30 é o piloto (Humano Guerreiro). Depois que o João aprovar, vêm os outros 19.
+
+## Emendas do terreno e fogueira nova (L41, 13/11/2026)
+
+O João achou ruins as emendas do mundo maior e a fogueira remendada do L37.
+
+**Terreno (`game/scripts/world/terreno.gd`):**
+- Cada bloco é desenhado em 4 quartos de 32 px da arte. Cada quarto escolhe o pedaço pelo vizinho do lado, o de cima/baixo e o da diagonal: miolo, borda, canto de fora ou canto de dentro. O canto de dentro é a união das duas bordas, então as bolinhas se encontram (antes ficava um degrau quadrado).
+- O formato das bordas é sempre o da grama do pacote (`Tilemap_color1`).
+  - Na beira da água, o contorno azul-escuro e o brilho claro do pacote.
+  - Entre dois chãos, o contorno fica da cor escura do próprio chão e o brilho vira uma sombrinha. Sem cara de penhasco e sem a linha de areia entre duas gramas.
+- O chão de baixo continua por baixo da borda do de cima.
+- O miolo da areia, da lama, da trilha e do piso vem de uma textura grande do Codex (384x256), presa ao mundo e repetida em espelho (shader `terreno_preenchimento`). Nas bolinhas da borda, a textura leva o sombreado da grama do pacote.
+  - Converter a textura: `game/tools/importar_textura.gd --pixel=4 --cores=16`.
+- Tufos de grama (um por tom) e pedacinhos (torrões, lajes, lodo, pedrinhas, folhinhas) são espalhados nas emendas por sorteio fixo de cada bloco.
+- Pontas soltas de 1 bloco somem só no desenho (a região do jogo não muda).
+
+**Fogueira (`game/assets/sprites/tiny/fogueira.png`):**
+- Um desenho inteiro por quadro (pedras, lenha, chamas e faíscas), 6 quadros em laço, pixel art 4x.
+- Converter: `importar_folha.gd --pixel=4 --paleta_de=... --fixo` e depois `game/tools/montar_fogueira.gd`, que copia as pedras e a lenha do 1º quadro para os outros (a IA redesenha cada quadro) e põe a sombra do pacote.
+- A versão em ilustração (pixelizar.gd) também foi feita; perdeu na comparação lado a lado (`evidence/comparacao/fogueira_nova_*`), porque o contorno escuro em volta das chamas destoa do fogo do pacote.
+- A antiga (L37) ficou guardada em `art/sprites/tiny/fogueira_l37/`, só para a comparação.

@@ -828,8 +828,11 @@ func _gerar_chao() -> void:
 			var i := y * largura + x
 			_tipo[cel] = gerador.tipo[i]
 			_distancia[cel] = gerador.distancia[i]
-			if _tipo[cel] == Chao.GRAMA and Vector2(cel - c).length() <= 2.6:
-				_terra[cel] = true  # clareira de areia em volta da fogueira
+			# Clareira de areia batida em volta da fogueira (só no desenho): uma elipse, e as
+			# trilhas terminam nela.
+			var e := Vector2((x - c.x) / 3.6, (y - c.y - 0.4) / 2.8)
+			if _tipo[cel] != Chao.AGUA and e.length() <= 1.0:
+				_terra[cel] = true
 			chao.set_cell(cel, 0, TILE_AGUA if _tipo[cel] == Chao.AGUA else TILE_CHAO)
 	_montar_terreno()
 
@@ -839,29 +842,14 @@ func _gerar_chao() -> void:
 ## chão de cada tile. Quem desenha é o Terreno, com a arte do Tiny Swords (tile de 64 px,
 ## escala 0,25): água lisa no fundo, espuma animada embaixo da beira, a ilha inteira em
 ## areia e, por cima, os chãos de cada região (de baixo para cima): lama do pântano, piso
-## das ruínas, trilha e a grama de cada região (um dos 5 tons do pacote). Cada camada
-## escolhe o tile pelos 4 vizinhos (o terreno deles tem as 16 combinações).
+## das ruínas, trilha e a grama de cada região (um dos 5 tons do pacote). As camadas e as
+## bordas são montadas pelo Terreno (L41), e as emendas ganham tufos e pedrinhas.
 const TS := 64
 const ESCALA_TS := 0.25
 const TEX_TS_AGUA := preload("res://assets/tiny_swords/terreno/agua.png")
 const TEX_TS_ESPUMA := preload("res://assets/tiny_swords/terreno/espuma.png")
-const TEX_TS_AREIA := preload("res://assets/sprites/tiny/areia.png")  # L12, feita sobre a grama deles
-const TEX_TS_GRAMA := preload("res://assets/tiny_swords/terreno/grama.png")
-## O chão de baixo para cima (L36): lama, piso de pedra antiga e trilha de terra.
-const TEX_PISOS := {
-	GeradorIlha.Piso.LAMA: preload("res://assets/sprites/tiny/mundo/lama.png"),
-	GeradorIlha.Piso.PEDRA: "res://assets/sprites/tiny/mundo/piso.png",
-	GeradorIlha.Piso.TRILHA: preload("res://assets/sprites/tiny/mundo/trilha.png"),
-}
-## A grama de cada região: os 5 tons do pacote (a Praia é só areia).
-const TEX_GRAMA_REGIAO := {
-	Regioes.Id.CLAREIRA: TEX_TS_GRAMA,
-	Regioes.Id.BOSQUE: preload("res://assets/tiny_swords/terreno/grama2.png"),
-	Regioes.Id.RUINAS: preload("res://assets/tiny_swords/terreno/grama3.png"),
-	Regioes.Id.COLINAS: preload("res://assets/tiny_swords/terreno/grama4.png"),
-	Regioes.Id.PANTANO: preload("res://assets/tiny_swords/terreno/grama5.png"),
-}
 
+var terreno: Terreno
 var _terra: Dictionary[Vector2i, bool] = {}
 var _camada_gelo: TileMapLayer  # gelo da lança de gelo, por cima da água
 ## Pedaços de decoração animada (espuma): [nó, centro], entregues à Soneca.
@@ -885,23 +873,9 @@ func _montar_terreno() -> void:
 	agua.position = Vector2(-20, -20) * TS
 	raiz.add_child(agua)
 
-	# Nível de cada bloco: 0 areia (ou água), 1..3 os pisos, 4 + região a grama.
-	var n := largura * altura
-	var terra := PackedByteArray()
-	terra.resize(n)
-	var nivel := PackedByteArray()
-	nivel.resize(n)
-	for y in altura:
-		for x in largura:
-			var i := y * largura + x
-			if gerador.tipo[i] == Chao.AGUA:
-				continue
-			terra[i] = 1
-			var piso := gerador.piso[i]
-			if piso != GeradorIlha.Piso.NADA:
-				nivel[i] = piso
-			elif gerador.tipo[i] == Chao.GRAMA and not _terra.has(Vector2i(x, y)):
-				nivel[i] = 4 + gerador.regiao[i]
+	terreno = Terreno.new()
+	terreno.preparar(gerador, _terra)
+	var terra := terreno.terra
 
 	var espuma := SpriteFrames.new()
 	espuma.remove_animation(&"default")
@@ -926,16 +900,22 @@ func _montar_terreno() -> void:
 				a.frame = (x * 7 + y * 3) % 16
 				a.position = Vector2(x * TS, y * TS) + Vector2(TS, TS) / 2.0
 				(pedacos[chave] as Node2D).add_child(a)
-	raiz.add_child(_camada_mascara(TEX_TS_AREIA, terra, 1, false))
-	for piso in [GeradorIlha.Piso.LAMA, GeradorIlha.Piso.PEDRA, GeradorIlha.Piso.TRILHA]:
-		var tex: Variant = TEX_PISOS[piso]
-		if tex is String:
-			if not ResourceLoader.exists(tex):
-				continue  # a arte ainda não chegou: fica a areia
-			tex = load(tex)
-		raiz.add_child(_camada_mascara(tex, nivel, piso, true))
-	for r in TEX_GRAMA_REGIAO:
-		raiz.add_child(_camada_mascara(TEX_GRAMA_REGIAO[r], nivel, 4 + r, false))
+	# Os chãos, de baixo para cima, com as bordas em quartos de bloco (L41, Terreno).
+	for camada in terreno.camadas():
+		raiz.add_child(camada)
+	# Tufos e pedacinhos em cima das emendas (sem colisão, embaixo de todos).
+	var emendas := Node2D.new()
+	emendas.name = "Emendas"
+	raiz.add_child(emendas)
+	for e in terreno.emendas():
+		var s := Sprite2D.new()
+		s.texture = e[0]
+		s.region_enabled = true
+		s.region_rect = Rect2(int(e[1]) * 128, 0, 128, 128)
+		s.centered = false
+		s.offset = Vector2(-64, -120)
+		s.position = e[2]
+		emendas.add_child(s)
 
 	# Gelo da lança de gelo (L16): bloco de 64 px no pixel do pacote, escala 0,25.
 	_camada_gelo = TileMapLayer.new()
@@ -950,29 +930,6 @@ func _montar_terreno() -> void:
 	_camada_gelo.scale = Vector2(ESCALA_TS, ESCALA_TS)
 	add_child(_camada_gelo)
 	move_child(_camada_gelo, raiz.get_index() + 1)
-
-
-## Uma camada do terreno: põe tile onde `mascara[i] == valor`. Os vizinhos que contam como
-## "do mesmo terreno" são os iguais ou, com `acima`, também os de nível maior (as camadas
-## de cima cobrem a emenda com a borda delas).
-func _camada_mascara(textura: Texture2D, mascara: PackedByteArray, valor: int, acima: bool) -> TileMapLayer:
-	var ts := TileSet.new()
-	ts.tile_size = Vector2i(TS, TS)
-	var src := TileSetAtlasSource.new()
-	src.texture = textura
-	src.texture_region_size = Vector2i(TS, TS)
-	ts.add_source(src, 0)
-	for y in 4:
-		for x in 4:
-			src.create_tile(Vector2i(x, y))
-	var camada := TileMapLayer.new()
-	camada.tile_set = ts
-	for y in altura:
-		for x in largura:
-			if mascara[y * largura + x] == valor:
-				camada.set_cell(Vector2i(x, y), 0, _tile_ts(_vizinhos_mascara(mascara, x, y, valor, acima)))
-	return camada
-
 
 ## Bits: 1 norte, 2 sul, 4 oeste, 8 leste (vizinho do mesmo terreno).
 func _vizinhos_mascara(mascara: PackedByteArray, x: int, y: int, valor: int, acima: bool) -> int:
@@ -989,18 +946,6 @@ func _conta(mascara: PackedByteArray, x: int, y: int, valor: int, acima: bool) -
 		return false
 	var m := mascara[y * largura + x]
 	return m == valor or (acima and m > valor)
-
-
-## Coluna: 0 começa à esquerda, 1 meio, 2 termina à direita, 3 tira vertical (sem lados).
-## Linha: 0 começa em cima, 1 meio, 2 termina embaixo, 3 tira horizontal (sem cima/baixo).
-func _tile_ts(v: int) -> Vector2i:
-	var oeste := v & 4 != 0
-	var leste := v & 8 != 0
-	var norte := v & 1 != 0
-	var sul := v & 2 != 0
-	var col := 1 if oeste and leste else (2 if oeste else (0 if leste else 3))
-	var lin := 1 if norte and sul else (2 if norte else (0 if sul else 3))
-	return Vector2i(col, lin)
 
 
 
