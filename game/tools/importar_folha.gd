@@ -76,6 +76,10 @@ func _init() -> void:
 		var x1 := floori(((c % colunas + 1) * cel.x - gx.y) / s)
 		var y1 := floori(((c / colunas + 1) * cel.y - gy.y) / s)
 		var pequeno := pequeno_folha.get_region(Rect2i(x0, y0, x1 - x0, y1 - y0))
+		if _args.has("grade_por_celula"):
+			# --grade_por_celula: o início da grade é procurado em cada célula (a IA às vezes
+			# desloca a grade de uma célula para outra; desenhos pequenos saem cortados).
+			pequeno = _reduzir_celula(folha, Rect2i(Vector2i(c % colunas, c / colunas) * cel, cel), s)
 		_apagar_soltos(pequeno, 3)
 		var caixa := pequeno.get_used_rect()
 		if _args.has("preencher"):
@@ -87,6 +91,14 @@ func _init() -> void:
 			var destino_peca := _caminho(saida).get_base_dir().path_join(separar[i] + ".png")
 			peca.save_png(destino_peca)
 			print("célula %d → %s (%dx%d)" % [c, destino_peca.get_file(), caixa.size.x, caixa.size.y])
+			continue
+		if _args.has("fixo"):
+			# --fixo: efeitos que andam dentro do quadro (as gotas caindo): o meio da célula vira
+			# o meio do quadro, sem recentralizar cada desenho (o movimento entre quadros fica).
+			var meio := pequeno.get_size() / 2
+			var lado := Vector2i(quadro, quadro)
+			tira.blit_rect(pequeno, Rect2i(meio - lado / 2, lado), Vector2i(i * quadro, 0))
+			print("célula %d: desenho %dx%d (fixo)" % [c, caixa.size.x, caixa.size.y])
 			continue
 		if caixa.size.x > quadro - 2 or caixa.size.y > quadro - base:
 			push_warning("célula %d: desenho %dx%d não cabe no quadro de %d" % [c, caixa.size.x, caixa.size.y, quadro])
@@ -155,6 +167,19 @@ func _mudancas(img: Image, horizontal: bool) -> PackedFloat32Array:
 			if _diferente(a, b):
 				t[i] += 1.0
 	return t
+
+
+## Uma célula reduzida com o início da grade dela (o tamanho `s` é o da folha), sem o fundo
+## e com a mesma limpeza de cores da folha.
+func _reduzir_celula(folha: Image, ret: Rect2i, s: float) -> Image:
+	var img := folha.get_region(ret)
+	var fx := _melhor_fase(_mudancas(img, true), s)
+	var fy := _melhor_fase(_mudancas(img, false), s)
+	var p := _reduzir(img, s, Vector2(fx.x, fy.x))
+	_tirar_fundo(p)
+	if _args.has("paleta_de"):
+		_usar_paleta_de(p, _caminho(_args["paleta_de"]))
+	return p
 
 
 ## Para um tamanho s: (melhor início, média de mudanças nas linhas da grade ÷ média geral).

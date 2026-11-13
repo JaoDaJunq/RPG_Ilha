@@ -14,6 +14,11 @@ extends SceneTree
 ##   godot --headless --path game --script res://tools/pixelizar.gd -- \
 ##     --entrada=../art/sprites/desenho_hd/candidatos/hd_v1.png --celulas=0,1 --altura=88 \
 ##     --saida=../art/sprites/tiny/convertido/teste.png [--quadro=128] [--base=8] [--celula=512x512]
+## Opções para efeitos e peças das habilidades (pedido L35):
+##   --sem_sombra    não põe a sombra do pacote (nuvem, tornado, poça...);
+##   --sem_contorno  não pinta a borda de #161c2e (luz: a parede de luz);
+##   --luz=0.7      luz sobre o magenta: só o que é claro fica (ver _limiar_luz);
+##   --separar=a,b   cada célula vira um PNG recortado (a.png, b.png) na pasta de --saida.
 
 const MAGENTA := Color(1, 0, 1)
 const CONTORNO := Color("161c2e")
@@ -21,6 +26,9 @@ const PALETA := "res://assets/tiny_swords/paleta.png"
 
 var _args := {}
 var _paleta: Array[Color] = []
+## --luz=0.7: desenhos de LUZ sobre o magenta (a parede de luz): o brilho se mistura com o
+## fundo; só fica o que tem verde acima disto (o claro), o resto vira transparente.
+var _limiar_luz := 0.0
 
 
 func _init() -> void:
@@ -29,6 +37,7 @@ func _init() -> void:
 			_args[a.substr(2)] = ""  # opção sem valor (ex.: --animacao)
 		elif a.begins_with("--"):
 			_args[a.substr(2).get_slice("=", 0)] = a.get_slice("=", 1)
+	_limiar_luz = float(_args.get("luz", "0"))
 	var folha := Image.load_from_file(_caminho(_args["entrada"]))
 	folha.convert(Image.FORMAT_RGBA8)
 	var celulas := Array(String(_args.get("celulas", "0")).split(",")).map(func(s: String) -> int: return s.to_int())
@@ -64,14 +73,22 @@ func _init() -> void:
 		var h := maxi(1, roundi(usado.size.y * fator))
 		parte.resize(w, h, Image.INTERPOLATE_LANCZOS)
 		_quantizar(parte)
-		_contorno(parte)
+		if not _args.has("sem_contorno"):
+			_contorno(parte)
+		var separar: PackedStringArray = String(_args.get("separar", "")).split(",", false)
+		if i < separar.size():
+			var peca := parte.get_region(parte.get_used_rect())
+			var destino_peca := _caminho(_args["saida"]).get_base_dir().path_join(separar[i] + ".png")
+			print("célula %d → %s (%dx%d): %s" % [c, separar[i], peca.get_width(), peca.get_height(), error_string(peca.save_png(destino_peca))])
+			continue
 		var destino := Vector2i(i * quadro + (quadro - w) / 2, quadro - base - h)
 		if animacao:
 			var rel := (Vector2(usado.position) - ref) * fator
 			destino = Vector2i(i * quadro + quadro / 2 + roundi(rel.x), quadro - base + roundi(rel.y))
 		var dentro := Rect2i(destino, Vector2i(w, h)).intersection(Rect2i(i * quadro, 0, quadro, quadro))
 		tira.blit_rect(parte, Rect2i(dentro.position - destino, dentro.size), dentro.position)
-		SombraTiny.por(tira, dentro)
+		if not _args.has("sem_sombra"):
+			SombraTiny.por(tira, dentro)
 		print("célula %d: %dx%d%s" % [c, w, h, "" if dentro.size == Vector2i(w, h) else " (CORTADO: não coube no quadro)"])
 	var saida := _caminho(_args["saida"])
 	DirAccess.make_dir_recursive_absolute(saida.get_base_dir())
@@ -83,7 +100,7 @@ func _tirar_magenta(img: Image) -> void:
 	for y in img.get_height():
 		for x in img.get_width():
 			var c := img.get_pixel(x, y)
-			if c.a < 0.5 or (minf(c.r, c.b) - c.g > 0.45):
+			if c.a < 0.5 or (minf(c.r, c.b) - c.g > 0.45) or c.g < _limiar_luz:
 				img.set_pixel(x, y, Color(0, 0, 0, 0))
 
 
