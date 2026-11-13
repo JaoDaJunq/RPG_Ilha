@@ -91,3 +91,32 @@ NÃO SIGA:
 ## Depois de gerar
 
 Salvar só nos caminhos acima. Não mexer em `game/` nem em nenhum outro arquivo. Responder com o caminho e o tamanho em pixels de cada imagem.
+
+## Folha 5 · chamas da fogueira em laço (alternativa ao Pixelbolt, para comparar)
+
+**Por quê:** o João vai passar muito tempo no acampamento e pediu a fogueira animada. O jogo desenha as pedras e a lenha (arte do L12) e põe as chamas por cima. O Claude fez uma versão com a simulação de fogo do Pixelbolt; esta é a versão desenhada, para escolher a mais bonita lado a lado.
+
+**Anexar:**
+1. `art/sprites/tiny/acampamento_v2.png`: a fogueira aprovada é o 1º desenho. Copiar o pixel, as cores das chamas (#cc5050, #f6703e, #ffdc00, #f9f4a9) e o tamanho das chamas.
+2. `art/prompts/reguas/objetos_4x.png`: peças do Tiny Swords no mesmo pixel.
+
+**Saída:** `art/sprites/tiny/candidatos/l37_chamas_v1.png`
+
+```text
+TAREFA: uma folha de ANIMAÇÃO EM LAÇO de 6 quadros com SÓ AS CHAMAS de uma fogueira pequena, em pixel art no MESMO pixel e nas MESMAS cores das chamas da fogueira da imagem 1 (o 1º desenho).
+Imagem 1536x1024, grade de 3 colunas x 2 linhas, células de 512x512, um quadro por célula, lidos da esquerda para a direita e de cima para baixo. Fundo magenta chapado #FF00FF.
+
+FAÇA:
+- Quadrados de 4x4 na imagem (cada célula = 128 pixels de jogo), sem anti-aliasing.
+- As chamas com cerca de 22 pixels de jogo de largura na base e 26 a 32 de altura (na imagem: ~88 px de largura e 104 a 128 de altura), a BASE das chamas sempre na MESMA linha, 100 px acima do fundo da célula, centralizada.
+- Cores: borda vermelha #cc5050 nas pontas, laranja #f6703e por fora, amarelo #ffdc00 no meio, creme #f9f4a9 no miolo de baixo. Sem contorno escuro (as chamas do pacote não têm).
+- Um fogo vivo: as línguas de fogo mudam de forma e de altura de um quadro para o outro, balançando para a esquerda e a direita, e o 6º quadro emenda no 1º (laço).
+- Em 2 dos 6 quadros, uma faísca (1 quadradinho amarelo ou creme) solta acima das chamas.
+
+NÃO FAÇA:
+- NÃO desenhe pedras, lenha, chão, sombra, fumaça, brilho em volta, moldura, texto nem número (o jogo põe as pedras e a lenha).
+- NÃO use degradê, borrado, quadrados de tamanhos diferentes, nem cores fora das 4 indicadas (rosa ou magenta, nunca).
+
+NÃO SIGA:
+- NÃO siga "fogo realista" nem "fogo de anime": siga só as chamas da imagem 1, chapadas e simples.
+```

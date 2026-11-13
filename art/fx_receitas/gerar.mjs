@@ -105,3 +105,71 @@ nova.palette = { ...GELO };
 for (const k of Object.keys(nova.effects)) if (k !== "area") delete nova.effects[k];
 salvar("nova_gelo.fx.json", aumentar(nova, 2.5));
 console.log("receitas novas: escudo, furia, raio, nova_gelo");
+
+// 6) Fogueira do acampamento (L37, 13/11): as chamas em laço sobre a lenha e as pedras da arte
+//    (game/assets/sprites/tiny/fogueira_base.png), com faíscas subindo de vez em quando. É a
+//    simulação de fogo do exemplo "campfire", sem a lenha desenhada (a lenha é a da arte; aqui
+//    ela só segura o fogo, invisível), nas cores do Tiny Swords e sem a fumaça cinza.
+const fogueira = ler("campfire.fluid.json");
+fogueira.name = "fogueira";
+fogueira.width = 40;
+fogueira.height = 56;
+// k, b e B só desenham os obstáculos invisíveis (a lenha e o chão).
+// As cores das chamas são as da fogueira desenhada (L12): vermelho, laranja, amarelo e creme.
+fogueira.palette = { R: "#cc5050", r: "#f6703e", y: "#ffdc00", W: "#f9f4a9", k: "#161c2e", b: "#5c3a2c", B: "#8a5a3c" };
+const ef = fogueira.effects.campfire;
+delete fogueira.effects.campfire;
+fogueira.effects.fogo = ef;
+ef.frames = 8;
+ef.duration = 110;
+ef.seed = 5;
+ef.dissipation = 0.09;
+ef.cooling = 0.26;
+ef.buoyancy = 0.6;
+ef.vorticity = 0.65;
+fogueira.symbols.lenha = [
+  "..kk........kk..",
+  ".kBBkk....kkBBk.",
+  "..kkbbBkkBbbkk..",
+  "....kkbbbbkk....",
+  "......kkkk......"
+];
+delete fogueira.symbols.logs;
+fogueira.symbols.ground = ["k".repeat(40), "k".repeat(40)];
+ef.obstacles = [{ symbol: "lenha", x: 12, y: 49, draw: "none" }, { symbol: "ground", x: 0, y: 54, draw: "none" }];
+ef.emitters[0].at = [20, 50];
+ef.emitters[0].radius = 7;
+ef.emitters[0].temperature = 1.1;
+ef.emitters[0].velocity = [0, -1.8];
+ef.emitters[1].at = [20, 38];
+ef.emitters[1].radius = 3;
+ef.emitters[1].sparks.count = 0.25;
+ef.emitters[1].sparks.life = [8, 16];
+ef.emitters[1].sparks.colors = ["W", "y", "y", "r"];
+ef.look = [{ field: "temperature", colors: ["R", "r", "y", "W"], thresholds: [0.3, 0.42, 0.64, 0.98], dither: 0 }];
+salvar("fogueira.fluid.json", fogueira);
+console.log("receita nova: fogueira");
+
+// 7) Faíscas da fogueira (L37): na comparação lado a lado, as chamas desenhadas pelo Codex
+//    (l37_chamas_v1) ficaram mais bonitas que as simuladas acima; o Pixelbolt fica com as
+//    faíscas, que sobem mais alto que as chamas, numa volta mais longa (24 quadros), para
+//    não parecerem repetidas. Só as faíscas: sem o fogo (temperatura zero, nada desenhado).
+const faiscas = JSON.parse(JSON.stringify(fogueira));
+faiscas.name = "faiscas";
+faiscas.height = 72;
+const fa = faiscas.effects.fogo;
+delete faiscas.effects.fogo;
+faiscas.effects.faiscas = fa;
+fa.frames = 24;
+fa.seed = 9;
+fa.obstacles = [];
+fa.emitters = [{
+  name: "faiscas",
+  at: [20, 58],
+  radius: 4,
+  rate: 1,
+  sparks: { count: 0.15, life: [10, 18], colors: ["W", "y", "y", "r"], trail: true, angle: [258, 282], speed: [2.2, 3.4], drag: 0.06 }
+}];
+fa.look = [{ field: "temperature", colors: ["r"], thresholds: [0.5], dither: 0 }];
+salvar("faiscas.fluid.json", faiscas);
+console.log("receita nova: faiscas");
