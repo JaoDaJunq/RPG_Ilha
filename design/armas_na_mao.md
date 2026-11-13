@@ -20,3 +20,9 @@
 4. Golpes especiais que precisem de pose própria (ex.: girar a espada no Giro) ganham quadros desenhados só para eles.
 
 Arte a pedir quando chegar a hora: espada, machado, picareta, arco, cajado (32×32 cada), e os pontos da mão em cada quadro do personagem.
+
+## Como ficou (L37, 13/11/2026)
+
+- **Arma própria na mão:** espada, cajado e maça têm um desenho só para a mão (`game/assets/sprites/tiny/itens/mao_*.png`), em ilustração do Codex pixelizada como os personagens (`pixelizar.gd --sem_sombra`), na diagonal com o cabo embaixo à esquerda. O ponto da mão é uma fração do caminho do pomo até a ponta (`Boneco.ARMAS_MAO`). Os ícones da barra continuam os de antes.
+- **Ladino com 2 adagas:** `maos.json` dos ladinos ganhou o campo `tras` (mão de trás nos 3 x 6 quadros, `marcar_maos.gd`, conferido em `evidence/maos/*_ladino_duas_maos.png`). De lado as duas apontam para a frente; de frente e de costas, a de trás é espelhada. Só a da frente gira no golpe.
+- **Arco:** uma tira de 4 quadros por vista (`arco_perfil/frente/costas.png`: repouso e 3 tempos, com a corda e a flecha desenhadas no arco). Mirando de lado, o personagem usa o quadro do braço esticado; de frente e de costas o arco sobe para o peito/ombro, e de costas fica por cima do corpo.

@@ -58,6 +58,24 @@ func _ready() -> void:
 	checar(inv.na_bancada, "usar a bancada posta libera a grade 3x3")
 
 	checar(w._lista_construcoes().size() == 4, "a lista para salvar tem as 4 peças (%d)" % w._lista_construcoes().size())
+
+	# Fogueira do acampamento (L37): pedras paradas, chamas e faíscas em laço, luz que tremula.
+	var fog := w.entidades.get_node("FogueiraAcampamento") as Construcao
+	checar(fog.chamas() != null and fog.chamas().is_playing() and fog.chamas().sprite_frames.get_frame_count(&"fogo") == Construcao.QUADROS_CHAMAS,
+		"a fogueira tem as chamas animadas (%d quadros)" % Construcao.QUADROS_CHAMAS)
+	var faiscas := fog.get_node_or_null("Faiscas") as AnimatedSprite2D
+	checar(faiscas != null and faiscas.is_playing(), "a fogueira solta faíscas")
+	w._aplicar_ciclo(true, true)
+	var luz: PointLight2D = null
+	for c in fog.get_children():
+		if c is PointLight2D:
+			luz = c
+	var energias := {}
+	for i in 6:
+		await esperar(0.05)
+		energias[snappedf(luz.energy, 0.001)] = true
+	checar(luz.enabled and energias.size() >= 3, "à noite a luz da fogueira acende e tremula (%d valores)" % energias.size())
+	w._aplicar_ciclo(false, true)
 	terminar()
 
 

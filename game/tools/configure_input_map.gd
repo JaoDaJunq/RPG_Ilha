@@ -26,7 +26,8 @@ const TECLAS := {
 	"esquivar": [KEY_SHIFT],  # o dash
 	"ficha": [KEY_C],
 	"alternar_noite": [KEY_N],
-	"alternar_som": [KEY_M],
+	"alternar_som": [KEY_P],
+	"mapa": [KEY_M],
 }
 
 const MOUSE := {

@@ -67,7 +67,7 @@ func _ready() -> void:
 	visual.play(animacao)
 	vida.maximo = dados.vida
 	vida.atual = vida.maximo
-	barra.definir_nivel(NIVEIS.get(especie, 1))
+	barra.definir_nivel(NIVEIS.get(especie, 1) + World.nivel_extra(self))
 	barra.ajustar_ao_sprite(visual)
 	if multiplayer.is_server():
 		# Dificuldade do mundo (os outros veem a vida pelos avisos de golpe, _piscar).

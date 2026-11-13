@@ -1,0 +1,127 @@
+{
+  "format": "pixelforge-fluid",
+  "version": 1,
+  "name": "fogueira",
+  "width": 40,
+  "height": 56,
+  "palette": {
+    "R": "#cc5050",
+    "r": "#f6703e",
+    "y": "#ffdc00",
+    "W": "#f9f4a9",
+    "k": "#161c2e",
+    "b": "#5c3a2c",
+    "B": "#8a5a3c"
+  },
+  "symbols": {
+    "ground": [
+      "kkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkk",
+      "kkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkk"
+    ],
+    "lenha": [
+      "..kk........kk..",
+      ".kBBkk....kkBBk.",
+      "..kkbbBkkBbbkk..",
+      "....kkbbbbkk....",
+      "......kkkk......"
+    ]
+  },
+  "effects": {
+    "fogo": {
+      "frames": 8,
+      "duration": 110,
+      "loop": true,
+      "seed": 5,
+      "walls": [
+        "bottom"
+      ],
+      "buoyancy": 0.6,
+      "vorticity": 0.65,
+      "dissipation": 0.09,
+      "cooling": 0.26,
+      "obstacles": [
+        {
+          "symbol": "lenha",
+          "x": 12,
+          "y": 49,
+          "draw": "none"
+        },
+        {
+          "symbol": "ground",
+          "x": 0,
+          "y": 54,
+          "draw": "none"
+        }
+      ],
+      "emitters": [
+        {
+          "name": "fire",
+          "at": [
+            20,
+            50
+          ],
+          "radius": 7,
+          "rate": 1,
+          "temperature": 1.1,
+          "density": 0.4,
+          "velocity": [
+            0,
+            -1.8
+          ],
+          "noise": 1.4,
+          "flicker": 0.6
+        },
+        {
+          "name": "embers",
+          "at": [
+            20,
+            38
+          ],
+          "radius": 3,
+          "rate": 1,
+          "sparks": {
+            "count": 0.25,
+            "life": [
+              8,
+              16
+            ],
+            "colors": [
+              "W",
+              "y",
+              "y",
+              "r"
+            ],
+            "trail": true,
+            "angle": [
+              250,
+              290
+            ],
+            "speed": [
+              0.3,
+              0.7
+            ],
+            "drag": 0.08
+          }
+        }
+      ],
+      "look": [
+        {
+          "field": "temperature",
+          "colors": [
+            "R",
+            "r",
+            "y",
+            "W"
+          ],
+          "thresholds": [
+            0.3,
+            0.42,
+            0.64,
+            0.98
+          ],
+          "dither": 0
+        }
+      ]
+    }
+  }
+}

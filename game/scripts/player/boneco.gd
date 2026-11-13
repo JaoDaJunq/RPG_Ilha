@@ -23,9 +23,35 @@ const TEMPO_GOLPE := 0.32
 ## O arco vai em pé na mão (L23): 4 quadros da corda (repouso e 3 de puxada) e a flecha.
 const ARCO := preload("res://assets/sprites/tiny/itens/arco_puxando.png")
 const FLECHA := preload("res://assets/sprites/tiny/itens/flecha_deitada.png")
-## Uma adaga por mão. O ícone do golpe furtivo já contém uma lâmina só.
-const ADAGA_MAO := preload("res://assets/sprites/tiny/icones/icone_golpe_furtivo.png")
+## Armas na mão (L37): desenho próprio, no estilo dos personagens (ilustração pixelizada com a
+## paleta e o contorno do pacote), em quadros de 64, na diagonal com o cabo embaixo à esquerda.
+## O 2º valor é onde fica a mão: a fração do caminho do canto de baixo à esquerda (0, o pomo) até
+## o de cima à direita (1, a ponta) do desenho. Item sem desenho próprio usa o ícone da barra.
+const ARMAS_MAO := {
+	&"espada_ferro": [preload("res://assets/sprites/tiny/itens/mao_espada.png"), 0.2],
+	&"cajado": [preload("res://assets/sprites/tiny/itens/mao_cajado.png"), 0.24],
+	&"maca": [preload("res://assets/sprites/tiny/itens/mao_maca.png"), 0.18],
+}
+## Uma adaga em cada mão do Ladino (L37): a de trás vai no ponto "tras" de maos.json.
+const ADAGA_MAO := preload("res://assets/sprites/tiny/itens/mao_adaga.png")
+const FRACAO_ADAGA := 0.22
 const QUADRO_ARCO := 64
+## Arco do sprite completo (L37): uma tira de 4 quadros de 64 por vista (repouso e 3 tempos da
+## puxada, com a corda e a flecha desenhadas no próprio arco). De perfil o arco fica em pé; de
+## frente e de costas, deitado, com a flecha para baixo ou para cima. Sem puxar, o arco vai em
+## pé (o repouso do perfil) em todas as vistas. PEGA_ARCO: a empunhadura em cada quadro.
+const ARCO_VISTAS := {
+	"": preload("res://assets/sprites/tiny/itens/arco_perfil.png"),
+	"_frente": preload("res://assets/sprites/tiny/itens/arco_frente.png"),
+	"_costas": preload("res://assets/sprites/tiny/itens/arco_costas.png"),
+}
+## Mirando de frente e de costas, o arco sai da mão (na cintura) e vai para o peito/ombro.
+const DESVIO_MIRA := {"_frente": Vector2(-6, -8), "_costas": Vector2(-10, -22)}
+const PEGA_ARCO := {
+	"": [Vector2(36, 32), Vector2(35, 32), Vector2(38, 32), Vector2(41, 32)],
+	"_frente": [Vector2(32, 49), Vector2(32, 49), Vector2(32, 49), Vector2(32, 50)],
+	"_costas": [Vector2(33, 37), Vector2(32, 36), Vector2(31, 35), Vector2(32, 31)],
+}
 
 var animation: StringName = &"parado_direita"
 ## Item da mão (id), definido pelo Player a cada quadro.
@@ -173,6 +199,7 @@ func _usar_vista(v: String) -> void:
 var _completo: Sprite2D
 var _tiras := {}  # vista ("", "_frente", "_costas") -> textura da tira de 6 quadros
 var _maos := {}  # vista -> Array de Vector2 (mão da frente em cada quadro)
+var _maos_tras := {}  # vista -> Array de Vector2 (mão de trás; sem "tras" em maos.json, a da frente)
 var _quadro := 0
 
 ## --- Caído (Player.caido) ---------------------------------------------------------------
@@ -200,6 +227,11 @@ func _montar_completo(pasta: String) -> void:
 		for p in j[par[1]]:
 			pontos.append(Vector2(p[0], p[1]))
 		_maos[par[0]] = pontos
+		var tras: Array[Vector2] = []
+		if j.has("tras"):
+			for p in j["tras"][par[1]]:
+				tras.append(Vector2(p[0], p[1]))
+		_maos_tras[par[0]] = tras if not tras.is_empty() else pontos
 	_item_tras = _sprite(null)
 	_completo = _sprite(_tiras[""])
 	_completo.region_enabled = true
@@ -261,8 +293,8 @@ func _animar_completo(delta: float) -> void:
 	if v != _vista:
 		_vista = v
 		_completo.texture = _tiras[v]
-		# De costas, a arma fica atrás do corpo; nas outras vistas, na frente.
-		move_child(_item, 0 if v == "_costas" else get_child_count() - 2)
+		# De costas, as armas ficam atrás do corpo; nas outras vistas, na frente.
+		move_child(_completo, get_child_count() - 1 if v == "_costas" else 0)
 	_dor = maxf(0.0, _dor - delta)
 	var giro := 0.0
 	if _golpe >= 0.0:
@@ -281,12 +313,14 @@ func _animar_completo(delta: float) -> void:
 	else:
 		_quadro = 1 if int(_tempo / TEMPO_RESPIRA) % 2 == 1 else 0
 	if item == &"arco" and carga >= 0.0:
-		_quadro = 0
+		# Mirando: de perfil, o braço esticado para a frente (quadro do ataque); senão, parado.
+		_quadro = 5 if _vista == "" else 0
 	_completo.region_rect = Rect2(_quadro * QUADRO_COMPLETO, 0, QUADRO_COMPLETO, QUADRO_COMPLETO)
 	var desvio := _desvio_dor()
 	_completo.position = desvio
 	var mao: Vector2 = _maos[_vista][_quadro] - PES_COMPLETO + desvio
-	_por_item_em(mao, mao, giro)
+	var mao_tras: Vector2 = _maos_tras[_vista][_quadro] - PES_COMPLETO + desvio
+	_por_item_em(mao, mao_tras, giro)
 
 
 ## Quadro mostrado agora (0 a 5) no sprite completo; -1 com o boneco por peças. Para os testes.
@@ -404,22 +438,19 @@ func _por_item_em(centro_mao: Vector2, centro_mao_tras: Vector2, giro: float) ->
 	_item.scale = Vector2.ONE * escala_item
 	_item_tras.scale = Vector2.ONE * escala_item
 	_flecha.scale = Vector2.ONE * escala_item
+	_item.flip_h = false
+	_item.z_index = 0
 	if item == &"adagas":
-		_item.texture = ADAGA_MAO
-		_item.region_enabled = false
-		var tam_adaga := ADAGA_MAO.get_size()
-		_item.offset = -Vector2(tam_adaga.x * 0.2, tam_adaga.y * 0.8).round()
-		_item.position = centro_mao
-		_item.rotation = giro
-		_item_tras.texture = ADAGA_MAO
-		_item_tras.region_enabled = false
-		_item_tras.flip_h = true
-		_item_tras.offset = -Vector2(tam_adaga.x * 0.8, tam_adaga.y * 0.8).round()
-		_item_tras.position = centro_mao_tras
-		_item_tras.rotation = -giro
+		# Uma em cada mão. De perfil as duas apontam para a frente; de frente e de costas, a
+		# de trás é o espelho da da frente (uma para cada lado). Só a da frente gira no golpe.
+		_por_arma(_item, ADAGA_MAO, FRACAO_ADAGA, centro_mao, giro, false)
+		_por_arma(_item_tras, ADAGA_MAO, FRACAO_ADAGA, centro_mao_tras, 0.0, _vista != "" and _completo != null)
 		return
 	if item == &"arco":
 		_por_arco(centro_mao, giro)
+		return
+	if ARMAS_MAO.has(item):
+		_por_arma(_item, ARMAS_MAO[item][0], ARMAS_MAO[item][1], centro_mao, giro, false)
 		return
 	_item.region_enabled = false
 	if _item.texture != dados.icone:
@@ -430,12 +461,40 @@ func _por_item_em(centro_mao: Vector2, centro_mao_tras: Vector2, giro: float) ->
 	_item.rotation = giro
 
 
+## Arma desenhada na diagonal (cabo embaixo à esquerda): o ponto a `fracao` do caminho do pomo
+## até a ponta fica no meio da mão. Espelhada, o cabo fica embaixo à direita.
+func _por_arma(s: Sprite2D, tex: Texture2D, fracao: float, centro_mao: Vector2, giro: float, espelhar: bool) -> void:
+	s.texture = tex
+	s.region_enabled = false
+	s.flip_h = espelhar
+	var r := _caixa(tex, 0)
+	var pega := Vector2(r.position.x + r.size.x * fracao, r.end.y - r.size.y * fracao).round()
+	if espelhar:
+		pega.x = tex.get_width() - pega.x
+	s.offset = -pega
+	s.position = centro_mao
+	s.rotation = -giro if espelhar else giro
+
+
 ## O arco fica em pé na mão da frente (barriga para a frente, corda para trás), com a
 ## empunhadura (lado da barriga, meia altura) no meio da mão. Puxando (carga de 0 a 1), a
 ## corda vai para trás em 3 quadros, a flecha aparece encaixada nela e a mão de trás segura
 ## a corda. De frente e de costas, só o arco.
 func _por_arco(centro_mao: Vector2, giro: float) -> void:
 	var q := 0 if carga < 0.0 else (1 if carga < 0.34 else (2 if carga < 0.67 else 3))
+	if _completo != null:
+		# Sprite completo (L37): a tira da vista, com a corda e a flecha no próprio desenho.
+		var v := _vista if carga >= 0.0 else ""
+		_item.texture = ARCO_VISTAS[v]
+		_item.region_enabled = true
+		_item.region_rect = Rect2(q * QUADRO_ARCO, 0, QUADRO_ARCO, QUADRO_ARCO)
+		_item.offset = -PEGA_ARCO[v][q]
+		_item.position = centro_mao + DESVIO_MIRA.get(v, Vector2.ZERO) if carga >= 0.0 else centro_mao
+		_item.rotation = 0.0 if carga >= 0.0 else giro * 0.4
+		# De costas, mirando, o arco sobe para a altura do ombro e fica POR CIMA do corpo (atrás
+		# dele quase não aparecia); a flecha passa acima da cabeça.
+		_item.z_index = 1 if carga >= 0.0 and v == "_costas" else 0
+		return
 	var caixa := _caixa(ARCO, q)
 	_item.texture = ARCO
 	_item.region_enabled = true

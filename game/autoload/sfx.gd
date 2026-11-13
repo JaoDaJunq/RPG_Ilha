@@ -1,5 +1,5 @@
 extends Node
-## Toca efeitos sonoros curtos e a música. M liga e desliga tudo.
+## Toca efeitos sonoros curtos e a música. P liga e desliga tudo (M é o mapa).
 
 const SONS := {
 	&"ataque": preload("res://assets/placeholder/ninja/audio/ataque.wav"),

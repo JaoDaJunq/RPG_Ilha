@@ -7,6 +7,10 @@ extends SceneTree
 ## O automático erra (o ogro tem a mão grande; no anão a barba esconde): conferir a imagem
 ## e corrigir o json à mão. Com o json já existente, a ferramenta só redesenha as marcas.
 ## Também salva evidence/maos/<nome>_<vista>.png (ampliada 4x, com a mão marcada) para conferir.
+## MÃO DE TRÁS (L37, para a 2ª adaga do Ladino): o campo "tras" = {"perfil": [...6], "frente": [...],
+## "costas": [...]}. É a ilha de pele do tamanho de uma mão MAIS LONGE da mão da frente, na faixa do corpo
+## (a mais longe da mão da frente). Se o json já existe sem "tras", só esse campo é acrescentado.
+## Na imagem de conferência, a mão da frente é magenta e a de trás, ciano.
 ## Uso: godot --headless --path game --script res://tools/marcar_maos.gd -- res://assets/sprites/tiny/personagens/humano_guerreiro
 const QUADRO := 128
 const VISTAS := ["perfil", "frente", "costas"]
@@ -26,6 +30,7 @@ func _marcar(pasta: String) -> void:
 	if FileAccess.file_exists(pasta + "/maos.json"):
 		existente = JSON.parse_string(FileAccess.get_file_as_string(pasta + "/maos.json"))
 	var saida := {}
+	var tras := {}
 	# Outras classes (L31): as poses copiam as do guerreiro da mesma raça. Parte da mão dele e
 	# procura a mão desenhada (ilha de pele) mais perto; a pele também vem do guerreiro.
 	var guia := {}
@@ -40,6 +45,7 @@ func _marcar(pasta: String) -> void:
 		# A pele vem da vista de frente (de costas não aparece o rosto).
 		var pele := _cores_de_pele(_abrir(pele_de))
 		var pontos := []
+		var pontos_tras := []
 		var conferir := Image.create(img.get_width() * 4, img.get_height() * 4, false, Image.FORMAT_RGBA8)
 		conferir.fill(Color(0.85, 0.85, 0.85))
 		for y in img.get_height():
@@ -51,14 +57,22 @@ func _marcar(pasta: String) -> void:
 			if existente.has(v):
 				p = Vector2i(int(existente[v][q][0]), int(existente[v][q][1]))
 			pontos.append([p.x, p.y])
+			var pt := _mao_tras(img, q, pele, p)
+			if existente.has("tras"):
+				pt = Vector2i(int(existente["tras"][v][q][0]), int(existente["tras"][v][q][1]))
+			pontos_tras.append([pt.x, pt.y])
 			conferir.fill_rect(Rect2i((q * QUADRO + p.x) * 4 - 6, p.y * 4 - 6, 12, 12), Color(1, 0, 1))
-			print("%s %s quadro %d: mão em %s" % [pasta.get_file(), v, q, p])
+			conferir.fill_rect(Rect2i((q * QUADRO + pt.x) * 4 - 6, pt.y * 4 - 6, 12, 12), Color(0, 1, 1))
+			print("%s %s quadro %d: mão em %s, mão de trás em %s" % [pasta.get_file(), v, q, p, pt])
 		saida[v] = pontos
+		tras[v] = pontos_tras
 		DirAccess.make_dir_recursive_absolute(ProjectSettings.globalize_path("res://../evidence/maos"))
 		conferir.save_png(ProjectSettings.globalize_path("res://../evidence/maos/%s_%s.png" % [pasta.get_file(), v]))
-	if existente.is_empty():
+	if existente.is_empty() or not existente.has("tras"):
+		var gravar := saida if existente.is_empty() else existente
+		gravar["tras"] = tras
 		var f := FileAccess.open(pasta + "/maos.json", FileAccess.WRITE)
-		f.store_string(JSON.stringify(saida))
+		f.store_string(JSON.stringify(gravar))
 
 
 ## As cores de pele: as do pixel no meio do rosto do 1º quadro e parecidas (a pele usa 2-3 tons).
@@ -172,5 +186,46 @@ func _mao_perto(img: Image, q: int, pele: Array[Color], alvo: Vector2i) -> Vecto
 			var c := soma / n - Vector2(q * QUADRO, 0)
 			if c.distance_to(Vector2(alvo)) < dist:
 				dist = c.distance_to(Vector2(alvo))
+				melhor = Vector2i(c.round())
+	return melhor
+
+
+## A mão de trás: a ilha de pele do tamanho de uma mão mais LONGE da mão da frente, na faixa
+## do corpo (abaixo do pescoço, acima dos pés). No golpe o braço da frente vai para trás e a
+## mão de trás pode ficar à direita, por isso a distância e não "a mais à esquerda".
+func _mao_tras(img: Image, q: int, pele: Array[Color], frente: Vector2i) -> Vector2i:
+	var usado := img.get_region(Rect2i(q * QUADRO, 0, QUADRO, QUADRO)).get_used_rect()
+	var y_min := usado.position.y + usado.size.y * 0.42
+	var y_max := 104.0  # os pés (sapatos claros, parecidos com pele) ficam em y 108 a 120
+	var visto := {}
+	var melhor := Vector2i(frente.x - 24, frente.y)
+	var melhor_d := 10.0
+	for y in range(int(y_min), int(y_max)):
+		for x in QUADRO:
+			var p := Vector2i(q * QUADRO + x, y)
+			if visto.has(p) or not _eh_pele(img.get_pixelv(p), pele):
+				continue
+			var fila: Array[Vector2i] = [p]
+			visto[p] = true
+			var soma := Vector2.ZERO
+			var n := 0
+			while not fila.is_empty():
+				var a: Vector2i = fila.pop_back()
+				soma += Vector2(a)
+				n += 1
+				for d in [Vector2i.LEFT, Vector2i.RIGHT, Vector2i.UP, Vector2i.DOWN]:
+					var b: Vector2i = a + d
+					if b.x < q * QUADRO or b.x >= (q + 1) * QUADRO or b.y < 0 or b.y >= QUADRO:
+						continue
+					if not visto.has(b) and _eh_pele(img.get_pixelv(b), pele):
+						visto[b] = true
+						fila.append(b)
+			if n < 12 or n > 260:
+				continue
+			var c := soma / n - Vector2(q * QUADRO, 0)
+			if c.y < y_min or c.y > y_max:
+				continue
+			if c.distance_to(Vector2(frente)) > melhor_d:
+				melhor_d = c.distance_to(Vector2(frente))
 				melhor = Vector2i(c.round())
 	return melhor

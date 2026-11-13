@@ -11,6 +11,7 @@
 - **Personagem:** criação ao entrar no mundo (raça, rosto, pele, classe). 4 raças (Humano, Ogro, Elfo, Anão) e 5 classes (Guerreiro, Mago, Arqueiro, Ladino, Clérigo), cada classe com 4 habilidades.
 - **Itens e fabricação:** inventário como no Minecraft, com bancada, baú e o auxílio de receitas. Construção (parede, porta, chão, tocha, fogueira) com peças que giram.
 - **Mundo:** animais com saque no chão, noite com slimes, dano com cabeçada, recuo e bordas vermelhas.
+- **Mundo maior (L36, etapa 1 de `design/proposta_mundo.md`):** ilha de 190 x 130 blocos com 6 regiões. Onde mexer: `world/gerador_ilha.gd` (formato, rio, regiões, trilhas), `world/decoracao_ilha.gd` (o que nasce em cada região), `world/regioes.gd` (nomes, perigo e tabelas de bichos de dia e de noite), `world/povoamento.gd` (spawn), `world/soneca.gd` (só ativo perto + rede por distância), `world/passagem.gd` (ponte e raízes), `ui/mapa.gd` (tecla M). Bicho novo: uma linha em `Povoamento.CRIATURAS` e nas tabelas de `Regioes.DADOS`.
 - **Multiplayer:** ENet, e o anfitrião decide tudo.
 
 O que mudou por último está no `git log`; as decisões, em `design/decisoes.md`.
