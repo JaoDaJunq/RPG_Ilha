@@ -2,16 +2,16 @@
 
 importer="texture"
 type="CompressedTexture2D"
-uid="uid://b7tjnc0hae14k"
-path="res://.godot/imported/fogueira_faiscas.png-d988c4a033775aec2f1ac34531003e40.ctex"
+uid="uid://ciwyha1kf0u8s"
+path="res://.godot/imported/emendas_pedacos.png-e1e2b837ef3e70a72ad43a12cb90bcd1.ctex"
 metadata={
 "vram_texture": false
 }
 
 [deps]
 
-source_file="res://assets/sprites/tiny/fx/fogueira_faiscas.png"
-dest_files=["res://.godot/imported/fogueira_faiscas.png-d988c4a033775aec2f1ac34531003e40.ctex"]
+source_file="res://assets/sprites/tiny/mundo/emendas_pedacos.png"
+dest_files=["res://.godot/imported/emendas_pedacos.png-e1e2b837ef3e70a72ad43a12cb90bcd1.ctex"]
 
 [params]
 

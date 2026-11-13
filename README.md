@@ -42,7 +42,7 @@ Co-op online de sobrevivência e exploração numa ilha de fantasia que reage ao
 - Bichos por região (`world/povoamento.gd`, tabelas em `world/regioes.gd`): cada região enche até o limite (que cresce com os jogadores) com os bichos dela, de dia e de noite; nascem fora da tela e longe da fogueira e de construções; morto volta depois de 2 minutos; longe do centro são mais fortes. Árvores e pedras crescem de novo (5 e 8 minutos).
 - Só fica ativo o que está perto (`world/soneca.gd`): bichos, árvores e a espuma longe de todos dormem, e a rede manda para cada jogador só os bichos e itens perto dele.
 - Mapa (M): a ilha de cima com as regiões, o acampamento e os jogadores; o que ainda não foi visto fica coberto e vai aparecendo ao andar (salvo com o mundo).
-- Acampamento com fogueira e barraca; a fogueira ilumina à noite.
+- Acampamento com fogueira (um desenho animado só, L41) e barraca; a fogueira ilumina à noite com a luz tremendo.
 - Mouse seleciona o objeto; a caixa em cima dele diz o que fazer e se está perto o bastante.
 - Segurar E corta árvore (3 golpes = 3 de madeira, vira toco) e minera pedra (4 golpes = 3 de pedra, some).
 - Bola de fogo (Mago): acerta slime (dano dobrado) e incendeia árvore; a árvore queimada rende **carvão** em vez de madeira.

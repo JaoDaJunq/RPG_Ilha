@@ -2,16 +2,16 @@
 
 importer="texture"
 type="CompressedTexture2D"
-uid="uid://cip4elagbcjll"
-path="res://.godot/imported/fogueira_base.png-602b844bdfa4d4befd48e06c0b197889.ctex"
+uid="uid://ybh5jnexfja"
+path="res://.godot/imported/textura_trilha.png-888e21d2983c82d343fb0c23f7928fd8.ctex"
 metadata={
 "vram_texture": false
 }
 
 [deps]
 
-source_file="res://assets/sprites/tiny/fogueira_base.png"
-dest_files=["res://.godot/imported/fogueira_base.png-602b844bdfa4d4befd48e06c0b197889.ctex"]
+source_file="res://assets/sprites/tiny/mundo/textura_trilha.png"
+dest_files=["res://.godot/imported/textura_trilha.png-888e21d2983c82d343fb0c23f7928fd8.ctex"]
 
 [params]
 

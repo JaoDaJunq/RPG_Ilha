@@ -2,16 +2,16 @@
 
 importer="texture"
 type="CompressedTexture2D"
-uid="uid://7lo5qq4e5u4t"
-path="res://.godot/imported/fogueira_chamas.png-b0875c23fb8b8aff31301be74c72392b.ctex"
+uid="uid://dqirqpgp1eu22"
+path="res://.godot/imported/emendas_tufos.png-e3d32294a5fe2fd4bb3106bf694fb198.ctex"
 metadata={
 "vram_texture": false
 }
 
 [deps]
 
-source_file="res://assets/sprites/tiny/fx/fogueira_chamas.png"
-dest_files=["res://.godot/imported/fogueira_chamas.png-b0875c23fb8b8aff31301be74c72392b.ctex"]
+source_file="res://assets/sprites/tiny/mundo/emendas_tufos.png"
+dest_files=["res://.godot/imported/emendas_tufos.png-e3d32294a5fe2fd4bb3106bf694fb198.ctex"]
 
 [params]
 
