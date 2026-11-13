@@ -34,7 +34,10 @@ func _ready() -> void:
 		terminar()
 		return
 	for r in PONTOS:
-		await _ir(p, PONTOS[r])
+		var cel: Vector2i = PONTOS[r]
+		if r == Regioes.Id.RUINAS:
+			cel = _perto_da_estatua(cel)
+		await _ir(p, cel)
 		checar(w.regiao_em(p.global_position) == r, "o jogador está em %s" % Regioes.nome(r))
 		await salvar_print("novidades/mundo_%s.png" % NOMES[r])
 	# As passagens (ponte e raízes).
@@ -69,6 +72,16 @@ func _ready() -> void:
 	p.camera.make_current()
 	await _medir_fps()
 	terminar()
+
+
+## Nas Ruínas, o print fica ao lado de uma estátua do guardião (se houver).
+func _perto_da_estatua(padrao: Vector2i) -> Vector2i:
+	for n in w.entidades.get_children():
+		if n is StaticBody2D and n.get_child_count() > 1:
+			var s := n.get_child(1) as Sprite2D
+			if s and s.texture and s.texture.resource_path.ends_with("ruinas_altas.png") and s.region_rect.position.x == 256 and w.regiao_em(n.global_position) == Regioes.Id.RUINAS:
+				return Vector2i(((n as Node2D).global_position / World.T).floor()) + Vector2i(-2, 2)
+	return padrao
 
 
 func _ir(p: Player, cel: Vector2i) -> void:

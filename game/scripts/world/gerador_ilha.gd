@@ -56,7 +56,7 @@ const CAMINHOS: Array = [
 	[Vector2(95, 65), Vector2(68, 67), Vector2(36, 68)],  # Pântano
 	[Vector2(36, 68), Vector2(48, 52), Vector2(54, 34), Vector2(57, 28)],  # até a ponte
 	[Vector2(66, 28), Vector2(80, 22), Vector2(96, 26), Vector2(112, 22), Vector2(140, 18)],  # Colinas → Ruínas
-	[Vector2(95, 65), Vector2(108, 54), Vector2(118, 47)],  # até o vau
+	[Vector2(95, 65), Vector2(108, 54), Vector2(118, 47), Vector2(118, 40)],  # até o vau e por ele
 	[Vector2(118, 40), Vector2(124, 32), Vector2(140, 18)],  # do vau às Ruínas
 ]
 
