@@ -1058,7 +1058,7 @@ func _process(delta: float) -> void:
 	if eh_local():
 		carga_arco = conjuracao.puxada()
 		_tremer(delta)
-	visual.item = item_mao
+	visual.item = UsoItens.visual_mao(item_mao)  # armas de cobre e ferro: o desenho da base
 	visual.carga = carga_arco
 
 
@@ -1288,6 +1288,8 @@ func _pedir_usar(espaco: int) -> void:
 	if not ItemData.existe(id):
 		return
 	var dados := ItemData.carregar(id)
+	if UsoItens.usar(self, espaco, dados):  # poções de mana e resistência, vara de pescar (L39)
+		return
 	if dados.cura > 0.0:
 		if vida.atual >= vida.maximo:
 			# Vida cheia: dá a comida ao aliado ferido mais perto (Luz própria: cura +50%).

@@ -18,17 +18,39 @@ extends Node
 const SLIME := preload("res://scenes/enemies/slime.tscn")
 const ATIRADOR := preload("res://scenes/enemies/atirador.tscn")
 const ANIMAL := preload("res://scenes/animals/animal.tscn")
+const BANDIDO := preload("res://scenes/enemies/bandido.tscn")
+const COGUMELO := preload("res://scenes/enemies/cogumelo.tscn")
+const MORCEGO := preload("res://scenes/enemies/morcego.tscn")
+const ESQUELETO := preload("res://scenes/enemies/esqueleto.tscn")
+const GOLEM := preload("res://scenes/enemies/golem.tscn")
 
-## tipo → [cena, espécie (animais) ou "", noturno]
+## tipo → [cena, espécie (animais e bandidos) ou "", noturno, {propriedade: valor} (opcional)]
 const CRIATURAS := {
 	"slime": [SLIME, "", false],
 	"slime_noite": [SLIME, "", true],
+	"slime_fogo": [SLIME, "", false, {elemento = &"fogo"}],
+	"slime_gelo": [SLIME, "", false, {elemento = &"gelo"}],
+	"slime_veneno": [SLIME, "", false, {elemento = &"veneno"}],
+	"slime_veneno_noite": [SLIME, "", true, {elemento = &"veneno"}],
 	"atirador": [ATIRADOR, "", false],
 	"atirador_noite": [ATIRADOR, "", true],
 	"galinha": [ANIMAL, "galinha", false],
 	"coelho": [ANIMAL, "coelho", false],
 	"javali": [ANIMAL, "javali", false],
 	"ovelha": [ANIMAL, "ovelha", false],
+	# Etapa 2 (L39)
+	"cervo": [ANIMAL, "cervo", false],
+	"caranguejo": [ANIMAL, "caranguejo", false],
+	"sapo": [ANIMAL, "sapo", false],
+	"cabra": [ANIMAL, "cabra", false],
+	"bandido_guerreiro": [BANDIDO, "guerreiro", false],
+	"bandido_lanceiro": [BANDIDO, "lanceiro", false],
+	"bandido_lanceiro_noite": [BANDIDO, "lanceiro", true],
+	"cogumelo": [COGUMELO, "", false],
+	"morcego_noite": [MORCEGO, "", true],
+	"esqueleto": [ESQUELETO, "", false],
+	"esqueleto_noite": [ESQUELETO, "", true],
+	"golem": [GOLEM, "", false],
 }
 
 ## A cada quanto tempo tenta fazer nascer (um por região por vez).
@@ -128,6 +150,10 @@ func criar(tipo: String, pos: Vector2, r: int, da_noite := false) -> Node2D:
 		n.set(&"especie", StringName(d[1]))
 	if d[2]:
 		n.set(&"noturno", true)
+	if d.size() > 3:
+		for prop in d[3]:
+			n.set(prop, d[3][prop])
+	n.set_meta(&"tipo", tipo)
 	n.position = pos
 	n.set_meta(&"regiao", r)
 	n.set_meta(&"da_noite", da_noite)

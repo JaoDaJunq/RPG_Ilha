@@ -15,7 +15,23 @@ const ESPECIES := {
 	&"coelho": {vida = 2.0, vel = 42.0, quadros = [2, 3], saque = [[&"carne_crua", 1, 1], [&"couro", 0, 1]]},
 	&"javali": {vida = 7.0, vel = 30.0, quadros = [4, 5], saque = [[&"carne_crua", 2, 3], [&"couro", 1, 2]], bravo = true},
 	&"ovelha": {vida = 4.0, vel = 20.0, saque = [[&"carne_crua", 2, 2], [&"couro", 1, 1]]},
+	# Etapa 2 (L39): folha própria de 6 quadros de 128 (ilustração pixelizada).
+	# cervo: foge de longe e corre muito (0 parado, 1-2 passos, 3 alerta, 4 correndo, 5 dor)
+	&"cervo": {vida = 6.0, vel = 30.0, folha = "cervo", arisco = 70.0, fuga = 2.8, saque = [[&"carne_crua", 1, 2], [&"couro", 1, 2]]},
+	# caranguejo: anda de lado; belisca quem bate nele ou fica em cima dele (3 pinças abertas, 4 beliscão)
+	&"caranguejo": {vida = 4.0, vel = 16.0, folha = "caranguejo", bravo = true, dano = 6.0, de_lado = true, saque = [[&"carne_crua", 1, 1], [&"pinca_caranguejo", 1, 1], [&"concha", 0, 1]]},
+	# sapo: anda pulando (1 agachado, 2 no ar, 3 coaxando, 4 aterrissando)
+	&"sapo": {vida = 2.5, vel = 26.0, folha = "sapo", pula = true, saque = [[&"carne_sapo", 1, 2]]},
+	# cabra: dá cabeçada em quem bate (3 cabeça baixa, 4 cabeçada)
+	&"cabra": {vida = 6.0, vel = 22.0, folha = "cabra", bravo = true, dano = 8.0, saque = [[&"carne_crua", 1, 2], [&"la", 1, 2], [&"leite", 0, 1]]},
 }
+const PASTA_FOLHAS := "res://assets/sprites/tiny/animais/"
+## Sapo: tempos do pulo (agachado, no ar) e a velocidade no ar (vezes `vel`).
+const PULO_AGACHA := 0.18
+const PULO_AR := 0.34
+const PULO_VEL := 2.6
+## Caranguejo: quanto tempo alguém pode ficar em cima dele antes do beliscão.
+const TEMPO_EM_CIMA := 0.8
 const DANO_JAVALI := 10.0
 ## Depois da cabeçada o javali quica DIST_RECUO px para trás em TEMPO_RECUO s e para por
 ## PAUSA_CABECADA s antes de investir de novo.
@@ -23,7 +39,7 @@ const DIST_RECUO := 12.0
 const TEMPO_RECUO := 0.2
 const PAUSA_CABECADA := 1.0
 ## Nível mostrado em cima da cabeça de cada espécie.
-const NIVEIS := {&"galinha": 1, &"coelho": 1, &"ovelha": 1, &"javali": 2}
+const NIVEIS := {&"galinha": 1, &"coelho": 1, &"ovelha": 1, &"javali": 2, &"cervo": 2, &"caranguejo": 2, &"sapo": 1, &"cabra": 2}
 
 @export var especie: StringName = &"galinha"
 @export var animacao: StringName = &"parado"
@@ -53,7 +69,19 @@ func _ready() -> void:
 	var dados: Dictionary = ESPECIES[especie]
 	var f := SpriteFrames.new()
 	f.remove_animation(&"default")
-	if especie == &"ovelha":
+	if dados.has("folha"):
+		var tex: Texture2D = load(PASTA_FOLHAS + String(dados.folha) + ".png")
+		var t := Vector2i(128, 128)
+		Criatura.anim(f, &"parado", tex, t, [0], 1.0)
+		Criatura.anim(f, &"andar", tex, t, [1, 0, 2, 0], 7.0)
+		Criatura.anim(f, &"correr", tex, t, [4, 1, 4, 2] if especie == &"cervo" else [1, 0, 2, 0], 10.0)
+		Criatura.anim(f, &"preparo", tex, t, [3], 1.0)  # cervo: alerta; sapo: coaxando
+		Criatura.anim(f, &"ataque", tex, t, [4], 1.0)
+		Criatura.anim(f, &"dor", tex, t, [5], 1.0)
+		Criatura.anim(f, &"agachado", tex, t, [1], 1.0)
+		Criatura.anim(f, &"no_ar", tex, t, [2], 1.0)
+		visual.offset = Vector2(0, -56)
+	elif especie == &"ovelha":
 		SpriteSheets.adicionar_tira(f, OVELHA_PARADA, &"parado", Vector2i(128, 128), 6, 6.0)
 		SpriteSheets.adicionar_tira(f, OVELHA_ANDANDO, &"andar", Vector2i(128, 128), 4, 8.0)
 		visual.offset = Vector2(0, -24)  # os pés da ovelha do pacote
@@ -127,6 +155,8 @@ func _physics_process(delta: float) -> void:
 	if provocador:
 		_de_quem = provocador
 		_assustado = maxf(_assustado, 0.5)
+	_anim_forcada_t = maxf(0.0, _anim_forcada_t - delta)
+	_perceber_jogadores(dados, delta)
 	# Bomba de fumaça: quem some de vista deixa de ser perseguido (ou de assustar o bicho).
 	if _assustado > 0.0 and is_instance_valid(_de_quem) and _de_quem is Player and ((_de_quem as Player).escondido() or (_de_quem as Player).caido):
 		_assustado = 0.0
@@ -145,11 +175,13 @@ func _physics_process(delta: float) -> void:
 				rapidez = DIST_RECUO / TEMPO_RECUO
 			elif _recarga > 0.0:
 				olhando_esquerda = para.x < 0.0  # parado, de olho em quem vai acertar
+				_forcar_anim(&"preparo", 0.05)
 			else:
 				dir = para.normalized()  # o javali investe
 				rapidez *= 1.6
 				if para.length() < 14.0 and efeitos.pode_atacar():
 					_recarga = TEMPO_RECUO + PAUSA_CABECADA
+					_forcar_anim(&"ataque", 0.3)
 					if _cabecada(_de_quem):
 						_dir_recuo = -para.normalized() if para.length() > 0.1 else -dir
 						_recuo = TEMPO_RECUO
@@ -157,13 +189,17 @@ func _physics_process(delta: float) -> void:
 			dir = para.normalized() if para.length() > 12.0 else Vector2.ZERO
 		else:
 			dir = -para.normalized()  # os outros fogem
-			rapidez *= 2.0
+			rapidez *= float(dados.get("fuga", 2.0))
 	else:
 		# Passeia: anda até um ponto perto de casa, para um pouco e escolhe outro.
 		if _destino == Vector2.INF or global_position.distance_to(_destino) < 4.0:
 			if _tempo > 2.5:
 				_tempo = 0.0
-				_destino = _casa + Vector2(randf_range(-48, 48), randf_range(-48, 48))
+				# O caranguejo anda de lado (quase só na horizontal).
+				var dy := 8.0 if dados.get("de_lado", false) else 48.0
+				_destino = _casa + Vector2(randf_range(-48, 48), randf_range(-dy, dy))
+			elif dados.get("pula", false) and randf() < delta * 0.4:
+				_forcar_anim(&"preparo", 0.8)  # o sapo coaxa parado
 		elif _tempo > 6.0:
 			_destino = Vector2.INF
 		else:
@@ -171,11 +207,75 @@ func _physics_process(delta: float) -> void:
 	rapidez *= efeitos.mult_velocidade()  # Lentidão; 0 se congelado, preso, atordoado...
 	if rapidez <= 0.0:
 		dir = Vector2.ZERO
+	var anim_pulo: StringName = &""
+	if dados.get("pula", false) and dir != Vector2.ZERO:
+		# O sapo anda pulando: agacha, salta (só anda no ar) e descansa um pouco.
+		var descanso := 0.25 if _assustado > 0.0 else 0.9
+		_pulo += delta
+		if _pulo < PULO_AGACHA:
+			anim_pulo = &"agachado"
+			dir = Vector2.ZERO
+		elif _pulo < PULO_AGACHA + PULO_AR:
+			anim_pulo = &"no_ar"
+			rapidez *= PULO_VEL
+		else:
+			anim_pulo = &"parado"
+			if dir.x != 0.0:
+				olhando_esquerda = dir.x < 0.0
+			dir = Vector2.ZERO
+			if _pulo > PULO_AGACHA + PULO_AR + descanso:
+				_pulo = 0.0
 	if dir.x != 0.0 and not recuando:  # recuando, continua de frente para quem acertou
 		olhando_esquerda = dir.x < 0.0
-	animacao = &"andar" if dir != Vector2.ZERO else &"parado"
+	var correndo: bool = rapidez > float(dados.vel) * 1.5 and _assustado > 0.0 and not dados.get("bravo", false)
+	if _anim_forcada_t > 0.0:
+		animacao = _anim_forcada
+	elif anim_pulo != &"":
+		animacao = anim_pulo
+	elif dir != Vector2.ZERO:
+		animacao = &"correr" if correndo and dados.has("folha") else &"andar"
+	else:
+		animacao = &"parado"
 	velocity = dir * rapidez + efeitos.impulso()
 	move_and_slide()
+
+
+## Etapa 2: o cervo arisco foge de quem chega perto (sem precisar apanhar); o caranguejo
+## belisca quem fica em cima dele.
+func _perceber_jogadores(dados: Dictionary, delta: float) -> void:
+	var arisco := float(dados.get("arisco", 0.0))
+	var de_lado: bool = dados.get("de_lado", false)
+	if arisco <= 0.0 and not de_lado:
+		return
+	var em_cima := false
+	for j in get_tree().get_nodes_in_group(&"jogadores"):
+		var p := j as Player
+		if p == null or p.escondido() or p.caido:
+			continue
+		var d := p.global_position.distance_to(global_position)
+		if arisco > 0.0 and d < arisco * p.fator_visao() and _assustado <= 0.0:
+			_de_quem = p
+			_assustado = 3.0
+			_forcar_anim(&"preparo", 0.25)  # alerta: ergue a cabeça e dispara
+		if de_lado and d < 10.0:
+			em_cima = true
+			if _em_cima_t + delta >= TEMPO_EM_CIMA and _assustado <= 0.0:
+				_de_quem = p
+				_assustado = 2.0
+	_em_cima_t = _em_cima_t + delta if em_cima else 0.0
+
+
+func _forcar_anim(nome: StringName, segundos: float) -> void:
+	if not visual.sprite_frames.has_animation(nome):
+		return  # os bichos antigos só têm parado e andar
+	_anim_forcada = nome
+	_anim_forcada_t = maxf(_anim_forcada_t, segundos) if _anim_forcada == nome else segundos
+
+
+var _anim_forcada: StringName = &""
+var _anim_forcada_t := 0.0
+var _em_cima_t := 0.0
+var _pulo := 0.0
 
 
 ## A cabeçada do javali em `alvo` (jogador ou invocação). Cego pode errar. Devolve se machucou.
@@ -184,7 +284,8 @@ func _cabecada(alvo: Node2D) -> bool:
 		World.efeito_todos(self, &"poeira", alvo.global_position)
 		return false
 	var v := alvo.get_node_or_null("HealthComponent") as HealthComponent
-	if v == null or not v.tomar_dano(Passivas.ataque_inimigo(self, alvo, DANO_JAVALI), &"fisico"):
+	var forca: float = ESPECIES[especie].get("dano", DANO_JAVALI)
+	if v == null or not v.tomar_dano(Passivas.ataque_inimigo(self, alvo, forca), &"fisico"):
 		return false
 	if alvo is Player:
 		(alvo as Player).reagir_ao_golpe(global_position)
@@ -196,6 +297,7 @@ func _on_atingido(quantidade: float, tipo: StringName, origem: Node) -> void:
 		_de_quem = origem
 		_assustado = 4.0
 	if vida.tomar_dano(quantidade, tipo):
+		_forcar_anim(&"dor", 0.25)
 		_piscar.rpc(vida.atual)
 
 

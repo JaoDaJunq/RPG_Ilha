@@ -36,7 +36,10 @@ const CANTO_FAISCAS := Vector2(-20, -93)
 const TREMOR_LUZ := 0.12
 static var _quadros_chamas: SpriteFrames
 ## Golpes para quebrar cada peça.
-const GOLPES := {&"parede": 4, &"porta": 3, &"chao": 2, &"tocha": 1, &"fogueira": 2, &"bau": 3, &"bancada": 3}
+const GOLPES := {&"parede": 4, &"porta": 3, &"chao": 2, &"tocha": 1, &"fogueira": 2, &"bau": 3, &"bancada": 3, &"fornalha": 4}
+## Fornalha (L39 folha 11): quadro 0 apagada, 1 acesa. Fica acesa um tempinho a cada uso.
+const FORNALHA := preload("res://assets/sprites/tiny/mundo/fornalha_plantas.png")
+const TEMPO_ACESA := 3.0
 ## Camada só das portas: os slimes batem nela, os jogadores não.
 const CAMADA_PORTA := 1 << 6
 
@@ -91,6 +94,11 @@ func _ready() -> void:
 			_mostrar_acampamento(4)
 			_colisao(Vector2(24, 8), 1)
 			add_to_group(&"bancadas")
+			_area_de_uso()
+		&"fornalha":
+			_mostrar_fornalha(false)
+			_colisao(Vector2(22, 8), 1)
+			add_to_group(&"fornalhas")
 			_area_de_uso()
 	_hurtbox()
 
@@ -201,11 +209,11 @@ func _area_de_uso() -> void:
 # --- Bancada (Interactable) --------------------------------------------------------
 
 func pode_interagir() -> bool:
-	return tipo in [&"bancada", &"bau", &"fogueira"]
+	return tipo in [&"bancada", &"bau", &"fogueira", &"fornalha"]
 
 
 func texto_acao() -> String:
-	return {&"bau": "Abrir baú", &"fogueira": "Assar carne"}.get(tipo, "Usar bancada")
+	return {&"bau": "Abrir baú", &"fogueira": "Assar", &"fornalha": "Derreter / assar"}.get(tipo, "Usar bancada")
 
 
 func destacar(ligado: bool) -> void:
@@ -222,14 +230,11 @@ func interagir(quem: Player) -> void:
 		quem.inventario.reenviar()
 		quem.abrir_mochila.rpc_id(quem.get_multiplayer_authority(), &"bancada")
 	elif tipo == &"fogueira":
-		# Assar: a carne crua da mão vira carne assada (uma por clique).
-		var i := quem.barra_escolhida
-		if quem.inventario.item_em(i) == &"carne_crua":
-			quem.inventario.gastar(i, 1)
-			quem.inventario.adicionar(&"carne_assada", 1)
-			quem.avisar("+1 carne assada", &"item")
-		else:
-			quem.avisar("Clique na fogueira com carne crua na mão para assar.")
+		# Assar: o que está cru na mão (carne, peixe, coxa de sapo) fica pronto, um por clique.
+		if not _assar(quem):
+			quem.avisar("Clique na fogueira com carne crua, peixe ou carne de sapo na mão para assar.")
+	elif tipo == &"fornalha":
+		_usar_fornalha(quem)
 	elif tipo == &"bau":
 		if quem.inventario.abrir_bau(self):
 			quem.abrir_mochila.rpc_id(quem.get_multiplayer_authority(), &"bau")
@@ -237,11 +242,80 @@ func interagir(quem: Player) -> void:
 			quem.avisar("Outro jogador está com este baú aberto.")
 
 
+# --- Assar e fornalha (L39) ----------------------------------------------------------
+
+## O cru da mão vira cozido (UsoItens.COZINHAR). Devolve se assou.
+func _assar(quem: Player) -> bool:
+	var i := quem.barra_escolhida
+	var pronto := UsoItens.cozido(quem.inventario.item_em(i))
+	if pronto == &"":
+		return false
+	quem.inventario.gastar(i, 1)
+	quem.inventario.adicionar(pronto, 1)
+	quem.avisar("+1 %s" % ItemData.carregar(pronto).nome.to_lower(), &"item")
+	return true
+
+
+## Fornalha: minério na mão vira barra (gasta 1 carvão, madeira ou graveto da mochila);
+## comida crua na mão fica pronta (sem gastar nada). Só o anfitrião chama.
+func _usar_fornalha(quem: Player) -> void:
+	var i := quem.barra_escolhida
+	var na_mao := quem.inventario.item_em(i)
+	if UsoItens.DERRETER.has(na_mao):
+		var lenha: StringName = &""
+		for c in UsoItens.COMBUSTIVEIS:
+			if quem.inventario.quantidade_de(c) > 0:
+				lenha = c
+				break
+		if lenha == &"":
+			quem.avisar("A fornalha precisa de carvão, madeira ou graveto na mochila.")
+			return
+		quem.inventario.gastar(i, 1)
+		quem.inventario.remover(lenha, 1)
+		var barra: StringName = UsoItens.DERRETER[na_mao]
+		quem.inventario.adicionar(barra, 1)
+		quem.ganhar_xp(2)
+		quem.avisar("+1 %s" % ItemData.carregar(barra).nome.to_lower(), &"item")
+		_acender.rpc()
+	elif _assar(quem):
+		_acender.rpc()
+	else:
+		quem.avisar("Clique na fornalha com minério na mão (e carvão ou madeira na mochila) para fazer barras. Ela também assa comida.")
+
+
+var _acesa_por := 0.0
+
+
+func _mostrar_fornalha(acesa: bool) -> void:
+	_sprite.texture = FORNALHA
+	_sprite.region_enabled = true
+	_sprite.region_rect = Rect2((1 if acesa else 0) * 128, 0, 128, 128)
+	_sprite.offset = Vector2(-64, -128 + 8)
+
+
+## Todos veem a fornalha acesa um tempinho.
+@rpc("authority", "call_local", "reliable")
+func _acender() -> void:
+	_acesa_por = TEMPO_ACESA
+	_mostrar_fornalha(true)
+	Sfx.tocar(&"fogo", -8.0)
+
+
+func acesa() -> bool:
+	return _acesa_por > 0.0
+
+
 # --- Porta e quebrar ---------------------------------------------------------------
 
 func _process(delta: float) -> void:
 	if tipo == &"fogueira":
 		_tremer_luz(delta)
+		return
+	if tipo == &"fornalha":
+		if _acesa_por > 0.0:
+			_acesa_por -= delta
+			if _acesa_por <= 0.0:
+				_mostrar_fornalha(false)
 		return
 	if tipo != &"porta":
 		return

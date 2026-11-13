@@ -11,7 +11,8 @@ func executar(_quem: Player, _hab: HabilidadeData, _dir: Vector2, _alvo: Vector2
 ## Dano já com o multiplicador do atributo certo, as melhorias da árvore e a Ressonância.
 static func dano_de(quem: Player, hab: HabilidadeData, base := -1.0) -> float:
 	var bonus := quem.bonus_dano_fisico() if hab.elemento == &"fisico" else 1.0
-	return (hab.dano if base < 0.0 else base) * quem.ficha.multiplicador(hab.elemento) * bonus * quem.mult_habilidade(hab)
+	# Arma de classe de cobre ou ferro na barra (L39): +20% ou +40%.
+	return (hab.dano if base < 0.0 else base) * quem.ficha.multiplicador(hab.elemento) * bonus * quem.mult_habilidade(hab) * UsoItens.bonus_arma(quem)
 
 
 ## Acerta todas as áreas atingíveis num círculo (menos o próprio jogador).

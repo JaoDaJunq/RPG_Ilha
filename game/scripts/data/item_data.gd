@@ -19,6 +19,16 @@ extends Resource
 @export var equipa: StringName = &""
 ## Consumível: quanto de vida recupera ao usar (botão direito com ele na mão).
 @export var cura := 0.0
+## Poção de mana: quanto de mana devolve ao usar (L39).
+@export var mana := 0.0
+## Poção de resistência: fração do dano a menos (0,3 = 30%) por `segundos_efeito`.
+@export var resistencia := 0.0
+@export var segundos_efeito := 0.0
+## Arma de classe (L39): de qual classe ela é (&"guerreiro", &"mago"...), quanto multiplica o
+## dano das habilidades e qual desenho vai na mão (a arma base: &"arco", &"cajado"...).
+@export var arma_de: StringName = &""
+@export var bonus_arma := 1.0
+@export var visual_mao: StringName = &""
 
 const PASTA := "res://data/items/"
 
