@@ -33,7 +33,7 @@ func _configurar() -> void:
 		raio_visao = 130.0
 		nivel = 3
 		xp = 22
-		saque = [[&"couro", 0, 1], [&"minerio_ferro", 1, 1, 0.35], [&"corda", 1, 1, 0.3], [BauTrancado.CHAVE, 1, 1, BauTrancado.CHANCE_CHAVE]]
+		saque = [[&"couro", 1, 1], [&"minerio_ferro", 1, 1, 0.35], [&"corda", 1, 1, 0.3], [BauTrancado.CHAVE, 1, 1, BauTrancado.CHANCE_CHAVE]]
 	else:
 		nome = "Bandido guerreiro"
 		vida_base = 14.0
@@ -42,7 +42,7 @@ func _configurar() -> void:
 		raio_visao = 120.0
 		nivel = 3
 		xp = 20
-		saque = [[&"couro", 0, 1], [&"carvao", 0, 2], [&"barra_cobre", 1, 1, 0.3], [BauTrancado.CHAVE, 1, 1, BauTrancado.CHANCE_CHAVE]]
+		saque = [[&"couro", 0, 1], [&"carvao", 1, 2], [&"barra_cobre", 1, 1, 0.3], [BauTrancado.CHAVE, 1, 1, BauTrancado.CHANCE_CHAVE]]
 
 
 func _montar_animacoes(f: SpriteFrames) -> void:
