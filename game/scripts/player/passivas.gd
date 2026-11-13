@@ -43,7 +43,6 @@ const HABILIDADES_ENGENHOSO: Array[StringName] = [&"armadilha", &"bomba"]
 # --- Ladino --------------------------------------------------------------------------
 const PELAS_COSTAS := 1.5
 const PASSOS_DE_GATO := 0.7  # os inimigos só notam a 70% da distância
-const EMBOSCADA := 2.0
 const EMBOSCADA_JANELA_MS := 1000  # depois que a fumaça acaba
 const EXECUCAO := 2.0
 const EXECUCAO_VIDA := 0.3
@@ -66,6 +65,16 @@ const FOGO_SAGRADO := 1.5
 const JULGAMENTO := 1.15
 const JULGAMENTO_MS := 5000
 const LUZ_PROPRIA_RAIO := 40.0
+
+# --- Acerto crítico (todas as classes) --------------------------------------------------
+## Chance de todo golpe ou habilidade num inimigo ou animal ser crítico, e quanto ele dá.
+## Também são críticos: o 1º golpe depois da fumaça (Emboscada), o golpe depois de uma
+## Esquiva perfeita e o Tiro carregado com a carga cheia (forcar_critico).
+const CHANCE_CRITICO := 0.05
+const CRITICO := 2.0
+## -1 = o padrão (CHANCE_CRITICO no jogo; 0 nas cenas de teste, para os números de dano
+## serem exatos). Os testes do crítico mudam este valor.
+static var chance_critico := -1.0
 
 
 # --- Dano que o jogador causa (anfitrião) ---------------------------------------------
@@ -93,13 +102,47 @@ static func dano_causado(p: Player, quantidade: float, tipo: StringName, alvo: N
 				a.set_meta(&"julgado_ate_ms", Time.get_ticks_msec() + JULGAMENTO_MS)
 		if tipo == &"fisico" and p.tem(&"estilhacar") and a.has_method(&"congelado") and a.congelado():
 			_estilhacar(p, a, quantidade * m)
-	if p.consumir_emboscada():
-		m *= EMBOSCADA
+	if a and (a.is_in_group(&"inimigos") or a.is_in_group(&"animais")) and _critico(p):
+		m *= CRITICO
+		critou(p, a)
 	m *= p.buffs.mult(&"dano")
 	m *= PassivasGuerreiro.dano_causado(p, quantidade, tipo, alvo) * PassivasMago.dano_causado(p, quantidade, tipo, alvo) \
 			* PassivasArqueiro.dano_causado(p, quantidade, tipo, alvo) * PassivasLadino.dano_causado(p, quantidade, tipo, alvo) \
 			* PassivasClerigo.dano_causado(p, quantidade, tipo, alvo)
 	return quantidade * m
+
+
+## Este acerto é crítico? (consome o crítico garantido: Emboscada, Esquiva perfeita, Tiro
+## carregado cheio). Anfitrião.
+static func _critico(p: Player) -> bool:
+	var garantido := p.consumir_emboscada()
+	if p.get_meta(&"critico_pronto", false):
+		p.set_meta(&"critico_pronto", false)
+		garantido = true
+	return garantido or randf() < _chance_critico(p)
+
+
+static func _chance_critico(p: Player) -> float:
+	if chance_critico >= 0.0:
+		return chance_critico
+	var cena := p.get_tree().current_scene if p.is_inside_tree() else null
+	if cena and cena.scene_file_path.begins_with("res://tests/"):
+		return 0.0
+	return CHANCE_CRITICO
+
+
+## O próximo acerto de `p` num inimigo ou animal é crítico (anfitrião).
+static func forcar_critico(p: Player) -> void:
+	p.set_meta(&"critico_pronto", true)
+
+
+## `p` acabou de dar um crítico em `alvo`: o brilho do acerto para todos e as passivas
+## (Sangue frio). Anfitrião.
+static func critou(p: Player, alvo: Node2D) -> void:
+	p.set_meta(&"ultimo_critico_ms", Time.get_ticks_msec())
+	p.set_meta(&"criticos", int(p.get_meta(&"criticos", 0)) + 1)
+	World.efeito_todos(p, &"giro", alvo.global_position + Vector2(0, -8))
+	PassivasArqueiro.critou(p, alvo)
 
 
 ## Depois que um golpe ou habilidade do jogador acertou `alvo` (Hurtbox; anfitrião).
@@ -171,6 +214,8 @@ static func derrotou(p: Player, alvo: Node) -> void:
 		var extra: StringName = &""
 		if a is Slime:
 			extra = &"gel_slime"
+		elif a is Atirador:
+			extra = &"pena"
 		elif a is Animal:
 			extra = Animal.ESPECIES[(a as Animal).especie].saque[0][0]
 		if extra != &"":

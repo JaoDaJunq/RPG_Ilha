@@ -7,7 +7,7 @@
 script = ExtResource("1_script")
 id = &"amanhecer"
 nome = "Amanhecer"
-descricao = "Suprema. Por 10 s, a área em volta de você vira dia: a sua luz cresce, os slimes da noite fogem dela e os que ficam dentro derretem."
+descricao = "Suprema. Por 10 s, a área em volta de você vira dia: a sua luz cresce, os slimes da noite fogem dela e os que ficam dentro derretem; os aliados na luz recuperam vida."
 icone = ExtResource("2_icone")
 modo = 1
 custo_mana = 25.0

@@ -14,7 +14,7 @@ const DADOS := {
 	passivas = [
 		[&"fluxo_arcano", "Fluxo arcano", "A mana volta 25% mais rápido.", "espirito", ""],
 		[&"ressonancia", "Ressonância", "Usar um elemento diferente do último dá +15% de dano.", "intelecto", ""],
-		[&"faisca", "Faísca", "À noite, o mago brilha: a luz dele fica maior e afasta os slimes da noite de perto (1,5 bloco).", "intelecto", ""],
+		[&"faisca", "Faísca", "Fabrica fogueira e tocha sem gastar graveto; à noite, o mago brilha: a luz dele fica maior e afasta os slimes da noite de perto (1,5 bloco).", "intelecto", ""],
 	],
 	iniciais = [
 		[&"bola_de_fogo", "Bola de fogo", "Projétil de fogo (acende árvores).", "", "", [&"fogo"]],
@@ -41,7 +41,7 @@ const DADOS := {
 			[&"nevasca", "Nevasca", "Suprema. Área grande por 6 s; quem fica dentro vai ficando lento até congelar.", "", ""],
 		]],
 		[&"raio_ramo", "Raio", [
-			[&"conducao", "Condução", "O Raio salta para mais 1 inimigo perto do alvo; se o alvo estiver molhado (na água ou no gelo), para mais 2.", "intelecto", ""],
+			[&"conducao", "Condução", "O Raio salta para mais 1 inimigo perto do alvo; se o alvo estiver Molhado (na água, no gelo ou com o gelo derretido), para mais 2.", "intelecto", ""],
 			[&"corrente_eletrica", "Corrente elétrica", "Um choque que pula entre até 5 inimigos.", "", ""],
 			[&"totem_tesla", "Totem tesla", "Uma torre que dá choque nos inimigos perto por 8 s.", "", ""],
 			[&"sobrecarga", "Sobrecarga", "A cada 4 feitiços, o próximo sai sem gastar mana.", "espirito", ""],
@@ -54,7 +54,7 @@ const DADOS := {
 			[&"golem_de_pedra", "Golem de pedra", "Invoca um golem por 15 s que chama os inimigos e dá socos.", "", ""],
 			[&"tremor", "Tremor", "Feitiços de terra têm 20% de chance de derrubar o alvo.", "forca", ""],
 			[&"fenda", "Fenda", "Uma rachadura em linha que derruba e desequilibra.", "", ""],
-			[&"despertar_da_ilha", "Despertar da ilha", "Suprema. A ilha treme por 8 s: inimigos erram metade dos ataques e ficam lentos.", "", ""],
+			[&"despertar_da_ilha", "Despertar da ilha", "Suprema. A ilha treme por 8 s: inimigos erram metade dos ataques e ficam lentos, e as pedras em volta se partem (dando recursos).", "", ""],
 		]],
 	],
 }

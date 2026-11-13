@@ -6,7 +6,7 @@ extends RefCounted
 ## Roda no ANFITRIÃO, menos `velocidade`, que roda no dono (quem anda).
 ##
 ##   - Rastreador (a parte das pegadas): a cada 5 s levanta poeira nos animais perto;
-##   - Sangue frio: acerto crítico (de mais de 6 blocos ou num alvo Marcado) devolve mana;
+##   - Sangue frio: cada acerto crítico (Passivas: 5% de chance; Tiro carregado cheio) devolve mana;
 ##   - Reaproveitar: passar por cima de uma armadilha ou mina sua recolhe e devolve a mana;
 ##   - Laço: o falcão te acompanha sempre (e bica quem você acertar);
 ##   - Matilha: com o companheiro perto, você e ele +15% de velocidade e de dano;
@@ -29,25 +29,19 @@ static func dano_causado(_p: Player, _quantidade: float, _tipo: StringName, _alv
 	return 1.0
 
 
-## Acerto crítico do Arqueiro: de longe (mais de 6 blocos) ou num alvo Marcado.
-static func critico(p: Player, alvo: Node) -> bool:
-	var a := alvo as Node2D
-	if a == null:
-		return false
-	if p.global_position.distance_to(a.global_position) > Passivas.PONTO_FRACO_DISTANCIA:
-		return true
-	var e := EfeitosEstado.de(a)
-	return e != null and e.tem(EfeitosEstado.MARCADO)
-
-
-## Depois que um golpe ou habilidade de `p` acertou `alvo` (o dano já foi aplicado).
-static func acertou(p: Player, alvo: Node, _quantidade: float, _tipo: StringName) -> void:
-	if p.tem(&"sangue_frio") and critico(p, alvo):
+## Sangue frio: `p` deu um acerto crítico (Passivas.critou chama). Devolve 3 de mana.
+static func critou(p: Player, _alvo: Node) -> void:
+	if p.tem(&"sangue_frio"):
 		var agora := Time.get_ticks_msec()
 		if agora >= int(p.get_meta(&"sangue_frio_ms", 0)):
 			p.set_meta(&"sangue_frio_ms", agora + SANGUE_FRIO_ESPERA_MS)
 			p.mana = minf(p.ficha.mana_maxima(), p.mana + SANGUE_FRIO_MANA)
 			p._enviar_mana()
+
+
+## Depois que um golpe ou habilidade de `p` acertou `alvo` (o dano já foi aplicado).
+static func acertou(_p: Player, _alvo: Node, _quantidade: float, _tipo: StringName) -> void:
+	pass
 
 
 ## Multiplicador do dano que `p` recebe.

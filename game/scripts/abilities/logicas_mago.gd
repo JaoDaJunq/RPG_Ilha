@@ -34,15 +34,12 @@ static func andar_zona(z: Zona, ate: Vector2, velocidade: float) -> void:
 	z.global_position += (ate - z.global_position).limit_length(velocidade * z.intervalo)
 
 
-## O alvo está molhado (em cima de água ou de gelo)? Condução salta mais nele.
+## O alvo está Molhado (o estado: saiu da água há pouco, o gelo dele derreteu) ou em cima de
+## água ou de gelo agora? Condução salta mais nele.
 static func molhado(alvo: Node2D) -> bool:
 	if alvo == null or not is_instance_valid(alvo):
 		return false
-	var w: World = alvo.get_tree().get_first_node_in_group(&"mundo")
-	if w == null or w.chao == null:
-		return false
-	var cel := w.chao.local_to_map(w.chao.to_local(alvo.global_position))
-	return w.tipo_do_chao(cel) == World.Chao.AGUA or w.eh_gelo(cel)
+	return EfeitosEstado.molhado(alvo)
 
 
 ## Condução (chamada pelo Raio): salta para mais 1 inimigo perto do alvo; se o alvo estiver
@@ -530,6 +527,7 @@ class DespertarDaIlha extends HabilidadeLogica:
 			"Dura %s s, até %s de você" % [TextoHabilidade.numero(DURACAO), TextoHabilidade.blocos(RAIO)],
 			"Inimigos erram metade dos ataques",
 			"Inimigos 40% mais lentos",
+			"As pedras em volta se partem (as pedras vão para a mochila)",
 		]
 
 	func executar(quem: Player, _hab: HabilidadeData, _dir: Vector2, _alvo: Vector2, _carga: float) -> void:
@@ -545,3 +543,20 @@ class DespertarDaIlha extends HabilidadeLogica:
 			for k in 3:
 				World.efeito_todos(zona, &"poeira", zona.global_position + Vector2.from_angle(randf() * TAU) * RAIO * randf_range(0.3, 0.9))
 		z.iniciar()
+		partir_pedras(quem, quem.global_position, RAIO)
+
+	## As pedras a até `raio` se partem de uma vez (o que rendem vai para a mochila de `quem`,
+	## como se tivesse minerado; igual à Machadada do Guerreiro).
+	static func partir_pedras(quem: Player, centro: Vector2, raio: float) -> int:
+		var partidas := 0
+		for n in quem.get_tree().get_nodes_in_group(&"recursos"):
+			var r := n as ResourceNode
+			if r == null or r.is_queued_for_deletion() or r.acao != "Minerar" or r.global_position.distance_to(centro) > raio:
+				continue
+			var vezes := 0
+			while is_instance_valid(r) and not r.is_queued_for_deletion() and r.pode_interagir() and vezes <= r.golpes:
+				r.interagir(quem)
+				vezes += 1
+			partidas += 1
+			World.efeito_todos(quem, &"poeira", r.global_position)
+		return partidas

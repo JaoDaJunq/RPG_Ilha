@@ -69,7 +69,8 @@ class LancaGelo extends HabilidadeLogica:
 		Logicas.lancar(Logicas.LANCA_GELO, quem, dir, dano_de(quem, hab))
 
 
-## Arqueiro: segura para carregar; carregado vai mais longe e bate mais.
+## Arqueiro: segura para carregar; carregado vai mais longe e bate mais. Com a carga cheia,
+## o acerto é crítico (Passivas.forcar_critico).
 class TiroCarregado extends HabilidadeLogica:
 	func executar(quem: Player, hab: HabilidadeData, dir: Vector2, _alvo: Vector2, carga: float) -> void:
 		carga = clampf(carga, 0.0, 1.0)
@@ -77,6 +78,7 @@ class TiroCarregado extends HabilidadeLogica:
 		var rapido := Passivas.MAO_LEVE_TIRO if quem.tem(&"mao_leve") else 1.0
 		var p := Logicas.lancar(Logicas.FLECHA, quem, dir, dano_de(quem, hab, hab.dano * (1.0 + 2.0 * carga)), (1.0 + carga) * rapido)
 		p.duracao /= rapido
+		p.critico = carga >= 1.0
 
 
 ## Arqueiro: armadilha no chão, onde o mouse estiver (até o alcance).

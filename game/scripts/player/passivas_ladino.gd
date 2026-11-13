@@ -9,7 +9,6 @@ extends RefCounted
 const TOXINA_ACUMULOS := 5
 ## Esquiva perfeita: o golpe do inimigo chegou até 0,3 s depois do dash.
 const ESQUIVA_PERFEITA_MS := 300
-const ESQUIVA_PERFEITA_CRITICO := 2.0
 ## Tempestade de aço: adagas soltas a cada dash.
 const TEMPESTADE_ADAGAS := 8
 
@@ -31,11 +30,8 @@ static func esquivou(p: Player) -> void:
 
 
 ## Multiplicador do dano que `p` causa em `alvo` (antes de aplicar).
-static func dano_causado(p: Player, _quantidade: float, _tipo: StringName, _alvo: Node) -> float:
-	# Esquiva perfeita: o próximo acerto depois de uma esquiva no último instante é crítico.
-	if p.get_meta(&"critico_pronto", false):
-		p.set_meta(&"critico_pronto", false)
-		return ESQUIVA_PERFEITA_CRITICO
+## (Esquiva perfeita: o crítico garantido fica em Passivas.forcar_critico / _critico.)
+static func dano_causado(_p: Player, _quantidade: float, _tipo: StringName, _alvo: Node) -> float:
 	return 1.0
 
 
@@ -60,7 +56,7 @@ static func ataque_inimigo(_atacante: Node, alvo: Node, _dano: float) -> float:
 	if p and p.tem(&"esquiva_perfeita") and p.has_meta(&"esquiva_ms") and p.vida.protegido() \
 			and Time.get_ticks_msec() - int(p.get_meta(&"esquiva_ms")) <= ESQUIVA_PERFEITA_MS:
 		p.remove_meta(&"esquiva_ms")
-		p.set_meta(&"critico_pronto", true)
+		Passivas.forcar_critico(p)
 		p.liberar_esquiva()
 		World.efeito_todos(p, &"subir_nivel", p.global_position + Vector2(0, -14))
 		p.avisar("Esquiva perfeita! Dash pronto e o próximo golpe é crítico.")
