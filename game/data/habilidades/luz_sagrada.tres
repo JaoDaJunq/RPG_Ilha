@@ -16,3 +16,4 @@ elemento = &"luz"
 dano = 2.0
 alcance = 0.0
 logica = &"LuzSagrada"
+conjuracao = 0.4

@@ -18,3 +18,5 @@ alcance = 0.0
 logica = &"CampoMinado"
 animacao = &"golpe"
 som = &"golpe_coleta"
+conjuracao = 1.0
+atributo_conjuracao = &"agilidade"

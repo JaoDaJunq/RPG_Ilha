@@ -18,3 +18,4 @@ alcance = 0.0
 logica = &"Santuario"
 animacao = &"golpe"
 som = &"esquiva"
+conjuracao = 0.6

@@ -18,3 +18,6 @@ alcance = 0.0
 logica = &"FlechaDoHorizonte"
 animacao = &"golpe"
 som = &"flecha"
+conjuracao = 1.5
+atributo_conjuracao = &"agilidade"
+velocidade_conjurando = 0.3

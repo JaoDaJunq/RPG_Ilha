@@ -18,3 +18,5 @@ alcance = 0.0
 logica = &"FonteDaVida"
 animacao = &"golpe"
 som = &"subir_nivel"
+conjuracao = 1.5
+velocidade_conjurando = 0.3

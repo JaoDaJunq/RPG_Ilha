@@ -18,3 +18,4 @@ alcance = 96.0
 logica = &"CirculoDeCura"
 animacao = &"golpe"
 som = &"subir_nivel"
+conjuracao = 0.8

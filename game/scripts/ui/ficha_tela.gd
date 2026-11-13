@@ -35,6 +35,8 @@ const STATUS := [
 	[&"magico", "item_cajado", "Dano mágico", "mágico"],
 	[&"coleta", "item_machado_pedra", "Velocidade de coleta", "coleta"],
 	[&"dash", "icone_esquiva", "Recarga do dash", "dash"],
+	[&"conj_magia", "icone_intelecto", "Conjuração (-3% por Intelecto acima de 5, até -40%)", "conjurar"],
+	[&"conj_arco", "icone_tiro", "Puxar o arco (-3% por Agilidade acima de 5, até -40%)", "puxar arco"],
 ]
 ## Status em que um número MENOR é melhor.
 const MENOR_MELHOR: Array[StringName] = [&"dash"]
@@ -206,6 +208,8 @@ func _status_de(f: Ficha) -> Dictionary:
 		&"magico": f.multiplicador_magico() * 100.0,
 		&"coleta": 100.0 / f.tempo_coleta(),
 		&"dash": f.recarga_esquiva(),
+		&"conj_magia": Conjuracao.reducao(f, &"intelecto") * 100.0,
+		&"conj_arco": Conjuracao.reducao(f, &"agilidade") * 100.0,
 	}
 
 
@@ -215,6 +219,8 @@ func _formatar(status: StringName, v: float) -> String:
 			return "+%s/s" % _decimal(v)
 		&"dash":
 			return "%s s" % _decimal(v)
+		&"conj_magia", &"conj_arco":
+			return "-%d%%" % roundi(v)
 		&"fisico", &"magico", &"coleta":
 			return "%d%%" % roundi(v)
 	return str(roundi(v))

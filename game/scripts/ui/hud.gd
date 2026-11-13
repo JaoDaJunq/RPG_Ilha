@@ -232,6 +232,8 @@ func mostrar_descricao(indice: int) -> void:
 	_dica_descricao.text = texto.descricao
 	var numeros: Array[String] = [texto.mana, texto.recarga]
 	_dica_numeros.text = "  ·  ".join(numeros) + ("\n" + texto.dano if texto.dano != "" else "")
+	if texto.get("conjuracao", "") != "":
+		_dica_numeros.text += "\n" + texto.conjuracao
 	var linhas: Array[String] = []
 	for e in texto.efeitos:
 		linhas.append("• " + e)

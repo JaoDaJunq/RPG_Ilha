@@ -18,3 +18,6 @@ alcance = 0.0
 logica = &"MarcaDoCacador"
 animacao = &"golpe"
 som = &"flecha"
+conjuracao = 0.4
+atributo_conjuracao = &"agilidade"
+velocidade_conjurando = 0.6

@@ -19,3 +19,5 @@ logica = &"DespertarDaIlha"
 animacao = &"golpe"
 duracao_animacao = 0.4
 som = &"giro"
+conjuracao = 2.0
+velocidade_conjurando = 0.3

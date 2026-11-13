@@ -16,3 +16,4 @@ elemento = &"raio"
 dano = 1.5
 alcance = 0.0
 logica = &"Raio"
+conjuracao = 0.5

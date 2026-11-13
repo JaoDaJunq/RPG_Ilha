@@ -19,3 +19,5 @@ logica = &"Juramento"
 animacao = &"parado"
 duracao_animacao = 0.3
 som = &"subir_nivel"
+conjuracao = 0.8
+atributo_conjuracao = &""

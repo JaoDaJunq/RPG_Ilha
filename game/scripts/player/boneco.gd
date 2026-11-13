@@ -275,6 +275,9 @@ func _animar_completo(delta: float) -> void:
 		giro = -1.1 if _quadro == 4 else lerpf(0.6, 1.4, clampf((t - 0.45) / 0.3, 0.0, 1.0))
 	elif nome.begins_with("andar"):
 		_quadro = [2, 0, 3, 0][int(_tempo / PASSO_ANDAR) % 4]
+	elif nome.begins_with("conjurar"):
+		_quadro = 4  # conjurando (Conjuracao): parado no "golpe preparação", arma erguida
+		giro = 0.0 if item == &"arco" else -1.1  # o arco fica reto, puxando
 	else:
 		_quadro = 1 if int(_tempo / TEMPO_RESPIRA) % 2 == 1 else 0
 	if item == &"arco" and carga >= 0.0:

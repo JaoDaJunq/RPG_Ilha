@@ -19,3 +19,5 @@ logica = &"Nevasca"
 animacao = &"golpe"
 duracao_animacao = 0.4
 som = &"esquiva"
+conjuracao = 1.6
+velocidade_conjurando = 0.3

@@ -19,3 +19,4 @@ logica = &"CorrenteEletrica"
 animacao = &"golpe"
 duracao_animacao = 0.2
 som = &"bola_de_fogo"
+conjuracao = 0.5

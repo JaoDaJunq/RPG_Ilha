@@ -18,3 +18,4 @@ alcance = 0.0
 logica = &"Aurora"
 animacao = &"golpe"
 som = &"bola_de_fogo"
+conjuracao = 0.4
