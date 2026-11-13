@@ -25,7 +25,9 @@ var _paleta: Array[Color] = []
 
 func _init() -> void:
 	for a in OS.get_cmdline_user_args():
-		if a.begins_with("--") and a.contains("="):
+		if a.begins_with("--") and not a.contains("="):
+			_args[a.substr(2)] = ""  # opção sem valor (ex.: --animacao)
+		elif a.begins_with("--"):
 			_args[a.substr(2).get_slice("=", 0)] = a.get_slice("=", 1)
 	var folha := Image.load_from_file(_caminho(_args["entrada"]))
 	folha.convert(Image.FORMAT_RGBA8)
