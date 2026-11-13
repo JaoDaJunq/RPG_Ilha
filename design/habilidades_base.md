@@ -95,6 +95,7 @@ e.empurrar(Vector2(-30, 0), 0.15)   # empurrão ou puxão (respeita paredes)
 | `CEGO` | chance de errar (0 = sempre) | o ataque erra (`erra_ataque()`) |
 | `PROVOCADO` | — | persegue a `origem` (um jogador ou uma invocação) |
 | `INVISIVEL` | — | jogadores: os inimigos não veem (`Player.escondido()`) |
+| `MOLHADO` | — | na água/gelo (o anfitrião confere sozinho) ou no gelo que derreteu com fogo; dura 4 s depois de sair. A Queimadura não pega (o fogo só seca) e ficar molhado apaga a Queimadura; a Condução salta mais (`EfeitosEstado.molhado(alvo)`) |
 
 - Os tiques passam pela Hurtbox sem repetir as passivas de quem aplicou; se derrubarem o
   alvo, `Passivas.derrotou(origem, alvo)` é chamado (Contágio, Sede, Cinzas...).
@@ -163,8 +164,21 @@ p.volta = true                      # Bumerangue de adaga, Martelo da justiça
 p.puxa = 48.0                       # Corrente (puxa até o lançador)
 p.estado = EfeitosEstado.ATORDOADO; p.estado_segundos = 0.5
 p.acertou.connect(func(alvo: Node, pos: Vector2) -> void: pass)   # a cada acerto
+p.critico = true                    # o acerto é crítico (Tiro carregado cheio)
+p.do_inimigo = true                 # flecha de INIMIGO: acerta jogadores e invocações
 ```
 Sem nada ligado, o projétil é igual ao de antes (para no primeiro).
+
+Projéteis de inimigo (`do_inimigo`, ex.: o Atirador) param nas paredes e portas e em tudo o
+que estiver no grupo `bloqueia_projeteis` com a meta `bloqueio_segmento = [a, b, grossura]`
+(parede: Barreira) ou `bloqueio_raio = r` (cúpula: Bastião). Ver `Projetil.bloqueado()`.
+
+### Acerto crítico — `Passivas` (player/passivas.gd)
+Todo acerto de jogador num inimigo ou animal tem 5% de chance (`CHANCE_CRITICO`) de dar o
+dobro (`CRITICO`). Garantido: `Passivas.forcar_critico(p)` (Esquiva perfeita, Tiro carregado
+cheio) e a Emboscada. Ao critar, `Passivas.critou(p, alvo)` mostra o brilho (`giro`) e chama
+`PassivasArqueiro.critou` (Sangue frio). Nas cenas de teste a chance aleatória é 0 (números
+exatos); os testes do crítico mudam `Passivas.chance_critico`.
 
 ### Golpes prontos — `Golpes` (golpes.gd, funções estáticas)
 ```gdscript

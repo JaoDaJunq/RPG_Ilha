@@ -16,6 +16,8 @@ Co-op online de sobrevivência e exploração numa ilha de fantasia que reage ao
 - Saque no chão (como no Minecraft): animais, slimes e baú quebrado soltam os itens no chão; é só chegar perto para pegar (o que não couber na mochila fica lá, e some depois de 5 minutos).
 - Nível em cima da cabeça de slimes e animais; a barra de vida aparece quando apanham e some 4 s depois. Personagem de frente, de perfil e de costas; 4 habilidades por classe. Balanceamento em [design/balanceamento.md](design/balanceamento.md).
 - Noite perigosa: slimes mais fortes no escuro, que fogem da luz e derretem ao amanhecer; derrotados deixam gel de slime.
+- Arqueiro inimigo (Archer preto do Tiny Swords): grupos de 2 nas bordas da ilha e, à noite, um arqueiro da noite de vez em quando. Fica longe, puxa o arco (o aviso) e atira; a flecha para nas paredes, na Barreira do Clérigo e na cúpula do Bastião. Respeita os estados (Cego erra, Medo foge, Provocado persegue...) e deixa penas e experiência.
+- Baús trancados longe da fogueira: o Ladino com Dedos leves abre na hora; os outros quebram a tranca com 6 golpes. Acerto crítico (5%, dano dobrado) e estado Molhado (água, gelo derretido).
 - Dano que dá para sentir: slime e javali dão uma cabeçada (acertam uma vez e recuam); quem apanha dá um passo para trás, fica vermelho, a tela treme de leve e, com pouca vida, as bordas ficam vermelhas.
 - Arte no estilo Tiny Swords:
   - ilha com mar e espuma animada, areia, grama, árvores balançando, arbustos e tocos;
