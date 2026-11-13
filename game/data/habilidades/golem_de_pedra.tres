@@ -19,3 +19,4 @@ logica = &"GolemDePedra"
 animacao = &"golpe"
 duracao_animacao = 0.3
 som = &"golpe_coleta"
+conjuracao = 1.2

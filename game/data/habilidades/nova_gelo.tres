@@ -16,3 +16,4 @@ elemento = &"gelo"
 dano = 0.4
 alcance = 0.0
 logica = &"NovaGelo"
+conjuracao = 0.5

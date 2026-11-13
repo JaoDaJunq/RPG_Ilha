@@ -18,3 +18,6 @@ alcance = 0.0
 logica = &"FlechaPerfurante"
 animacao = &"golpe"
 som = &"flecha"
+conjuracao = 0.6
+atributo_conjuracao = &"agilidade"
+velocidade_conjurando = 0.6

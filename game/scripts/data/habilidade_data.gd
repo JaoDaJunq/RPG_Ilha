@@ -6,7 +6,7 @@ extends Resource
 enum Modo {
 	RAPIDO,    ## vai na hora, na direção do mouse
 	IMEDIATO,  ## sem alvo (em volta do jogador)
-	CARREGAR,  ## segura a tecla para carregar e solta para lançar
+	CARREGAR,  ## como RAPIDO, mas segurar além da conjuração enche a carga (0 a 1)
 }
 
 @export var id: StringName
@@ -30,3 +30,14 @@ enum Modo {
 @export var duracao_animacao := 0.0
 ## Som ao lançar (nome em Sfx). Vazio usa a tabela antiga Player.SONS (e depois &"ataque").
 @export var som: StringName
+
+# --- Conjuração (design/conjuracao.md) ---------------------------------------------
+## Tempo (s) segurando a tecla antes de poder soltar (feitiço sendo conjurado, corda do arco
+## sendo puxada). 0 = sai na hora. Soltar antes cancela sem gastar mana nem recarga.
+## No modo CARREGAR, é a puxada mínima; segurando mais, a carga continua até encher.
+@export var conjuracao := 0.0
+## Atributo que deixa a conjuração mais rápida: &"intelecto" (magias), &"agilidade" (arco)
+## ou vazio (tempo fixo). Fórmula em Conjuracao.reducao().
+@export var atributo_conjuracao: StringName = &"intelecto"
+## Velocidade de andar enquanto conjura (0,5 = metade).
+@export var velocidade_conjurando := 0.5

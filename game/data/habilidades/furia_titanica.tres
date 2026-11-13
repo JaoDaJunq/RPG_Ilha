@@ -19,3 +19,5 @@ logica = &"FuriaTitanica"
 animacao = &"golpe"
 duracao_animacao = 0.4
 som = &"giro"
+conjuracao = 0.8
+atributo_conjuracao = &""

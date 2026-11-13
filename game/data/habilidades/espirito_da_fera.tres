@@ -18,3 +18,5 @@ alcance = 0.0
 logica = &"EspiritoDaFera"
 animacao = &"parado"
 som = &"subir_nivel"
+conjuracao = 0.8
+atributo_conjuracao = &"agilidade"

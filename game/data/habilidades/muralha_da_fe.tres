@@ -18,3 +18,5 @@ alcance = 0.0
 logica = &"MuralhaDaFe"
 animacao = &"golpe"
 som = &"esquiva"
+conjuracao = 1.2
+velocidade_conjurando = 0.3

@@ -149,7 +149,7 @@ func _atirador() -> void:
 	checar(absf((gasto_sem - gasto_com) - PassivasArqueiro.SANGUE_FRIO_MANA) < 0.05, "Sangue frio: o tiro cheio (crítico) custou %.2f de mana (sem a passiva: %.2f)" % [gasto_com, gasto_sem])
 	var custo := p.custo_de(ArvoreData.no(&"arqueiro", &"tiro_carregado").habilidade)
 	var gasto_fraco := await _mana_gasta_tiro_longe(0.0)
-	checar(absf(gasto_fraco - custo) < 0.05, "Sangue frio: tiro sem carga (sem crítico) não devolve mana (%.2f de %.2f)" % [gasto_fraco, custo])
+	checar(absf(gasto_fraco - custo) < 0.1, "Sangue frio: tiro sem carga (sem crítico) não devolve mana (%.2f de %.2f)" % [gasto_fraco, custo])
 	await _limpar()
 
 

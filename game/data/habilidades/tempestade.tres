@@ -19,3 +19,5 @@ logica = &"Tempestade"
 animacao = &"golpe"
 duracao_animacao = 0.4
 som = &"bola_de_fogo"
+conjuracao = 1.8
+velocidade_conjurando = 0.3

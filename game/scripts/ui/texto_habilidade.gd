@@ -22,8 +22,26 @@ static func de_habilidade(hab: HabilidadeData, tecla: String, ficha: Ficha) -> D
 		mana = "Mana: %s" % numero(hab.custo_mana),
 		recarga = "Recarga: %s s" % numero(hab.recarga),
 		dano = _dano(hab, ficha),
+		conjuracao = conjuracao(hab, ficha),
 		efeitos = efeitos(hab, ficha),
 	}
+
+
+## Linha do tempo de conjuração (Conjuracao), com a fórmula e o número do atributo. Vazio se
+## a habilidade sai na hora.
+static func conjuracao(hab: HabilidadeData, ficha: Ficha) -> String:
+	if hab.conjuracao <= 0.0:
+		return ""
+	var arco := hab.atributo_conjuracao == &"agilidade"
+	var rotulo := "Puxar o arco" if arco else "Conjuração"
+	if hab.atributo_conjuracao == &"":
+		return "%s: %s s (tempo fixo; segure e solte no verde)" % [rotulo, numero(hab.conjuracao)]
+	var nome_attr: String = Ficha.NOMES.get(hab.atributo_conjuracao, String(hab.atributo_conjuracao))
+	var formula := "-%d%% por ponto de %s acima de %d, até -%d%%" % [roundi(Conjuracao.REDUCAO_POR_PONTO * 100.0), nome_attr, Conjuracao.PONTO_NEUTRO, roundi(Conjuracao.REDUCAO_MAXIMA * 100.0)]
+	if ficha == null:
+		return "%s: %s s (%s)" % [rotulo, numero(hab.conjuracao), formula]
+	var red := Conjuracao.reducao(ficha, hab.atributo_conjuracao)
+	return "%s: %s s (base %s s, -%d%% pelo %s %d; %s)" % [rotulo, numero(snappedf(hab.conjuracao * (1.0 - red), 0.01)), numero(hab.conjuracao), roundi(red * 100.0), nome_attr, ficha.valor(hab.atributo_conjuracao), formula]
 
 
 ## O dash (Shift) não é uma HabilidadeData: vem das constantes do jogador.
@@ -77,7 +95,7 @@ static func efeitos(hab: HabilidadeData, ficha: Ficha = null) -> Array[String]:
 			l.append("Golpe físico no congelado: dano dobrado")
 			l.append("Sobre a água, cria um caminho de gelo")
 		&"TiroCarregado":
-			l.append("Carga completa em %s s" % numero(Player.CARGA_MAXIMA))
+			l.append("Solte no verde; segurando mais, carga completa em %s s" % numero(Player.CARGA_MAXIMA))
 			l.append("Carregado: até 3x de dano e 2x de velocidade")
 		&"Armadilha":
 			l.append("Prende por %s s" % numero(ArmadilhaChao.TEMPO_PRESO))

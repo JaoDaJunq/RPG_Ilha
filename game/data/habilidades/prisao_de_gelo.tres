@@ -19,3 +19,4 @@ logica = &"PrisaoDeGelo"
 animacao = &"golpe"
 duracao_animacao = 0.2
 som = &"esquiva"
+conjuracao = 0.7

@@ -72,8 +72,11 @@ var _prontas_no_anfitriao: Dictionary = {}  # id da habilidade → ms (o anfitri
 var _recarga_esquiva := 0.0
 var _impulso := Vector2.ZERO
 var _impulso_restante := 0.0
-var _carregando := -1
-var _inicio_carga := 0.0
+## Tecla (0-3) da habilidade sendo conjurada/carregada; -1 = nenhuma (o HUD usa).
+var _carregando: int:
+	get:
+		return conjuracao.indice if conjuracao else -1
+var conjuracao: Conjuracao  # segurar a tecla para conjurar (Conjuracao)
 var _mana_enviada := -1.0
 
 @onready var visual: Boneco = $Visual
@@ -100,6 +103,7 @@ func _ready() -> void:
 	efeitos = _componente(EfeitosEstado.new(), "EfeitosEstado")
 	buffs = _componente(Buffs.new(), "Buffs")
 	recursos = _componente(RecursosClasse.new(), "Recursos")
+	conjuracao = _componente(Conjuracao.new(), "Conjuracao")
 	if eh_local() and not multiplayer.is_server():
 		# O jogador controlado aqui não recebe as propriedades de nascimento.
 		raca = Net.raca
@@ -186,7 +190,7 @@ func _physics_process(delta: float) -> void:
 		# Caído: parado no chão, sem coletar nem golpear (a tela de morte está aberta).
 		velocity = Vector2.ZERO
 		_impulso_restante = 0.0
-		_carregando = -1
+		conjuracao.cancelar()
 		_progresso = 0.0
 		_cancelar_ajuda()
 		return
@@ -198,7 +202,7 @@ func _physics_process(delta: float) -> void:
 		velocity = _impulso * minf(1.0, _impulso_restante / delta)
 		_impulso_restante -= delta
 	else:
-		velocity = entrada * ficha.velocidade() * multiplicador_velocidade()
+		velocity = entrada * ficha.velocidade() * multiplicador_velocidade() * conjuracao.velocidade()
 	move_and_slide()
 
 	_atualizar_alvo()
@@ -285,11 +289,9 @@ func recarga_esquiva_restante() -> float:
 	return _recarga_esquiva / ficha.recarga_esquiva()
 
 
-## 0 a 1 enquanto segura uma habilidade de carregar; -1 se não está carregando.
+## Carga extra (0 a 1) enquanto segura uma habilidade de carga (Tiro carregado); -1 fora dela.
 func carga_atual() -> float:
-	if _carregando < 0:
-		return -1.0
-	return clampf((Time.get_ticks_msec() / 1000.0 - _inicio_carga) / Passivas.carga_maxima(self), 0.0, 1.0)
+	return conjuracao.carga() if conjuracao else -1.0
 
 
 ## Mostra um aviso na tela deste jogador (de onde quer que seja chamado).
@@ -303,7 +305,7 @@ func avisar(texto: String, som: StringName = &"") -> void:
 # --- Ações (pedidos ao anfitrião) ---------------------------------------------
 
 func golpear() -> void:
-	if _recarga_golpe > 0.0:
+	if _recarga_golpe > 0.0 or conjuracao.ativa():  # conjurando, as mãos estão ocupadas
 		return
 	_recarga_golpe = recarga_golpe * (0.5 if _golpe_rapido else 1.0)  # Ritmo: golpe depois do dash
 	_golpe_rapido = false
@@ -318,6 +320,7 @@ func golpear() -> void:
 func esquivar() -> void:
 	if _recarga_esquiva > 0.0:
 		return
+	conjuracao.cancelar()  # o dash interrompe a conjuração
 	var entrada := Input.get_vector(&"mover_esquerda", &"mover_direita", &"mover_cima", &"mover_baixo")
 	var dir := entrada.normalized() if entrada != Vector2.ZERO else direcao_mira()
 	_recarga_esquiva = ficha.recarga_esquiva()
@@ -330,31 +333,36 @@ func esquivar() -> void:
 	_pedir_esquiva.rpc_id(1)
 
 
-## Aperta a tecla da habilidade `i`: lança na hora ou começa a carregar.
+## Aperta a tecla da habilidade `i`: lança na hora ou começa a conjurar (Conjuracao).
 func comecar_habilidade(i: int) -> void:
 	var hab := habilidades()
-	if i >= hab.size() or float(_recargas.get(hab[i].id, 0.0)) > 0.0:
+	if i >= hab.size() or float(_recargas.get(hab[i].id, 0.0)) > 0.0 or conjuracao.ativa():
 		return
 	if mana < custo_de(hab[i]):
 		avisar("Sem mana suficiente para %s." % hab[i].nome)
 		return
-	if hab[i].modo == HabilidadeData.Modo.CARREGAR:
-		_carregando = i
-		_inicio_carga = Time.get_ticks_msec() / 1000.0
+	if Conjuracao.conjura(hab[i]):
+		conjuracao.comecar(i, hab[i])
 		return
 	usar_habilidade(i, 0.0)
 
 
+## Soltou a tecla: no verde, lança; antes, cancela sem gastar mana nem recarga.
 func soltar_carga() -> void:
-	if _carregando < 0:
+	if not conjuracao.ativa():
 		return
-	var i := _carregando
-	var carga := carga_atual()
-	_carregando = -1
+	if not conjuracao.pronta():
+		conjuracao.cancelar()
+		return
+	var i := conjuracao.indice
+	var carga := maxf(0.0, conjuracao.carga())
+	conjuracao.terminar()
 	usar_habilidade(i, carga)
 
 
-func usar_habilidade(i: int, carga: float) -> void:
+## `atalho`: pula a conjuração (só o atalho dos testes, usar_habilidade_por_id; o anfitrião
+## só aceita do jogador dele mesmo).
+func usar_habilidade(i: int, carga: float, atalho := false) -> void:
 	var hab := habilidades()
 	if i >= hab.size() or float(_recargas.get(hab[i].id, 0.0)) > 0.0:
 		return
@@ -365,15 +373,16 @@ func usar_habilidade(i: int, carga: float) -> void:
 	var dir := direcao_mira()
 	_direcao = SpriteSheets.direcao_de(dir)
 	Sfx.tocar(hab[i].som if hab[i].som != &"" else SONS.get(hab[i].id, &"ataque"), -10.0)
-	_pedir_habilidade.rpc_id(1, hab[i].id, dir, posicao_mira(), carga)
+	_pedir_habilidade.rpc_id(1, hab[i].id, dir, posicao_mira(), carga, atalho)
 
 
-## Atalho usado pelos testes: usa a habilidade pelo id, se a classe tiver.
+## Atalho usado pelos testes: usa a habilidade pelo id, se a classe tiver, sem esperar a
+## conjuração (vale só no anfitrião; ver Conjuracao.liberar_no_anfitriao).
 func usar_habilidade_por_id(hab_id: StringName, carga := 0.0) -> bool:
 	var hab := habilidades()
 	for i in hab.size():
 		if hab[i].id == hab_id:
-			usar_habilidade(i, carga)
+			usar_habilidade(i, carga, true)
 			return true
 	return false
 
@@ -419,6 +428,7 @@ func reagir_ao_golpe(origem: Vector2) -> void:
 	dir = dir.normalized() if dir.length() > 0.1 else Vector2.DOWN
 	mover_por_habilidade(dir * EMPURRAO_DANO * Passivas.empurrao(self), DURACAO_EMPURRAO)
 	_reagir_dor.rpc(dir)
+	conjuracao.apanhou()  # apanhar não cancela a conjuração, só atrasa um pouco
 
 
 @rpc("any_peer", "call_local", "reliable")
@@ -469,7 +479,7 @@ func _pedir_esquiva() -> void:
 
 
 @rpc("any_peer", "call_local", "reliable")
-func _pedir_habilidade(hab_id: StringName, dir: Vector2, alvo_mira: Vector2, carga: float) -> void:
+func _pedir_habilidade(hab_id: StringName, dir: Vector2, alvo_mira: Vector2, carga: float, atalho := false) -> void:
 	if not multiplayer.is_server() or not _pedido_do_dono() or caido:
 		return
 	# Só vale a habilidade que está numa das teclas (aprendida na árvore).
@@ -479,6 +489,19 @@ func _pedir_habilidade(hab_id: StringName, dir: Vector2, alvo_mira: Vector2, car
 			hab = h
 	if hab == null:
 		return
+	# Conjuração: o anfitrião confere o tempo pelo relógio dele (nada sai antes da hora).
+	if Conjuracao.conjura(hab):
+		var espera := conjuracao.liberar_no_anfitriao(hab, atalho)
+		if espera < 0.0:
+			conjuracao.recusar_no_anfitriao(hab)
+			return
+		if not (atalho and eh_local()):
+			carga = conjuracao.carga_no_anfitriao(hab, carga, espera)
+		conjuracao.terminar_no_anfitriao()
+		if espera > 0.0:
+			await get_tree().create_timer(espera).timeout
+			if caido or not is_inside_tree():
+				return
 	var agora := Time.get_ticks_msec()
 	var custo := custo_de(hab)
 	# Folga de 100 ms: o pedido pode chegar um pouco antes do relógio do anfitrião.
@@ -826,7 +849,7 @@ func _caido_sync(valor: bool, tempo: float) -> void:
 	visual.caido = valor
 	if not eh_local():
 		return
-	_carregando = -1
+	conjuracao.cancelar()
 	_impulso_restante = 0.0
 	velocity = Vector2.ZERO
 	if valor:
@@ -973,10 +996,12 @@ func _processar_interacao(delta: float) -> void:
 
 func _animar(entrada: Vector2) -> void:
 	var tipo := &"parado"
-	if _atacando > 0.0 or _carregando >= 0:
-		if _carregando >= 0:
-			_direcao = SpriteSheets.direcao_de(direcao_mira())
-		tipo = &"golpe" if _carregando >= 0 or _animacao_hab == &"" else _animacao_hab
+	if conjuracao.ativa():
+		# Conjurando: a arma erguida (boneco: quadro "golpe preparação"), olhando para a mira.
+		_direcao = SpriteSheets.direcao_de(direcao_mira())
+		tipo = &"conjurar"
+	elif _atacando > 0.0:
+		tipo = &"golpe" if _animacao_hab == &"" else _animacao_hab
 	elif entrada != Vector2.ZERO:
 		_direcao = SpriteSheets.direcao_de(entrada)
 		tipo = &"andar"
@@ -1031,7 +1056,7 @@ func _process(delta: float) -> void:
 	if not modulate.is_equal_approx(tom):
 		modulate = tom
 	if eh_local():
-		carga_arco = carga_atual()
+		carga_arco = conjuracao.puxada()
 		_tremer(delta)
 	visual.item = item_mao
 	visual.carga = carga_arco

@@ -18,3 +18,4 @@ alcance = 0.0
 logica = &"Levantar"
 animacao = &"golpe"
 som = &"subir_nivel"
+conjuracao = 1.0

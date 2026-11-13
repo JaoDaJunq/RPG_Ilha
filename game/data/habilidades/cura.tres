@@ -16,3 +16,4 @@ elemento = &"luz"
 dano = 0.0
 alcance = 0.0
 logica = &"Cura"
+conjuracao = 0.5

@@ -19,3 +19,4 @@ logica = &"TornadoDeFogo"
 animacao = &"golpe"
 duracao_animacao = 0.3
 som = &"giro"
+conjuracao = 1.0

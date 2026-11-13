@@ -16,3 +16,6 @@ elemento = &"fisico"
 dano = 1.0
 alcance = 110.0
 logica = &"ChuvaFlechas"
+conjuracao = 0.5
+atributo_conjuracao = &"agilidade"
+velocidade_conjurando = 0.6

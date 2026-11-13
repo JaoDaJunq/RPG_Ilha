@@ -16,3 +16,6 @@ elemento = &"fisico"
 dano = 1.0
 alcance = 0.0
 logica = &"TiroCarregado"
+conjuracao = 0.4
+atributo_conjuracao = &"agilidade"
+velocidade_conjurando = 0.6

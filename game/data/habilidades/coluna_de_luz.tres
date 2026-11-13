@@ -18,3 +18,4 @@ alcance = 120.0
 logica = &"ColunaDeLuz"
 animacao = &"golpe"
 som = &"bola_de_fogo"
+conjuracao = 0.5

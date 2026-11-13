@@ -19,3 +19,4 @@ logica = &"Praga"
 animacao = &"golpe"
 duracao_animacao = 0.3
 som = &"bola_de_fogo"
+conjuracao = 0.8

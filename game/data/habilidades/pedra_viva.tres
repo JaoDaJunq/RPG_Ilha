@@ -19,3 +19,4 @@ logica = &"PedraViva"
 animacao = &"golpe"
 duracao_animacao = 0.25
 som = &"golpe_coleta"
+conjuracao = 0.3

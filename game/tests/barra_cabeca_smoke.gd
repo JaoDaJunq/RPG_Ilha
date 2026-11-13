@@ -93,7 +93,14 @@ func _mochila_sem_dash(w: World, p: Player) -> void:
 	w.hud._mochila.fechar()
 	checar(not p.menu_aberto, "fechada a mochila, o jogador volta ao normal")
 	_apertar(&"esquivar")
+	await esperar(0.1)
+	# Bola de fogo conjura (design/conjuracao.md): segura até o verde e solta.
 	_apertar(&"habilidade_1")
+	await esperar(0.5)
+	var solta := InputEventAction.new()
+	solta.action = &"habilidade_1"
+	solta.pressed = false
+	Input.parse_input_event(solta)
 	await esperar(0.1)
 	checar(p.recarga_esquiva_restante() > 0.0, "fechada a mochila, o Shift volta a dar dash")
 	checar(p.recarga_restante(0) > 0.0, "e a habilidade volta a sair")

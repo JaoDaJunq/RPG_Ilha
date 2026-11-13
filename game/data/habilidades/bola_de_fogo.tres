@@ -16,3 +16,4 @@ elemento = &"fogo"
 dano = 1.0
 alcance = 0.0
 logica = &"BolaDeFogo"
+conjuracao = 0.3

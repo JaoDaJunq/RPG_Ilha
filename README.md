@@ -71,7 +71,7 @@ Atalhos para testar sem o menu: `-- --solo`, `-- --hospedar` ou `-- --entrar=IP`
 | Girar parede e porta | Rodinha do mouse (com a peça na mão) |
 | Mochila e fabricação | I ou Tab (na bancada: segurar E). Shift + clique manda a pilha para o outro lado; com ela aberta não há dash nem habilidades |
 | Dash (esquiva) | Shift |
-| Habilidades da classe | Q, R, T e E (Tiro carregado: segure e solte). Botão direito no botão delas (ou no Shift) mostra o que fazem |
+| Habilidades da classe | Q, R, T e E. Magias, tiros do arco e supremas: segure até o anel ficar verde e solte (soltar antes cancela; ver design/conjuracao.md). Botão direito no botão delas (ou no Shift) mostra o que fazem |
 | Ficha do personagem | C |
 | Árvore de habilidades | K (clique num nó para ver e aprender; com ela aberta não há dash nem habilidades) |
 | Dia / noite | N |
