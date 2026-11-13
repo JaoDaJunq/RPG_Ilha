@@ -6,16 +6,12 @@ extends RefCounted
 ## repetir o de outro arquivo). Peças prontas (zona, invocação, projéteis especiais,
 ## corrente, avanço, buffs, estados): ver design/habilidades_base.md.
 ##
-## Tudo aqui roda no ANFITRIÃO. Artes provisórias (placeholders, até o Codex desenhar):
-##   - falcão: a galinha da folha de animais;
-##   - mina: o ícone da bomba;
-##   - torre de besta: o barril do acampamento;
-##   - rede: a flecha do pacote.
+## Tudo aqui roda no ANFITRIÃO. Arte própria (pedido L33, pasta Invocacao.ARTE): o falcão
+## (2 quadros batendo asa), a mina, a torre de besta e a rede (no ar e caída no alvo).
 
 const FOLHA_ANIMAIS := "res://assets/sprites/tiny/animais/animais.png"
-const ARTE_MINA := "res://assets/sprites/tiny/icones/icone_bomba.png"
-const ARTE_TORRE := "res://assets/sprites/tiny/acampamento.png"
 const OVELHA := "res://assets/tiny_swords/natureza/ovelha_parada.png"
+const REDE := preload("res://scenes/abilities/rede.tscn")
 ## Pés no chão para as folhas de 128 px (animais, acampamento) na escala 0,25, como em Animal.
 const PES := Vector2(0, -14)
 
@@ -62,14 +58,11 @@ static func domado_de(quem: Player) -> Companheiro:
 	return null
 
 
-## Cria um falcão (placeholder: a galinha da folha). `segundos` 0 = fica para sempre (Laço).
+## Cria um falcão (batendo asa). `segundos` 0 = fica para sempre (Laço).
 static func criar_falcao(quem: Player, dano: float, segundos: float) -> Companheiro:
 	var c := Companheiro.criar_companheiro(quem)
 	c.set_meta(&"falcao", true)
-	c.textura_caminho = FOLHA_ANIMAIS
-	c.quadro_inicial = 1
-	c.quadros = 1
-	c.deslocamento = PES + Vector2(0, -12)  # voando, um pouco acima do chão
+	c.desenho(["falcao_a", "falcao_b"], 7.0, "", 12.0)  # voando, um pouco acima do chão
 	c.dano = dano
 	c.velocidade = 140.0
 	c.alcance = 14.0
@@ -97,12 +90,7 @@ static func criar_mina(quem: Player, ponto: Vector2, dano: float, custo: float) 
 	if minhas.size() >= MINAS_MAXIMAS:
 		minhas[0].queue_free()
 	var m := Invocacao.criar(quem, ponto)
-	m.textura_caminho = ARTE_MINA
-	m.quadro = Vector2i(35, 39)
-	m.quadro_inicial = 0
-	m.quadros = 1
-	m.escala = 0.25
-	m.deslocamento = Vector2(0, -4)
+	m.desenho(["mina"])
 	m.duracao = MinaDeFogo.DURACAO
 	m.dano = 0.0
 	m.alcance = MinaDeFogo.GATILHO
@@ -216,10 +204,14 @@ class Rede extends HabilidadeLogica:
 		return ["Prende (não anda) por %s s" % TextoHabilidade.numero(PRESO)]
 
 	func executar(quem: Player, hab: HabilidadeData, dir: Vector2, _alvo: Vector2, _carga: float) -> void:
-		var p := Logicas.lancar(Logicas.FLECHA, quem, dir, dano_de(quem, hab), 0.8)
+		var p := Logicas.lancar(LogicasArqueiro.REDE, quem, dir, dano_de(quem, hab), 0.8)
 		p.duracao /= 0.8
 		p.estado = EfeitosEstado.PRESO
 		p.estado_segundos = PRESO
+		# A rede cai e fica enrolada no alvo enquanto ele está preso.
+		p.acertou.connect(func(alvo: Node, _pos: Vector2) -> void:
+			if is_instance_valid(alvo) and alvo is Node2D:
+				World.efeito_preso_todos(alvo as Node2D, &"rede_chao", PRESO, Vector2(0, 1)))
 
 
 ## Engenhoqueiro: mina no chão da mira; explode quando alguém pisa e deixa Queimadura.
@@ -263,9 +255,7 @@ class TorreDeBesta extends HabilidadeLogica:
 			if (n as Invocacao).dono == quem:
 				(n as Invocacao).sumir()  # uma torre por jogador
 		var t := Invocacao.criar(quem, LogicasArqueiro.ponto_no_chao(quem, hab, alvo))
-		t.textura_caminho = LogicasArqueiro.ARTE_TORRE
-		t.quadro_inicial = 3  # o barril (placeholder)
-		t.deslocamento = LogicasArqueiro.PES
+		t.desenho(["torre_besta"])
 		t.duracao = DURACAO
 		t.vida_maxima = 40.0
 		t.dano = dano_de(quem, hab)

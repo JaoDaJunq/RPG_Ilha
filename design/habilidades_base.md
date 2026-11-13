@@ -116,7 +116,8 @@ z.cura = 4.0                                           # por tique nos jogadores
 z.estado = EfeitosEstado.VENENO; z.estado_segundos = 2.0; z.estado_forca = 1.0
 z.buff = Buffs.DANO; z.buff_valor = 0.15; z.buff_segundos = 1.5   # Estandarte
 z.seguir = quem              # anda junto (Rastro de chamas, Martelo giratório)
-z.efeito_visual = &"nova_gelo"; z.escala_visual = 1.5; z.efeito_tique = &"poeira"
+z.efeito_visual = &"circulo_cura"; z.escala_visual = Efeito.escala_para_raio(&"circulo_cura", 36.0)
+z.efeito_tique = &"poeira"   # peças de arte: Efeito.PECAS (poça, nuvem, cúpula, nevasca...)
 z.ao_tique = func(zona: Zona, inimigos: Array[Node2D], jogadores: Array[Player]) -> void: pass
 z.iniciar()
 ```
@@ -127,8 +128,8 @@ Tem vida (`HealthComponent`), tempo de vida e ataca sozinha o inimigo mais perto
 Sincronizada (spawner do mundo).
 ```gdscript
 var g := Invocacao.criar(quem, ponto)
-g.textura_caminho = "res://assets/sprites/tiny/pedras_slime.png"  # arte (placeholder)
-g.quadro_inicial = 0; g.quadros = 1; g.escala = 0.25; g.deslocamento = Vector2(0, -56)
+g.desenho(["golem"], 6.0, "golem_soco")   # arte inteira de assets/sprites/tiny/habilidades/
+g.escala = 0.5               # (opcional) maior; folhas antigas: textura_caminho + quadro
 g.duracao = 15.0; g.vida_maxima = 40.0
 g.dano = dano_de(quem, hab); g.elemento = &"terra"
 g.alcance = 18.0; g.intervalo = 1.0; g.visao = 110.0
@@ -140,8 +141,8 @@ g.estado = EfeitosEstado.ATORDOADO; g.estado_segundos = 0.5
 g.ao_atacar = func(inv: Invocacao, alvo: Node2D) -> void: pass
 g.iniciar()
 ```
-A invocação ataca em nome dela mesma (não usa as passivas do dono). A arte vai sempre por
-caminho (`textura_caminho`): peça a arte ao Codex e troque o placeholder.
+A invocação ataca em nome dela mesma (não usa as passivas do dono). A arte vai por caminho,
+sincronizada ao nascer; o desenho do ataque (`textura_ataque`) aparece em todos a cada golpe.
 
 ### Companheiro — `Companheiro` (companheiro.gd + scenes/abilities/companheiro.tscn)
 Uma Invocação que segue o dono e ataca o alvo dele (`Player.ultimo_alvo`, o último inimigo
@@ -220,6 +221,6 @@ static func ataque_inimigo(atacante: Node, _alvo: Node, _dano: float) -> float:
 - Nada de arte desenhada por código: efeitos só da tabela de `Efeito` (giro, poeira,
   congelar, explosao, subir_nivel, escudo, furia, raio, nova_gelo) via `World.efeito_todos`,
   `World.efeito_preso_todos` e `World.efeito_laco_todos`, ou receitas Pixelbolt novas em
-  `art/fx_receitas/`. Arte de invocação/companheiro: pedir ao Codex (placeholder até lá).
+  `art/fx_receitas/`. Arte de invocação/companheiro e peças de habilidade: `Efeito.PECAS` e `Invocacao.desenho` (pedido L33). Peças andando: `World.efeito_movel_todos`.
 - O anfitrião muda o estado; o cliente só pede (as lógicas já rodam no anfitrião).
 - Commits pequenos em português; sem `git push`.
