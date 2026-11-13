@@ -122,7 +122,7 @@ func _pensar_lanceiro(delta: float) -> Vector2:
 	if _alvo == null:
 		return _passear(delta)
 	var para := _alvo.global_position - global_position
-	var d := para.length()
+	var d := maxf(para.length(), 0.5)  # em cima do alvo: não divide por zero
 	_olhar_para(_alvo.global_position)
 	if _recarga <= 0.0 and d < LANCA_LONGE and efeitos.pode_atacar():
 		_mudar_golpe(Golpe.PREPARANDO)
