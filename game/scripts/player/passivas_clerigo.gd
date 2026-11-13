@@ -7,15 +7,13 @@ extends RefCounted
 ##
 ## Também guarda o que as habilidades do Clérigo precisam lembrar de cada jogador:
 ##   - Elo vital: com quem está ligado e até quando (metas no jogador);
-##   - Levantar: quando o jogador desmaiou pela última vez.
+##   - (o Levantar usa o estado caído do próprio Player: Player.caido).
 
 ## Fogo sagrado: Queimadura no que a luz acerta (dano por segundo = esta fração do acerto).
 const FOGO_SAGRADO_QUEIMA := 0.25
 const FOGO_SAGRADO_SEGUNDOS := 3.0
 ## Elo vital: cada um toma esta fração do dano; o resto vai para o outro.
 const ELO_FRACAO := 0.5
-## Levantar: só vale para quem desmaiou há no máximo este tempo.
-const LEVANTAR_MS := 60000
 ## Luz própria: a comida cura mais (quem come perto do Clérigo, ele incluso).
 const LUZ_PROPRIA_COMIDA := 1.5
 const LUZ_PROPRIA_COMIDA_RAIO := 56.0
@@ -72,12 +70,9 @@ static func custo_mana(_p: Player, _hab: HabilidadeData) -> float:
 	return 1.0
 
 
-## Todo quadro, no anfitrião (auras, relógios). Aqui: passa a ouvir o desmaio de cada
-## jogador (para o Levantar).
-static func processar(p: Player, _delta: float) -> void:
-	if not p.has_meta(&"ouve_desmaio"):
-		p.set_meta(&"ouve_desmaio", true)
-		p.vida.morreu.connect(func() -> void: p.set_meta(&"desmaiou_ms", Time.get_ticks_msec()))
+## Todo quadro, no anfitrião (auras, relógios). O Clérigo não tem relógio próprio hoje.
+static func processar(_p: Player, _delta: float) -> void:
+	pass
 
 
 # --- Curas (player.receber_cura chama, anfitrião) ----------------------------------------
@@ -127,19 +122,3 @@ static func elo_de(p: Player) -> Player:
 	return outro if outro.vida.esta_vivo() else null
 
 
-# --- Levantar -----------------------------------------------------------------------------
-
-## O aliado (não `quem`) que desmaiou por último, há no máximo um minuto. Nulo se nenhum.
-static func ultimo_caido(quem: Player) -> Player:
-	var melhor: Player = null
-	var quando := Time.get_ticks_msec() - LEVANTAR_MS
-	for n in quem.get_tree().get_nodes_in_group(&"jogadores"):
-		var o := n as Player
-		if o and o != quem and not o.criando and o.has_meta(&"desmaiou_ms") and int(o.get_meta(&"desmaiou_ms")) >= quando:
-			quando = int(o.get_meta(&"desmaiou_ms"))
-			melhor = o
-	return melhor
-
-
-static func esquecer_queda(p: Player) -> void:
-	p.remove_meta(&"desmaiou_ms")

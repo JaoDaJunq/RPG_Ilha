@@ -29,7 +29,7 @@ const DADOS := {
 			[&"circulo_de_cura", "Círculo de cura", "Uma área no chão que cura por 6 s.", "", ""],
 			[&"elo_vital", "Elo vital", "Liga você a um aliado: vocês dividem o dano e toda cura vale para os dois.", "", ""],
 			[&"ultimo_suspiro", "Último suspiro", "O aliado perto que cairia fica com 1 de vida (uma vez por minuto).", "vitalidade", ""],
-			[&"levantar", "Levantar", "Traz para o seu lado o aliado que desmaiou no último minuto.", "", ""],
+			[&"levantar", "Levantar", "Levanta ali mesmo o aliado caído perto, com metade da vida.", "", ""],
 			[&"fonte_da_vida", "Fonte da vida", "Suprema. Área grande que cura todo mundo e limpa os efeitos ruins por 8 s.", "", ""],
 		]],
 		[&"protetor", "Protetor", [

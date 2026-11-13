@@ -7,7 +7,7 @@
 script = ExtResource("1_script")
 id = &"levantar"
 nome = "Levantar"
-descricao = "Traz para o seu lado o aliado que desmaiou no último minuto, protegido por 2 s."
+descricao = "Levanta ali mesmo o aliado caído perto, com metade da vida e protegido por 2 s."
 icone = ExtResource("2_icone")
 modo = 1
 custo_mana = 20.0

@@ -21,12 +21,31 @@ static func ponto_na_mira(quem: Player, alvo: Vector2, alcance: float) -> Vector
 	return de + (alvo - de).limit_length(alcance * Passivas.alcance(quem))
 
 
-## O aliado (outro jogador) mais perto da mira, a até ALCANCE_ALIADO do Clérigo. Se ninguém
+## O aliado (outro jogador, de pé) mais perto da mira, a até ALCANCE_ALIADO do Clérigo. Se ninguém
 ## estiver perto da mira, o aliado mais perto do Clérigo. Nulo se não houver aliado.
 static func aliado_na_mira(quem: Player, mira: Vector2) -> Player:
 	var melhor: Player = null
 	var menor := INF
 	for o in Passivas.outros_jogadores(quem, ALCANCE_ALIADO):
+		if o.caido:
+			continue  # caído só volta pelo Levantar (caido_na_mira)
+		var d := o.global_position.distance_to(mira)
+		if d > RAIO_MIRA_ALIADO:
+			d = 1000.0 + o.global_position.distance_to(quem.global_position)
+		if d < menor:
+			menor = d
+			melhor = o
+	return melhor
+
+
+## O aliado CAÍDO mais perto da mira, a até ALCANCE_ALIADO do Clérigo (se nenhum estiver
+## perto da mira, o caído mais perto do Clérigo). Nulo se não houver.
+static func caido_na_mira(quem: Player, mira: Vector2) -> Player:
+	var melhor: Player = null
+	var menor := INF
+	for o in Passivas.outros_jogadores(quem, ALCANCE_ALIADO):
+		if not o.caido:
+			continue
 		var d := o.global_position.distance_to(mira)
 		if d > RAIO_MIRA_ALIADO:
 			d = 1000.0 + o.global_position.distance_to(quem.global_position)
@@ -114,27 +133,26 @@ class EloVital extends HabilidadeLogica:
 		quem.avisar("Elo vital com outro jogador: vocês dividem o dano.")
 
 
-## Levantar: traz para o lado do Clérigo o aliado que desmaiou no último minuto (quem
-## desmaia acorda no acampamento com a vida cheia; o Levantar o põe de volta na luta).
+## Levantar: levanta ali mesmo o aliado CAÍDO perto (o mais perto da mira), com parte da
+## vida e protegido por um tempo; a tela de morte dele fecha (Player.levantar).
 class Levantar extends HabilidadeLogica:
 	## Linhas de efeito da janelinha da habilidade (TextoHabilidade).
 	func textos(hab: HabilidadeData, ficha: Ficha) -> Array[String]:
-		var l: Array[String] = ["Vale para quem desmaiou há até %d s" % (PassivasClerigo.LEVANTAR_MS / 1000), "Chega protegido por %s s" % TextoHabilidade.numero(PROTECAO)]
+		var l: Array[String] = ["Aliado caído a até %s" % TextoHabilidade.blocos(ALCANCE_ALIADO),
+			"Volta com %d%% da vida" % roundi(VIDA * 100.0), "Fica protegido por %s s" % TextoHabilidade.numero(PROTECAO)]
 		return l
 
 	const PROTECAO := 2.0
+	const VIDA := 0.5
 
-	func executar(quem: Player, hab: HabilidadeData, _dir: Vector2, _alvo: Vector2, _carga: float) -> void:
-		var caido := PassivasClerigo.ultimo_caido(quem)
+	func executar(quem: Player, hab: HabilidadeData, _dir: Vector2, alvo: Vector2, _carga: float) -> void:
+		var caido := LogicasClerigo.caido_na_mira(quem, alvo)
 		if caido == null:
-			quem.avisar("Nenhum aliado caiu no último minuto.")
+			quem.avisar("Nenhum aliado caído perto.")
 			return
-		var destino := quem.global_position + Vector2(14, 0)
-		PassivasClerigo.esquecer_queda(caido)
-		caido.teleportar(destino)
-		caido.vida.proteger(PROTECAO * quem.mult_habilidade(hab))
-		World.efeito_todos(quem, &"subir_nivel", destino + Vector2(0, -14))
-		caido.avisar("Um Clérigo levantou você!")
+		if caido.levantar(caido.global_position, VIDA, PROTECAO * quem.mult_habilidade(hab)):
+			World.efeito_todos(caido, &"subir_nivel", caido.global_position + Vector2(0, -14))
+			caido.avisar("Um Clérigo levantou você!", &"subir_nivel")
 
 
 ## Fonte da vida (suprema): área grande em volta do Clérigo que cura todos e limpa os

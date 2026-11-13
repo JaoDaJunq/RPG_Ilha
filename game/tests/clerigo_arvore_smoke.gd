@@ -173,14 +173,18 @@ func _elo() -> void:
 
 func _levantar() -> void:
 	await _limpar()
-	aliado.vida.tomar_dano(100000.0)  # desmaia: acorda no acampamento (cheio)
+	aliado.global_position = p.global_position + Vector2(60, 0)
+	var onde := aliado.global_position
+	aliado.vida.tomar_dano(100000.0)  # cai no lugar (vida 0)
 	await get_tree().physics_frame
-	aliado.global_position = p.global_position + Vector2(400, 0)
-	checar(PassivasClerigo.ultimo_caido(p) == aliado, "Levantar sabe quem desmaiou no último minuto")
-	await _usar(&"levantar", p.global_position)
-	checar(aliado.global_position.distance_to(p.global_position) < 20.0, "Levantar traz o aliado para o lado do Clérigo (%.0f px)" % aliado.global_position.distance_to(p.global_position))
-	checar(aliado.vida.protegido(), "Levantar: o aliado chega protegido")
-	checar(PassivasClerigo.ultimo_caido(p) == null, "Levantar: não traz o mesmo duas vezes")
+	checar(aliado.caido and LogicasClerigo.caido_na_mira(p, onde) == aliado, "Levantar acha o aliado caído perto")
+	await _usar(&"levantar", onde)
+	checar(not aliado.caido, "Levantar levanta o aliado caído")
+	checar(aliado.global_position.distance_to(onde) < 1.0, "Levantar: ele levanta ali mesmo (%.0f px)" % aliado.global_position.distance_to(onde))
+	checar(is_equal_approx(aliado.vida.atual, aliado.vida.maximo * LogicasClerigo.Levantar.VIDA),
+			"Levantar: volta com metade da vida (%.0f de %.0f)" % [aliado.vida.atual, aliado.vida.maximo])
+	checar(aliado.vida.protegido(), "Levantar: o aliado volta protegido")
+	checar(LogicasClerigo.caido_na_mira(p, onde) == null, "Levantar: ninguém mais caído para levantar")
 
 
 func _fonte() -> void:
