@@ -7,6 +7,7 @@ extends TesteBase
 const SLIME := preload("res://scenes/enemies/slime.tscn")
 const JOGADOR := preload("res://scenes/player/player.tscn")
 const PEDRA := preload("res://scenes/world/pedra.tscn")
+const ATIRADOR := preload("res://scenes/enemies/atirador.tscn")
 
 var w: World
 var p: Player
@@ -146,7 +147,9 @@ func _bau_trancado() -> void:
 	checar(is_instance_valid(b) and b.golpes_restantes() == 1, "cada golpe estraga a tranca (falta 1)")
 	Golpes.acertar(p, b, 1.0, &"fisico")
 	await get_tree().physics_frame
-	checar(not is_instance_valid(b) and get_tree().get_nodes_in_group(&"itens_chao").size() > itens, "a tranca quebrou: o saque caiu no chão e o baú sumiu")
+	checar(is_instance_valid(b) and not b.pode_interagir() and not b.is_in_group(&"baus_trancados") and get_tree().get_nodes_in_group(&"itens_chao").size() > itens, "a tranca quebrou: o saque caiu no chão e o baú aparece aberto")
+	await get_tree().create_timer(BauTrancado.ABERTO_SEGUNDOS + 0.6).timeout
+	checar(not is_instance_valid(b), "o baú aberto some depois de %.1f s" % BauTrancado.ABERTO_SEGUNDOS)
 	checar("BauTeste1" in w._removidos, "o baú aberto fica registrado (não volta ao carregar o mundo)")
 	# Ladino com Dedos leves: abre na hora.
 	var b2 := BauTrancado.new()
@@ -158,8 +161,31 @@ func _bau_trancado() -> void:
 	p.arvore[&"dedos_leves"] = 1
 	b2.interagir(p)
 	await get_tree().physics_frame
-	checar(not is_instance_valid(b2) and get_tree().get_nodes_in_group(&"itens_chao").size() > itens, "Dedos leves: o baú trancado abre na hora")
+	checar(not b2.pode_interagir() and get_tree().get_nodes_in_group(&"itens_chao").size() > itens, "Dedos leves: o baú trancado abre na hora")
 	p.arvore.erase(&"dedos_leves")
+	# Chave: abre na hora e some do inventário.
+	var b3 := BauTrancado.new()
+	b3.name = "BauTeste3"
+	b3.position = p.global_position + Vector2(0, 30)
+	w.entidades.add_child(b3)
+	await get_tree().physics_frame
+	itens = get_tree().get_nodes_in_group(&"itens_chao").size()
+	checar(ItemData.existe(BauTrancado.CHAVE) and ItemData.carregar(BauTrancado.CHAVE).icone != null, "a chave é um item com ícone")
+	p.inventario.adicionar(BauTrancado.CHAVE, 1)
+	b3.interagir(p)
+	await get_tree().physics_frame
+	checar(not b3.pode_interagir() and p.inventario.quantidade_de(BauTrancado.CHAVE) == 0 and get_tree().get_nodes_in_group(&"itens_chao").size() > itens, "a chave abre o baú trancado e some")
+	# O arqueiro inimigo às vezes solta a chave (aqui, sempre).
+	var a: Atirador = colocar(w, ATIRADOR, p.global_position + Vector2(60, 0))
+	a.set_physics_process(false)
+	a.chance_chave = 1.0
+	await get_tree().physics_frame
+	a.vida.tomar_dano(9999.0)
+	await get_tree().physics_frame
+	var chave_no_chao := false
+	for it in get_tree().get_nodes_in_group(&"itens_chao"):
+		chave_no_chao = chave_no_chao or it.get(&"item") == BauTrancado.CHAVE
+	checar(chave_no_chao, "o arqueiro inimigo derrotado soltou a chave")
 	await pegar_do_chao(p)
 	p.global_position = w.centro + Vector2(0, 60)
 	# O mundo espalha os baús (iguais em todos, longe da fogueira).

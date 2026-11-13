@@ -31,6 +31,8 @@ const COM_DANO: Array[StringName] = [QUEIMADURA, VENENO]
 const MARCADO_PADRAO := 0.2
 ## Quanto tempo fica molhado depois de sair da água (ou do gelo derretido).
 const MOLHADO_SEGUNDOS := 4.0
+## Altura (px do mundo, acima dos pés) do meio das gotinhas do Molhado: perto da cabeça.
+const GOTAS_ALTURA := 16.0
 ## De quanto em quanto tempo o anfitrião confere se o dono está na água.
 const INTERVALO_AGUA := 0.3
 
@@ -59,6 +61,8 @@ var _empurrao_t := 0.0
 var _agua_t := 0.0
 ## A mira vermelha em cima da cabeça enquanto o dono está Marcado (em todas as máquinas).
 var _marca: Efeito
+## As gotinhas pingando enquanto o dono está Molhado (em todas as máquinas).
+var _gotas: Efeito
 
 
 func _ready() -> void:
@@ -75,6 +79,21 @@ func _atualizar_marca() -> void:
 	elif not tem(MARCADO) and is_instance_valid(_marca):
 		_marca.sumir(0.15)
 		_marca = null
+	_atualizar_gotas(dono)
+
+
+## Molhado: gotinhas pingando em volta da cabeça (em laço) e, se acabou de entrar na água,
+## o respingo do pacote no pé.
+func _atualizar_gotas(dono: Node2D) -> void:
+	if tem(MOLHADO) and not is_instance_valid(_gotas):
+		_gotas = Efeito.criar(&"gotas", Vector2(0, -GOTAS_ALTURA), true)
+		_gotas.z_index = 1
+		dono.add_child.call_deferred(_gotas)
+		if na_agua(dono) and dono.get_parent():
+			dono.get_parent().add_child.call_deferred(Efeito.criar(&"respingo", dono.global_position))
+	elif not tem(MOLHADO) and is_instance_valid(_gotas):
+		_gotas.sumir(0.3)
+		_gotas = null
 
 
 ## O componente de `alvo` (nulo se ele não tiver).

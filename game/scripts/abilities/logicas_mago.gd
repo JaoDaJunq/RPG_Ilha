@@ -195,7 +195,7 @@ class TornadoDeFogo extends HabilidadeLogica:
 		z.efeito_tique = &"fogo"
 		# O funil de fogo (2 quadros girando) anda junto com a zona até a mira e fica lá.
 		var ida := minf(DURACAO, quem.global_position.distance_to(ate) / VELOCIDADE)
-		World.efeito_movel_todos(quem, &"tornado", quem.global_position, ate, ida, DURACAO - ida, &"", 2.0)
+		World.efeito_movel_todos(quem, &"tornado", quem.global_position, ate, ida, DURACAO - ida)
 		z.ao_tique = func(zona: Zona, inimigos: Array[Node2D], _j: Array[Player]) -> void:
 			var centro: Vector2 = zona.global_position
 			for e in Golpes.inimigos_em_volta(zona, centro, RAIO_PUXAO):
@@ -328,7 +328,7 @@ class Nevasca extends HabilidadeLogica:
 		z.efeito_tique = &"nova_gelo"
 		# Três nuvens de neve cobrindo a área (uma só, do tamanho da área, ficaria grosseira).
 		for desvio in NUVENS:
-			World.efeito_laco_todos(quem, &"nevasca", ponto + desvio, DURACAO, 2.0)
+			World.efeito_laco_todos(quem, &"nevasca", ponto + desvio, DURACAO)
 		z.ao_tique = func(zona: Zona, inimigos: Array[Node2D], _j: Array[Player]) -> void:
 			for e in inimigos:
 				var n: int = conta.get(e.get_instance_id(), 0) + 1
@@ -378,7 +378,6 @@ class TotemTesla extends HabilidadeLogica:
 	func executar(quem: Player, hab: HabilidadeData, _dir: Vector2, alvo: Vector2, _carga: float) -> void:
 		var t := Invocacao.criar(quem, LogicasMago.ponto_mira(quem, alvo, hab.alcance))
 		t.desenho(["totem_tesla"])
-		t.escala = 0.5  # da altura de um jogador
 		t.duracao = 8.0
 		t.vida_maxima = 30.0
 		t.dano = dano_de(quem, hab)
@@ -478,7 +477,6 @@ class GolemDePedra extends HabilidadeLogica:
 	func executar(quem: Player, hab: HabilidadeData, _dir: Vector2, alvo: Vector2, _carga: float) -> void:
 		var g := Invocacao.criar(quem, LogicasMago.ponto_mira(quem, alvo, hab.alcance))
 		g.desenho(["golem"], 6.0, "golem_soco")
-		g.escala = 0.5  # maior que o mago (a arte veio pequena para um golem)
 		g.duracao = 15.0
 		g.vida_maxima = 40.0
 		g.dano = dano_de(quem, hab)

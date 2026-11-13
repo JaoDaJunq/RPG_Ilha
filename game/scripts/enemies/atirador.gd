@@ -44,6 +44,8 @@ const DESVIO_CEGO := 0.6
 ## Arqueiro da noite: nasce no escuro, é mais forte, foge da luz e vai embora ao amanhecer.
 @export var noturno := false
 @export var envenenado := false
+## Chance de soltar uma chave de baú trancado ao morrer (os testes mudam).
+var chance_chave := BauTrancado.CHANCE_CHAVE
 @export var olhando_esquerda := false
 
 var _recarga := 1.0
@@ -337,7 +339,10 @@ func _on_morreu() -> void:
 	var xp := XP_DERROTA * (2 if noturno else 1)
 	World.dar_xp_em_volta(self, global_position, xp)
 	World.avisar_todos(self, "Arqueiro inimigo derrotado! +%d de experiência para quem estava perto." % xp)
-	World.soltar_itens(self, global_position, [[&"pena", 1 + randi() % 2], [&"carvao", randi() % 2]])
+	var itens := [[&"pena", 1 + randi() % 2], [&"carvao", randi() % 2]]
+	if randf() < chance_chave:
+		itens.append([BauTrancado.CHAVE, 1])  # abre um baú trancado (e some)
+	World.soltar_itens(self, global_position, itens)
 	queue_free()
 
 

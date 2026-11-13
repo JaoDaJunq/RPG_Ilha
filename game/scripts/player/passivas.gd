@@ -141,7 +141,7 @@ static func forcar_critico(p: Player) -> void:
 static func critou(p: Player, alvo: Node2D) -> void:
 	p.set_meta(&"ultimo_critico_ms", Time.get_ticks_msec())
 	p.set_meta(&"criticos", int(p.get_meta(&"criticos", 0)) + 1)
-	World.efeito_todos(p, &"giro", alvo.global_position + Vector2(0, -8))
+	World.efeito_todos(p, &"critico", alvo.global_position + Vector2(0, -6))
 	PassivasArqueiro.critou(p, alvo)
 
 

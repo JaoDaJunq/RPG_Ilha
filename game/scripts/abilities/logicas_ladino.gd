@@ -170,8 +170,7 @@ class FrascoDeAcido extends HabilidadeLogica:
 		z.estado = EfeitosEstado.MARCADO
 		z.estado_forca = MARCA
 		z.estado_segundos = 1.2
-		z.efeito_visual = &"poca_acido"
-		z.escala_visual = Efeito.escala_para_raio(&"poca_acido", RAIO)
+		z.efeito_visual = Efeito.peca_para_raio(&"poca_acido", RAIO)  # desenhada no tamanho da área (escala 1)
 		z.iniciar()
 
 
@@ -193,8 +192,7 @@ class NuvemToxica extends HabilidadeLogica:
 		z.estado = EfeitosEstado.VENENO
 		z.estado_forca = veneno
 		z.estado_segundos = Player.TEMPO_VENENO
-		z.efeito_visual = &"nuvem_toxica"
-		z.escala_visual = Efeito.escala_para_raio(&"nuvem_toxica", RAIO)
+		z.efeito_visual = Efeito.peca_para_raio(&"nuvem_toxica", RAIO)  # desenhada no tamanho da área (escala 1)
 		z.set_meta(&"nuvem_toxica", true)
 		z.iniciar()
 		# Confere o fogo a cada 0,1 s (um projétil passa rápido; o tique da zona é de 1 s).
