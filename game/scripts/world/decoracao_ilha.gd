@@ -184,6 +184,7 @@ func espalhar() -> void:
 	bosque.frequency = 0.07
 	var g := w.gerador
 	var densidade := w.plantas / 100.0
+	var depois: Array = []
 	for y in w.altura:
 		for x in w.largura:
 			var cel := Vector2i(x, y)
@@ -207,13 +208,10 @@ func espalhar() -> void:
 				continue
 			var longe_centro := p.distance_to(w.centro)
 			if o_que in NOVOS_L39:
-				# Sem usar o rng (senão as árvores dos mundos salvos mudariam de lugar).
+				# Sem usar o rng e só depois de tudo (senão as árvores dos mundos salvos
+				# mudariam de lugar ou perderiam o espaço).
 				if _hash01(cel) < densidade and longe_centro > 80.0 and g.distancia[i] < 0.9:
-					if MINERIOS.has(StringName(o_que)):
-						if w._livre(p, 24.0):
-							_minerio(StringName(o_que), p)
-					elif w._livre(p, 12.0):
-						_coletavel(StringName(o_que), p, false)
+					depois.append([StringName(o_que), p])
 				continue
 			if o_que.begins_with("arvore:"):
 				var mata := bosque.get_noise_2d(x, y) > -0.1 or regiao != Regioes.Id.CLAREIRA
@@ -230,6 +228,13 @@ func espalhar() -> void:
 						_coletavel(StringName(o_que), p, true)  # frutinhas, conchas, cogumelos
 					else:
 						_peca(StringName(o_que), p)
+	# Os novos do L39 (ervas, capim, minérios...) no espaço que sobrou.
+	for d in depois:
+		if MINERIOS.has(d[0]):
+			if w._livre(d[1], 24.0):
+				_minerio(d[0], d[1])
+		elif w._livre(d[1], 12.0):
+			_coletavel(d[0], d[1], false)
 
 
 func _sortear(tabela: Array, sorteio: float, na_lama: bool) -> String:
