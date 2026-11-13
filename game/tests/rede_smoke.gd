@@ -78,7 +78,7 @@ func _ready() -> void:
 	for nome in niveis:
 		niveis_certos = niveis_certos and niveis[nome] == ("3" if String(nome).begins_with("SlimeNoite") else "1")
 	checar(niveis_certos, "cliente vê o nível dos slimes (1 e, os da noite, 3): %s" % str(niveis))
-	checar(absf(float(relatorio.get("barra_slime", -1.0)) - 75.0) < 0.5, "cliente vê a barra de vida do slime que apanhou (%s)" % relatorio.get("barra_slime"))
+	checar(absf(float(relatorio.get("barra_slime", -1.0)) - 100.0 * 5.0 / 6.0) < 0.5, "cliente vê a barra de vida do slime que apanhou (%s)" % relatorio.get("barra_slime"))
 	var esperado := Ficha.criar(&"ogro", &"arqueiro")
 	checar(relatorio.get("vida_vista", 0.0) == esperado.vida_maxima(), "cliente recebe a própria vida do anfitrião (%s)" % relatorio.get("vida_vista"))
 	checar(relatorio.get("titulo", "") == "Ogro Arqueiro", "cliente escolheu Ogro Arqueiro (%s)" % relatorio.get("titulo"))

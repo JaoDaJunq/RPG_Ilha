@@ -364,6 +364,8 @@ func _definir_gelo(cel: Vector2i, congelado: bool) -> void:
 func _efeito(nome: StringName, pos: Vector2) -> void:
 	if Net.veio_do_anfitriao():
 		entidades.add_child(Efeito.criar(nome, pos))
+		if nome == &"explosao":
+			Combate.tremer_perto(get_tree(), pos, Combate.TREMOR_EXPLOSAO)  # L40: só a câmera de quem está perto
 
 
 ## Efeito em laço preso a alguém (o escudo do Bloqueio), em todos os jogadores.

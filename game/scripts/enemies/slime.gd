@@ -19,6 +19,8 @@ const XP_DERROTA := 10
 ## Nível mostrado em cima da cabeça (o slime comum e o da noite).
 const NIVEL := 1
 const NIVEL_NOTURNO := 3
+## Peso no empurrão do golpe (ReacaoGolpe): 1 = o normal.
+const PESO := 1.0
 
 @export var velocidade := 28.0
 @export var raio_visao := 90.0
@@ -34,8 +36,9 @@ const NIVEL_NOTURNO := 3
 @export var envenenado := false
 
 var _recarga := 0.0
-var _empurrao := Vector2.ZERO
 var _dano_visivel := 0.0  # mostra o quadro de dano por um instante
+## Reação ao apanhar (empurrão, piscar, número, hit stop): ReacaoGolpe, comum a todos.
+var reacao: ReacaoGolpe
 ## Quem ele persegue (só o anfitrião sabe): um jogador ou, provocado, uma invocação.
 var _alvo_atual: Node2D = null
 
@@ -66,8 +69,10 @@ func _ready() -> void:
 		raio_visao *= 1.4
 	barra.definir_nivel((NIVEL_NOTURNO if noturno else NIVEL) + World.nivel_extra(self))
 	barra.ajustar_ao_sprite(visual)
+	reacao = ReacaoGolpe.em(self, PESO)
+	reacao.reagiu.connect(func(_q: float, _c: bool, _f: float) -> void: _dano_visivel = 0.3)
 	if multiplayer.is_server():
-		# Dificuldade do mundo: a vida vai para os outros pelos avisos de golpe (_piscar).
+		# Dificuldade do mundo: a vida vai para os outros pelos avisos de golpe (ReacaoGolpe).
 		vida.maximo *= World.mult_dificuldade(self, &"vida_inimigo")
 		vida.atual = vida.maximo
 		hurtbox.atingido.connect(_on_atingido)
@@ -142,9 +147,11 @@ func _physics_process(delta: float) -> void:
 	if _estado == Estado.RECUANDO:
 		rapidez = _DIST_RECUO / _TEMPO_RECUO  # saltinho para trás depois da cabeçada
 	if efeitos.impulso() != Vector2.ZERO:
-		_empurrao = Vector2.ZERO  # puxado ou empurrado por habilidade: vale só esse movimento
-	velocity = dir * rapidez * efeitos.mult_velocidade() + _empurrao + efeitos.impulso()
-	_empurrao = _empurrao.move_toward(Vector2.ZERO, 400.0 * delta)
+		reacao.parar_empurrao()  # puxado ou empurrado por habilidade: vale só esse movimento
+	# Atacando (achatado, no pulo ou quicando), o golpe do jogador não o empurra: o pulo
+	# não é cortado, então trocar golpes sem esquivar custa vida.
+	reacao.armadura = parado or _estado in [Estado.PREPARANDO, Estado.PULANDO, Estado.RECUANDO]
+	velocity = dir * rapidez * efeitos.mult_velocidade() + reacao.empurrao(delta) + efeitos.impulso()
 	move_and_slide()
 
 
@@ -191,11 +198,8 @@ func _on_atingido(quantidade: float, tipo: StringName, origem: Node) -> void:
 				efeitos.remover(EfeitosEstado.CONGELADO)
 				World.avisar_todos(self, "Estilhaçou! Golpe em inimigo congelado dá dano dobrado.")
 	parado = not efeitos.pode_mover()
-	if not vida.tomar_dano(dano, tipo):
-		return
-	if origem is Node2D and not parado:
-		_empurrao = (global_position - origem.global_position).normalized() * 160.0
-	_piscar.rpc(vida.atual, vida.maximo)
+	reacao.armadura = parado or _estado in [Estado.PREPARANDO, Estado.PULANDO, Estado.RECUANDO]
+	vida.tomar_dano(dano, tipo)  # o ReacaoGolpe empurra, pisca e mostra o número
 
 
 ## O pulo acertou `alvo` (um jogador ou uma invocação): dá o dano, se não errar (Cego).
@@ -213,20 +217,6 @@ func _cabecada(alvo: Node2D) -> bool:
 	return true
 
 
-
-
-## Todos veem o golpe; a vida vai junto para a barra em cima da cabeça aparecer nos clientes.
-@rpc("authority", "call_local", "reliable")
-func _piscar(atual: float, maximo: float) -> void:
-	if not multiplayer.is_server():
-		vida.maximo = maximo
-		vida.atual = atual
-	barra.mostrar_dano()
-	Sfx.tocar(&"acerto", -10.0)
-	_dano_visivel = 0.3
-	var t := create_tween()
-	t.tween_property(visual, "self_modulate", Color(1.0, 0.5, 0.5), 0.05)
-	t.tween_property(visual, "self_modulate", Color.WHITE, 0.2)
 
 
 func _on_morreu() -> void:
@@ -297,12 +287,12 @@ func _decidir(alvo: Node2D, delta: float) -> Vector2:
 					_mudar(Estado.RECUANDO)
 					return _dir_recuo
 			if _tempo_estado >= _TEMPO_PULO:
-				_recarga = recarga_contato
+				_recarga = recarga_contato * Combate.ritmo_inimigo(self)
 				_mudar(Estado.PERSEGUINDO if ve_alvo else Estado.PASSEANDO)
 			return _dir_pulo
 		Estado.RECUANDO:
 			if _tempo_estado >= _TEMPO_RECUO:
-				_recarga = _RECARGA_CABECADA
+				_recarga = _RECARGA_CABECADA * Combate.ritmo_inimigo(self)
 				_mudar(Estado.PERSEGUINDO if ve_alvo else Estado.PASSEANDO)
 				return Vector2.ZERO
 			return _dir_recuo

@@ -45,7 +45,7 @@ shape = SubResource("Shape_corpo")
 
 [node name="HealthComponent" type="Node" parent="."]
 script = ExtResource("2_vida")
-maximo = 4.0
+maximo = 6.0
 invulneravel_por = 0.15
 
 [node name="Hurtbox" type="Area2D" parent="."]

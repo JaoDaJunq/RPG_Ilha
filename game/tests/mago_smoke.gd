@@ -24,7 +24,7 @@ func _ready() -> void:
 	await get_tree().physics_frame
 	p.golpear()
 	await get_tree().physics_frame
-	var normal := p.dano_golpe * p.ficha.multiplicador_fisico()
+	var normal := p.dano_do_golpe(0)
 	var tirou := vida_antes - (slime.vida.atual if is_instance_valid(slime) else 0.0)
 	checar(tirou >= normal * 2.0 - 0.01, "golpe no congelado estilhaça: dano dobrado (%.2f, normal %.2f)" % [tirou, normal])
 	checar(not is_instance_valid(slime) or not slime.congelado(), "estilhaçar descongela")
