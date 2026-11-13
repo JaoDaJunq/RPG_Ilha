@@ -78,11 +78,11 @@ Célula marcada "vazia": só o fundo magenta.
 6. LAJE ENTALHADA no chão: placa de pedra plana e rachada com uma espiral entalhada, vista de cima. ~40 x 24.
 
 ## Folha 08: ponte (régua `largas_4x.png`; 1 coluna x 2 linhas, células de 1536x512)
-1. PONTE DE MADEIRA inteira, na horizontal (atravessa um rio que corre de cima para baixo): tábuas na vertical lado a lado, duas vigas embaixo, corrimão de corda com postes nas duas bordas (de cima e de baixo). ~120 x 44.
+1. PONTE DE MADEIRA inteira, na horizontal (atravessa um rio que corre de cima para baixo): tábuas na vertical lado a lado, duas vigas embaixo, corrimão de corda com postes nas duas bordas (de cima e de baixo). GRANDE: ~350 x 100 (quase a célula inteira na largura; atravessa um rio de 5 blocos).
 2. A MESMA PONTE QUEBRADA: o meio caiu (falta um buraco de tábuas no centro), tábuas soltas penduradas, corda arrebentada.
 
 ## Folha 09: raízes que fecham o caminho (régua `largas_4x.png`; 1 coluna x 2 linhas, células de 1536x512)
-1. MURALHA DE RAÍZES: raízes enormes, grossas e escuras, entrelaçadas, com espinhos e musgo, formando uma barreira baixa e comprida na horizontal. ~110 x 46.
+1. MURALHA DE RAÍZES: raízes enormes, grossas e escuras, entrelaçadas, com espinhos e musgo, formando uma barreira baixa e comprida na horizontal. GRANDE: ~350 x 100 (quase a célula inteira na largura; fecha uma passagem de 5 blocos).
 2. AS MESMAS RAÍZES RECOLHIDAS: só os tocos das raízes nas duas pontas, encolhidos, com folhinhas novas brotando (o caminho do meio livre).
 
 ## Terrenos (refazer o tileset do pacote)
