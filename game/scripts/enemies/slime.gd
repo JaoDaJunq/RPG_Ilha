@@ -13,6 +13,15 @@ extends CharacterBody2D
 
 ## Slime no estilo Tiny Swords (L14): quadros 4 (parado) e 5 (achatado) da folha de pedras.
 const TEXTURA := preload("res://assets/sprites/tiny/pedras_slime.png")
+## Slimes dos elementos (L39 folha 09): fogo 0-1, gelo 2-3, veneno 4-5 (parado e achatado).
+const TEXTURA_ELEMENTOS := preload("res://assets/sprites/tiny/inimigos/slimes_elementos.png")
+## Por elemento: quadro, o estado que o contato deixa (segundos, força), imune a, fraco a e o
+## saque a mais [item, chance].
+const ELEMENTOS := {
+	&"fogo": {quadro = 0, estado = EfeitosEstado.QUEIMADURA, segundos = 3.0, forca = 3.0, imune = [&"fogo", &"queimadura"], fraco = &"gelo", saque = [&"carvao", 0.7]},
+	&"gelo": {quadro = 2, estado = EfeitosEstado.LENTIDAO, segundos = 2.5, forca = 0.5, imune = [&"gelo"], fraco = &"fogo", saque = [&"cristal", 0.2]},
+	&"veneno": {quadro = 4, estado = EfeitosEstado.VENENO, segundos = 4.0, forca = 2.0, imune = [&"veneno"], fraco = &"fogo", saque = [&"erva", 0.6]},
+}
 const TEMPO_CONGELADO := 2.5
 ## Experiência para cada jogador perto quando o slime é derrotado.
 const XP_DERROTA := 10
@@ -34,6 +43,9 @@ const PESO := 1.0
 @export var noturno := false
 ## Envenenado (sincronizado para todos verem a cor verde).
 @export var envenenado := false
+## Slime de elemento (L39): &"fogo", &"gelo" ou &"veneno" (vazio = o verde comum). Ver
+## ELEMENTOS: o que o contato faz e a que ele é imune; o elemento contrário dá o triplo.
+@export var elemento: StringName = &""
 
 var _recarga := 0.0
 var _dano_visivel := 0.0  # mostra o quadro de dano por um instante
@@ -54,8 +66,10 @@ func _ready() -> void:
 	var f := SpriteFrames.new()
 	f.remove_animation(&"default")
 	var t := Vector2i(128, 128)
-	var parado := SpriteSheets.quadro(TEXTURA, 4, t)
-	var achatado := SpriteSheets.quadro(TEXTURA, 5, t)
+	var tex: Texture2D = TEXTURA if elemento == &"" else TEXTURA_ELEMENTOS
+	var q0: int = 4 if elemento == &"" else int(ELEMENTOS[elemento].quadro)
+	var parado := SpriteSheets.quadro(tex, q0, t)
+	var achatado := SpriteSheets.quadro(tex, q0 + 1, t)
 	SpriteSheets.adicionar_quadros(f, &"parado", [parado], 1.0)
 	SpriteSheets.adicionar_quadros(f, &"pulo", [achatado, parado, parado, achatado], 7.0)
 	SpriteSheets.adicionar_quadros(f, &"dano", [achatado], 1.0)
@@ -67,7 +81,11 @@ func _ready() -> void:
 		dano_contato *= 1.5
 		velocidade *= 1.15
 		raio_visao *= 1.4
-	barra.definir_nivel((NIVEL_NOTURNO if noturno else NIVEL) + World.nivel_extra(self))
+	if elemento != &"":
+		vida.maximo *= 1.3
+		vida.atual = vida.maximo
+		dano_contato *= 1.15
+	barra.definir_nivel((NIVEL_NOTURNO if noturno else NIVEL) + (1 if elemento != &"" else 0) + World.nivel_extra(self))
 	barra.ajustar_ao_sprite(visual)
 	reacao = ReacaoGolpe.em(self, PESO)
 	reacao.reagiu.connect(func(_q: float, _c: bool, _f: float) -> void: _dano_visivel = 0.3)
@@ -179,6 +197,18 @@ func _jogador_mais_proximo() -> Player:
 
 func _on_atingido(quantidade: float, tipo: StringName, origem: Node) -> void:
 	var dano := quantidade
+	if elemento != &"":
+		var e: Dictionary = ELEMENTOS[elemento]
+		if tipo in e.imune:
+			World.efeito_todos(self, &"poeira", global_position)
+			return  # o próprio elemento não faz nada
+		if tipo == e.fraco:
+			# Fogo derrete o gelo, gelo apaga o fogo, fogo queima o veneno: o triplo.
+			if tipo == &"gelo":
+				dano *= 3.0
+				tipo = &"fisico_elemento"  # o gelo apaga o fogo, mas não congela
+			else:
+				dano *= 1.5  # o fogo já dá o dobro no slime: fica o triplo
 	match tipo:
 		&"gelo":
 			efeitos.aplicar(EfeitosEstado.CONGELADO, TEMPO_CONGELADO, 0.0, origem)
@@ -211,6 +241,9 @@ func _cabecada(alvo: Node2D) -> bool:
 	var v := alvo.get_node_or_null("HealthComponent") as HealthComponent
 	if v == null or not v.tomar_dano(Passivas.ataque_inimigo(self, alvo, dano_contato), &"fisico"):
 		return false
+	if elemento != &"":
+		var e: Dictionary = ELEMENTOS[elemento]
+		EfeitosEstado.aplicar_em(alvo, e.estado, e.segundos, e.forca, self, 3)
 	if alvo is Player:
 		(alvo as Player).avisar("O slime pulou em você! Esquive (Shift) quando ele achatar.")
 		(alvo as Player).reagir_ao_golpe(global_position)
@@ -220,12 +253,17 @@ func _cabecada(alvo: Node2D) -> bool:
 
 
 func _on_morreu() -> void:
-	var xp := XP_DERROTA * (2 if noturno else 1)
+	var xp := XP_DERROTA * (2 if noturno else 1) + (5 if elemento != &"" else 0)
 	World.dar_xp_em_volta(self, global_position, xp)
 	World.avisar_todos(self, "Slime derrotado! +%d de experiência para quem estava perto." % xp)
 	# Saque: gel de slime no chão (o da noite deixa mais).
 	var gel := (2 if noturno else 1) + randi() % 2
-	World.soltar_itens(self, global_position, [[&"gel_slime", gel]])
+	var itens := [[&"gel_slime", gel]]
+	if elemento != &"":
+		var extra: Array = ELEMENTOS[elemento].saque
+		if randf() < float(extra[1]):
+			itens.append([extra[0], 1])
+	World.soltar_itens(self, global_position, itens)
 	queue_free()
 
 

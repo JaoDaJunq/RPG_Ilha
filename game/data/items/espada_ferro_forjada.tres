@@ -1,0 +1,16 @@
+[gd_resource type="Resource" script_class="ItemData" load_steps=3 format=3]
+
+[ext_resource type="Script" path="res://scripts/data/item_data.gd" id="1_script"]
+[ext_resource type="Texture2D" path="res://assets/sprites/tiny/icones/item_espada_ferro_forjada.png" id="2_icone"]
+
+[resource]
+script = ExtResource("1_script")
+id = &"espada_ferro_forjada"
+nome = "Espada de ferro forjada"
+icone = ExtResource("2_icone")
+pilha = 1
+ferramenta = &"espada"
+poder = 2.8
+arma_de = &"guerreiro"
+bonus_arma = 1.4
+visual_mao = &"espada_ferro"

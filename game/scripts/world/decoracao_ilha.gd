@@ -69,38 +69,71 @@ const PECAS := {
 	&"obelisco": [MUNDO + "ruinas_altas.png", 2, Vector2(256, 256), 8, "alto", 6.0, Color(0.4, 1.0, 0.8)],
 }
 
+## Coletáveis (L39): segurar E colhe e a peça volta a crescer depois de um tempo.
+## [textura, quadro, item, quantidade, ação, textura de colhido ("" = some), quadro de colhido]
+const COLETA := "res://scenes/world/coletavel.tscn"
+const COLETAVEIS := {
+	&"frutinhas": [MUNDO + "bosque.png", 3, &"frutinhas", 3, "Colher", MUNDO + "fornalha_plantas.png", 2],
+	&"cogumelo_vermelho": [MUNDO + "bosque.png", 5, &"cogumelo", 2, "Colher", "", 0],
+	&"conchas": [MUNDO + "praia.png", 0, &"concha", 2, "Pegar", "", 0],
+	&"ervas": [MUNDO + "fornalha_plantas.png", 3, &"erva", 2, "Colher", "", 0],
+	&"capim": [MUNDO + "fornalha_plantas.png", 4, &"fibra", 2, "Colher", "", 0],
+	# Os mesmos de antes, a mais nas regiões novas (nomes diferentes: não usam o rng).
+	&"frutinhas2": [MUNDO + "bosque.png", 3, &"frutinhas", 3, "Colher", MUNDO + "fornalha_plantas.png", 2],
+	&"cogumelo2": [MUNDO + "bosque.png", 5, &"cogumelo", 2, "Colher", "", 0],
+}
+## Entradas da TABELA que entraram no L39 (sorteadas sem o rng; ver espalhar).
+const NOVOS_L39: Array[String] = ["ervas", "capim", "frutinhas2", "cogumelo2", "minerio_cobre", "minerio_ferro", "cristal"]
+## Pedras com minério (L39 folha 10): [quadro inteiro, quadro depois do golpe, item, quantidade].
+## Mineradas viram pedrinhas e voltam a crescer.
+const MINERIOS := {
+	&"minerio_cobre": [0, 1, &"minerio_cobre", 2],
+	&"minerio_ferro": [2, 3, &"minerio_ferro", 2],
+	&"cristal": [4, 5, &"cristal", 1],
+}
+## Ponto de pesca (folha 11, quadro 5): ondinhas na água perto da terra; pescar perto dá 2.
+const CHANCE_PONTO_PESCA := 0.006
+
 ## O que sai de cada bloco, por região: [o quê, chance por bloco]. "arvore:<tipo>" é árvore,
-## "pedra" é pedra (recursos); o resto é decoração (PECAS). As chances se somam na ordem.
+## "pedra" é pedra (recursos); o resto é decoração (PECAS), coletável (COLETAVEIS) ou minério
+## (MINERIOS). As chances se somam na ordem; as novas (L39) vão no FIM da lista, para não
+## mudar o lugar das árvores dos mundos já salvos.
 const TABELA := {
 	Regioes.Id.CLAREIRA: [
 		["arvore:pinheiro1", 0.010], ["arvore:pinheiro2", 0.008], ["arvore:copa1", 0.008], ["arvore:copa2", 0.006],
 		["pedra", 0.007], ["arbusto", 0.02], ["pedrinha", 0.012], ["flores_amarelas", 0.012],
 		["cogumelo_azul", 0.003], ["cogumelo_vermelho", 0.002],
+		["capim", 0.008], ["ervas", 0.004],
 	],
 	Regioes.Id.BOSQUE: [
 		["arvore:cerejeira", 0.035], ["arvore:copa1", 0.008], ["arvore:copa2", 0.006],
 		["pedra", 0.005], ["flores_rosa", 0.05], ["flores_amarelas", 0.03], ["flores_azuis", 0.02],
 		["frutinhas", 0.008], ["tronco", 0.004], ["cogumelo_vermelho", 0.008], ["arbusto", 0.015],
+		["ervas", 0.008], ["capim", 0.006], ["frutinhas2", 0.006],
 	],
 	Regioes.Id.PRAIA: [
 		["arvore:coqueiro1", 0.009], ["arvore:coqueiro2", 0.009],
 		["conchas", 0.03], ["estrela", 0.01], ["poca", 0.005], ["tronco_mar", 0.004],
 		["pedras_algas", 0.007], ["pedrinha", 0.008], ["arbusto", 0.004],
+		["capim", 0.005],
 	],
 	Regioes.Id.PANTANO: [
 		["arvore:morta", 0.022], ["arvore:copa2", 0.004],
 		["cogumelo_gigante", 0.006], ["cogumelos_roxos", 0.016], ["cogumelo_azul", 0.012],
 		["taboa", 0.02], ["pedra", 0.004], ["toco_podre", 0.006], ["raiz", 0.007], ["arbusto", 0.005],
+		["ervas", 0.007], ["capim", 0.008], ["cogumelo2", 0.006],
 	],
 	Regioes.Id.COLINAS: [
 		["arvore:pinheiro1", 0.010], ["arvore:pinheiro2", 0.008], ["pedra", 0.055],
 		["rochedo", 0.006], ["pedras_empilhadas", 0.005], ["ossada", 0.002], ["pedrinha", 0.03],
 		["arbusto", 0.008],
+		["minerio_cobre", 0.014], ["minerio_ferro", 0.008], ["cristal", 0.002],
 	],
 	Regioes.Id.RUINAS: [
 		["arvore:copa1", 0.012], ["arvore:copa2", 0.008], ["arvore:cerejeira", 0.004], ["pedra", 0.018],
 		["coluna", 0.007], ["estatua", 0.0015], ["obelisco", 0.002], ["coluna_quebrada", 0.007],
 		["muro", 0.005], ["arbusto", 0.012], ["flores_azuis", 0.008], ["pedrinha", 0.01],
+		["cristal", 0.007], ["minerio_ferro", 0.005], ["ervas", 0.004],
 	],
 }
 ## No piso de pedra das ruínas sai laje; na lama, mais taboas; nas lagoas do pântano,
@@ -151,6 +184,7 @@ func espalhar() -> void:
 	bosque.frequency = 0.07
 	var g := w.gerador
 	var densidade := w.plantas / 100.0
+	var depois: Array = []
 	for y in w.altura:
 		for x in w.largura:
 			var cel := Vector2i(x, y)
@@ -173,6 +207,12 @@ func espalhar() -> void:
 			if o_que == "":
 				continue
 			var longe_centro := p.distance_to(w.centro)
+			if o_que in NOVOS_L39:
+				# Sem usar o rng e só depois de tudo (senão as árvores dos mundos salvos
+				# mudariam de lugar ou perderiam o espaço).
+				if _hash01(cel) < densidade and longe_centro > 80.0 and g.distancia[i] < 0.9:
+					depois.append([StringName(o_que), p])
+				continue
 			if o_que.begins_with("arvore:"):
 				var mata := bosque.get_noise_2d(x, y) > -0.1 or regiao != Regioes.Id.CLAREIRA
 				if mata and longe_centro > World.RAIO_CLAREIRA and g.distancia[i] < 0.9 and w._livre(p, 26.0):
@@ -184,7 +224,17 @@ func espalhar() -> void:
 				var peca: Array = PECAS[StringName(o_que)]
 				var raio := 30.0 if peca[5] > 0.0 else 12.0
 				if w._livre(p, raio):
-					_peca(StringName(o_que), p)
+					if COLETAVEIS.has(StringName(o_que)):
+						_coletavel(StringName(o_que), p, true)  # frutinhas, conchas, cogumelos
+					else:
+						_peca(StringName(o_que), p)
+	# Os novos do L39 (ervas, capim, minérios...) no espaço que sobrou.
+	for d in depois:
+		if MINERIOS.has(d[0]):
+			if w._livre(d[1], 24.0):
+				_minerio(d[0], d[1])
+		elif w._livre(d[1], 12.0):
+			_coletavel(d[0], d[1], false)
 
 
 func _sortear(tabela: Array, sorteio: float, na_lama: bool) -> String:
@@ -220,6 +270,8 @@ func _na_agua(cel: Vector2i, p: Vector2, sorteio: float, regiao: int, densidade:
 		a.scale = Vector2(ESCALA, ESCALA)
 		a.position = p
 		_chao.add_child(a)
+	elif g.distancia[i] < 1.1 and _hash01(cel) < CHANCE_PONTO_PESCA * densidade and _perto_da_terra(cel):
+		_ponto_pesca(p)  # L39: sem usar o rng
 
 
 func _perto_da_terra(cel: Vector2i) -> bool:
@@ -258,6 +310,9 @@ func _arvore(tipo: StringName, p: Vector2) -> void:
 	a.quadros = d[4]
 	a.pe_esgotado = d[7]
 	a.desvio_x = d[8]
+	if String(tipo).begins_with("coqueiro"):
+		a.extra_id = &"coco"  # L39: o coqueiro também dá coco
+		a.extra_qtd = Vector2i(1, 2)
 	a.position = p
 	w.entidades.add_child(a)
 
@@ -330,6 +385,98 @@ func _peca(nome: StringName, p: Vector2) -> void:
 		luz.enabled = false
 		luz.add_to_group(&"luzes_noturnas")
 		s.add_child(luz)
+
+
+# --- Coletáveis, minérios e pesca (L39) -----------------------------------------------
+
+var _coletas := 0
+var _minerios := 0
+var _pontos_pesca := 0
+
+
+## Um número de 0 a 1 que só depende do bloco e da semente (não mexe no rng).
+func _hash01(cel: Vector2i) -> float:
+	var h := hash(Vector3i(cel.x, cel.y, w.semente + 39))
+	return float(absi(h) % 10000) / 10000.0
+
+
+## Arbusto de frutinhas, concha, cogumelo, erva, capim: um ResourceNode pequeno que se colhe
+## e volta a crescer. `com_rng`: substitui uma peça de decoração antiga, que sorteava o
+## espelho; sorteia igual para o rng continuar na mesma conta.
+func _coletavel(nome: StringName, p: Vector2, com_rng: bool) -> void:
+	var d: Array = COLETAVEIS[nome]
+	var espelhar := rng.randf() < 0.5 if com_rng else _hash01(Vector2i(p)) < 0.5
+	var tex := _textura(d[0])
+	if tex == null:
+		return
+	w._ocupar(p)
+	_coletas += 1
+	if not w.gerar_recursos:
+		return
+	var c: ResourceNode = (load(COLETA) as PackedScene).instantiate()
+	c.name = "Coleta%d" % _coletas
+	c.textura_inteiro = tex
+	c.regiao_inteiro = Rect2(int(d[1]) * 128, 0, 128, 128)
+	c.item_id = d[2]
+	c.quantidade = int(d[3])
+	c.acao = String(d[4])
+	if String(d[5]) != "":
+		c.textura_esgotado = _textura(d[5])
+		c.regiao_esgotado = Rect2(int(d[6]) * 128, 0, 128, 128)
+	c.regiao_queimado = c.regiao_inteiro
+	c.position = p
+	w.entidades.add_child(c)
+	c.sprite.flip_h = espelhar
+
+
+## Pedra com minério (Colinas e Ruínas): minera como pedra (picareta), dá o minério e vira
+## pedrinhas; depois de um tempo volta.
+func _minerio(nome: StringName, p: Vector2) -> void:
+	var d: Array = MINERIOS[nome]
+	w._ocupar(p)
+	_minerios += 1
+	if not w.gerar_recursos:
+		return
+	var m: ResourceNode = PEDRA.instantiate()
+	m.name = "Minerio%d" % _minerios
+	m.textura_inteiro = _textura(MUNDO + "minerios.png")
+	m.regiao_inteiro = Rect2(int(d[0]) * 128, 0, 128, 128)
+	m.regioes_por_golpe = [Rect2(int(d[0]) * 128, 0, 128, 128), Rect2(int(d[1]) * 128, 0, 128, 128)]
+	m.regiao_queimado = m.regiao_inteiro
+	m.item_id = d[2]
+	m.quantidade = int(d[3])
+	m.golpes = 5
+	m.some_ao_esgotar = false
+	m.textura_esgotado = _textura(NAT + "pedrinha2.png")
+	m.regiao_esgotado = Rect2(0, 0, 64, 64)
+	m.pe_esgotado = 14
+	m.set_meta(&"minerio", true)
+	m.position = p
+	w.entidades.add_child(m)
+	(m.get_node("Interactable") as Interactable).tempo_segurar = 5.0
+
+
+## Ondinhas na água perto da terra (ponto de pesca): decoração no chão, no grupo
+## "pontos_pesca" (UsoItens.pescar dá 2 peixes perto dele).
+func _ponto_pesca(p: Vector2) -> void:
+	var tex := _textura(MUNDO + "fornalha_plantas.png")
+	if tex == null:
+		return
+	_pontos_pesca += 1
+	var s := Sprite2D.new()
+	s.name = "PontoPesca%d" % _pontos_pesca
+	s.texture = tex
+	s.region_enabled = true
+	s.region_rect = Rect2(5 * 128, 0, 128, 128)
+	s.centered = false
+	s.offset = Vector2(-64, -128 + 8)
+	s.scale = Vector2(ESCALA, ESCALA)
+	s.position = p
+	s.add_to_group(&"pontos_pesca")
+	_chao.add_child(s)
+	var t := s.create_tween().set_loops()
+	t.tween_property(s, "modulate:a", 0.45, 1.2)
+	t.tween_property(s, "modulate:a", 1.0, 1.2)
 
 
 func _por_nevoa(p: Vector2) -> void:

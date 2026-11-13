@@ -5,8 +5,9 @@ extends RefCounted
 ## as tabelas para fazer nascer os bichos; o mapa (M) usa o nome e a cor.
 ##
 ## Tabelas de aparecimento: lista de [tipo, peso]. `tipo` é uma chave de Povoamento.CRIATURAS
-## (hoje: slime, atirador, galinha, coelho, javali, ovelha). Bicho novo da etapa 2 (cervo,
-## caranguejo, sapo...) entra em Povoamento.CRIATURAS e numa linha destas tabelas.
+## (slimes dos elementos, bandidos, cervo, caranguejo, sapo, cabra, cogumelo, morcego,
+## esqueleto, golem... desde a etapa 2, L39). Bicho novo entra lá e numa linha destas tabelas.
+## A dificuldade sobe com a região: os mais fortes (golem, lanceiro, esqueleto) ficam longe.
 
 enum Id { CLAREIRA, BOSQUE, PRAIA, PANTANO, COLINAS, RUINAS }
 
@@ -19,32 +20,32 @@ const DADOS := {
 	Id.CLAREIRA: {
 		"nome": "Clareira", "perigo": 0.0, "limite": 10, "limite_noite": 3,
 		"dia": [["galinha", 4], ["coelho", 4], ["ovelha", 2]],
-		"noite": [["slime_noite", 1]],
+		"noite": [["slime_noite", 2], ["morcego_noite", 1]],
 	},
 	Id.BOSQUE: {
-		"nome": "Bosque Florido", "perigo": 0.25, "limite": 14, "limite_noite": 4,
-		"dia": [["coelho", 3], ["javali", 3], ["ovelha", 2], ["slime", 3]],
-		"noite": [["slime_noite", 3], ["atirador_noite", 1]],
+		"nome": "Bosque Florido", "perigo": 0.25, "limite": 16, "limite_noite": 4,
+		"dia": [["cervo", 4], ["coelho", 2], ["javali", 3], ["ovelha", 1], ["slime", 3], ["bandido_guerreiro", 1]],
+		"noite": [["slime_noite", 3], ["atirador_noite", 1], ["morcego_noite", 2]],
 	},
 	Id.PRAIA: {
-		"nome": "Praia das Conchas", "perigo": 0.3, "limite": 12, "limite_noite": 4,
-		"dia": [["galinha", 2], ["atirador", 2], ["slime", 2]],
-		"noite": [["slime_noite", 2], ["atirador_noite", 2]],
+		"nome": "Praia das Conchas", "perigo": 0.3, "limite": 14, "limite_noite": 4,
+		"dia": [["caranguejo", 5], ["galinha", 1], ["atirador", 2], ["slime_fogo", 2], ["slime", 1], ["bandido_guerreiro", 1]],
+		"noite": [["slime_noite", 2], ["atirador_noite", 2], ["morcego_noite", 1]],
 	},
 	Id.PANTANO: {
-		"nome": "Pântano dos Cogumelos", "perigo": 0.55, "limite": 14, "limite_noite": 6,
-		"dia": [["slime", 6], ["javali", 1]],
-		"noite": [["slime_noite", 4]],
+		"nome": "Pântano dos Cogumelos", "perigo": 0.55, "limite": 16, "limite_noite": 6,
+		"dia": [["sapo", 5], ["slime_veneno", 4], ["cogumelo", 4], ["slime", 1], ["javali", 1]],
+		"noite": [["slime_veneno_noite", 3], ["slime_noite", 1], ["morcego_noite", 3]],
 	},
 	Id.COLINAS: {
-		"nome": "Colinas de Pedra", "perigo": 0.75, "limite": 12, "limite_noite": 5,
-		"dia": [["ovelha", 3], ["javali", 2], ["atirador", 3]],
-		"noite": [["atirador_noite", 2], ["slime_noite", 2]],
+		"nome": "Colinas de Pedra", "perigo": 0.75, "limite": 14, "limite_noite": 5,
+		"dia": [["cabra", 5], ["golem", 3], ["bandido_lanceiro", 3], ["atirador", 2], ["slime_gelo", 2]],
+		"noite": [["atirador_noite", 1], ["bandido_lanceiro_noite", 2], ["morcego_noite", 3], ["slime_noite", 1]],
 	},
 	Id.RUINAS: {
-		"nome": "Ruínas dos Guardiões", "perigo": 1.0, "limite": 12, "limite_noite": 6,
-		"dia": [["slime", 4], ["atirador", 3]],
-		"noite": [["slime_noite", 3], ["atirador_noite", 3]],
+		"nome": "Ruínas dos Guardiões", "perigo": 1.0, "limite": 14, "limite_noite": 6,
+		"dia": [["esqueleto", 5], ["slime_gelo", 2], ["slime_fogo", 1], ["bandido_guerreiro", 2], ["bandido_lanceiro", 1], ["atirador", 2], ["golem", 1]],
+		"noite": [["esqueleto_noite", 3], ["morcego_noite", 3], ["slime_noite", 2], ["atirador_noite", 1]],
 	},
 }
 

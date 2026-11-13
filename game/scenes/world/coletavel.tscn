@@ -1,0 +1,40 @@
+[gd_scene load_steps=6 format=3]
+
+[ext_resource type="Script" path="res://scripts/world/resource_node.gd" id="1_recurso"]
+[ext_resource type="Script" path="res://scripts/components/interactable.gd" id="3_inter"]
+[ext_resource type="Script" path="res://scripts/components/hurtbox.gd" id="4_hurt"]
+
+[sub_resource type="RectangleShape2D" id="Shape_selecao"]
+size = Vector2(22, 16)
+
+[sub_resource type="RectangleShape2D" id="Shape_hurt"]
+size = Vector2(4, 4)
+
+[node name="Coletavel" type="StaticBody2D"]
+collision_layer = 0
+collision_mask = 0
+script = ExtResource("1_recurso")
+acao = "Colher"
+golpes = 1
+quantidade = 2
+escala = 0.25
+pe = 8
+
+[node name="Sprite2D" type="Sprite2D" parent="."]
+
+[node name="Interactable" type="Area2D" parent="."]
+script = ExtResource("3_inter")
+alcance = 30.0
+tempo_segurar = 0.6
+
+[node name="Forma" type="CollisionShape2D" parent="Interactable"]
+position = Vector2(0, -7)
+shape = SubResource("Shape_selecao")
+
+[node name="Hurtbox" type="Area2D" parent="."]
+monitorable = false
+script = ExtResource("4_hurt")
+
+[node name="Forma" type="CollisionShape2D" parent="Hurtbox"]
+position = Vector2(0, -4)
+shape = SubResource("Shape_hurt")

@@ -11,7 +11,7 @@ func _ready() -> void:
 	var especies := {}
 	for b in bichos:
 		especies[b.especie] = true
-	checar(especies.size() == 4, "das 4 espécies (%s)" % ", ".join(especies.keys()))
+	checar(especies.size() >= 4, "de várias espécies (%s)" % ", ".join(especies.keys()))
 
 	# Uma galinha perto do jogador: apanha, foge e, derrotada, deixa carne e pena.
 	var g: Animal = bichos.filter(func(b: Animal) -> bool: return b.especie == &"galinha")[0]

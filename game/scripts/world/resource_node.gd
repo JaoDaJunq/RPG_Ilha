@@ -47,6 +47,9 @@ const TEXTURA_CHAMAS := preload("res://assets/tiny_swords/fx/fogo.png")
 ## Fogo: depois de quanto tempo queimando passa para as vizinhas, e até que distância.
 @export var espalhar_apos := 2.0
 @export var raio_do_fogo := 42.0
+## Item a mais na coleta (o coco do coqueiro), entre extra_qtd.x e extra_qtd.y.
+@export var extra_id: StringName = &""
+@export var extra_qtd := Vector2i(1, 1)
 
 var estado := Estado.INTEIRO
 var _golpes_restantes: int
@@ -216,11 +219,22 @@ const XP_COLETA := 2
 func _entregar(quem: Player, item: StringName, qtd: int) -> void:
 	qtd = PassivasGuerreiro.coleta(quem, item, qtd)  # Braço de lenhador
 	quem.inventario.adicionar(item, qtd)
+	# Item a mais (L39): o coqueiro também dá coco. Só na coleta normal (não no carvão).
+	if extra_id != &"" and item == item_id and ItemData.existe(extra_id):
+		var n := randi_range(extra_qtd.x, extra_qtd.y)
+		if n > 0:
+			quem.inventario.adicionar(extra_id, n)
+			quem.avisar("+%d %s" % [n, ItemData.carregar(extra_id).nome.to_lower()], &"item")
 	quem.ganhar_xp(XP_COLETA)
 	quem.avisar("+%d %s" % [qtd, ItemData.carregar(item).nome.to_lower()], &"item")
 
 
 func _mostrar(regiao: Rect2) -> void:
+	# Coletável sem desenho de "esgotado" (concha, erva): some até crescer de novo (L39).
+	sprite.visible = regiao.size != Vector2.ZERO
+	if not sprite.visible:
+		_altura_visivel = 0.0
+		return
 	sprite.region_enabled = true
 	sprite.region_rect = regiao
 	sprite.centered = false

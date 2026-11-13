@@ -27,7 +27,7 @@ func _ready() -> void:
 	var especies := {}
 	for a in get_tree().get_nodes_in_group(&"animais"):
 		especies[a.especie] = true
-	checar(especies.size() == 4, "as 4 espécies de animais estão na ilha (%s)" % ", ".join(especies.keys()))
+	checar(especies.size() >= 8, "as 8 espécies de animais estão na ilha (%s)" % ", ".join(especies.keys()))
 
 	# Uma construção é zona segura.
 	var perto := w.centro + Vector2(400, 0)
@@ -96,9 +96,7 @@ func _da_regiao(r: int, da_noite: bool) -> Array:
 
 
 func _especie(n: Node) -> String:
-	if n is Animal:
-		return String(n.especie)
-	return "slime" if n is Slime else "atirador"
+	return _especie_de(String(n.get_meta(&"tipo", "")))
 
 
 func _especie_de(tipo: String) -> String:
