@@ -23,6 +23,8 @@ const TEMPO_CONGELADO := 2.5
 const XP_DERROTA := 15
 const NIVEL := 2
 const NIVEL_NOTURNO := 4
+## Peso no empurrão do golpe (ReacaoGolpe).
+const PESO := 1.2
 ## Distância que ele tenta manter do alvo (px): recua abaixo de PERTO, chega mais acima de LONGE.
 const PERTO := 56.0
 const LONGE := 104.0
@@ -35,7 +37,7 @@ const DESVIO_CEGO := 0.6
 @export var velocidade := 26.0
 @export var raio_visao := 128.0
 @export var dano_flecha := 9.0
-@export var recarga_tiro := 2.4
+@export var recarga_tiro := 2.0
 ## Velocidade da flecha dele (a do jogador é 200: esta dá para esquivar).
 @export var velocidade_flecha := 140.0
 @export var alcance_flecha := 150.0
@@ -51,7 +53,8 @@ var chance_chave := BauTrancado.CHANCE_CHAVE
 var _recarga := 1.0
 var _mirando := -1.0  # segundos puxando o arco (-1 = não está mirando)
 var _dir_tiro := Vector2.RIGHT
-var _empurrao := Vector2.ZERO
+## Reação ao apanhar (empurrão, piscar, número, hit stop): ReacaoGolpe, comum a todos.
+var reacao: ReacaoGolpe
 var _alvo_atual: Node2D = null
 var _casa := Vector2.INF
 var _destino := Vector2.INF
@@ -84,6 +87,8 @@ func _ready() -> void:
 		raio_visao *= 1.2
 	barra.definir_nivel((NIVEL_NOTURNO if noturno else NIVEL) + World.nivel_extra(self))
 	barra.ajustar_ao_sprite(visual)
+	reacao = ReacaoGolpe.em(self, PESO)
+	reacao.altura_numero = 26.0
 	if multiplayer.is_server():
 		vida.maximo *= World.mult_dificuldade(self, &"vida_inimigo")
 		vida.atual = vida.maximo
@@ -142,9 +147,9 @@ func _physics_process(delta: float) -> void:
 	if efeitos.mult_velocidade() <= 0.0 and animacao == &"andando":
 		animacao = &"parado"  # preso, congelado...: o Preso ainda atira
 	if efeitos.impulso() != Vector2.ZERO:
-		_empurrao = Vector2.ZERO
-	velocity = dir * velocidade * efeitos.mult_velocidade() + _empurrao + efeitos.impulso()
-	_empurrao = _empurrao.move_toward(Vector2.ZERO, 400.0 * delta)
+		reacao.parar_empurrao()
+	reacao.armadura = parado
+	velocity = dir * velocidade * efeitos.mult_velocidade() + reacao.empurrao(delta) + efeitos.impulso()
 	move_and_slide()
 
 
@@ -228,7 +233,7 @@ func _cancelar_tiro() -> void:
 ## Solta a flecha (anfitrião). Cego: sai torta e pode errar.
 func _soltar() -> void:
 	_mirando = -1.0
-	_recarga = recarga_tiro
+	_recarga = recarga_tiro * Combate.ritmo_inimigo(self)
 	var dir := _dir_tiro
 	if efeitos.erra_ataque():
 		dir = dir.rotated(DESVIO_CEGO * (1.0 if randf() < 0.5 else -1.0))
@@ -316,23 +321,8 @@ func _on_atingido(quantidade: float, tipo: StringName, origem: Node) -> void:
 				dano *= 2.0
 				efeitos.remover(EfeitosEstado.CONGELADO)
 	parado = not efeitos.pode_mover()
-	if not vida.tomar_dano(dano, tipo):
-		return
-	if origem is Node2D and not parado:
-		_empurrao = (global_position - origem.global_position).normalized() * 120.0
-	_piscar.rpc(vida.atual, vida.maximo)
-
-
-@rpc("authority", "call_local", "reliable")
-func _piscar(atual: float, maximo: float) -> void:
-	if not multiplayer.is_server():
-		vida.maximo = maximo
-		vida.atual = atual
-	barra.mostrar_dano()
-	Sfx.tocar(&"acerto", -10.0)
-	var t := create_tween()
-	t.tween_property(visual, "self_modulate", Color(1.0, 0.5, 0.5), 0.05)
-	t.tween_property(visual, "self_modulate", Color.WHITE, 0.2)
+	reacao.armadura = parado
+	vida.tomar_dano(dano, tipo)  # o ReacaoGolpe empurra, pisca e mostra o número
 
 
 func _on_morreu() -> void:
