@@ -126,6 +126,33 @@ func _mostrar_fogueira() -> void:
 	_chamas.frame = absi(hash(name)) % QUADROS_CHAMAS
 
 
+## Fogueira do acampamento (o Brasinha): `forca` de 0 (fraquinho) a 1 (acordado) muda a luz
+## e o raio da zona segura. Com a força cheia fica como a fogueira de sempre.
+func definir_forca(forca: float, raio_cheio: float) -> void:
+	if _luz_base_energia < 0.0:
+		_luz_base_energia = _luz_energia
+		_luz_base_escala = _luz_escala
+	var k := lerpf(0.5, 1.0, clampf(forca, 0.0, 1.0))
+	_luz_energia = _luz_base_energia * lerpf(0.55, 1.0, forca)
+	_luz_escala = _luz_base_escala * k
+	set_meta(&"raio_luz", raio_cheio * k)
+
+
+## Quando o desenho do Brasinha chega, a fogueira vira só a base (sem as chamas).
+func usar_base_sem_chama(base: Texture2D) -> void:
+	if _chamas == null or base == null:
+		return
+	_chamas.visible = false
+	_sprite.texture = (base as AtlasTexture).atlas
+	_sprite.region_enabled = true
+	_sprite.region_rect = (base as AtlasTexture).region
+	_sprite.offset = Vector2(-64, -128 + 8)
+
+
+var _luz_base_energia := -1.0
+var _luz_base_escala := 1.0
+
+
 ## A fogueira está animada? (Para os testes.)
 func chamas() -> AnimatedSprite2D:
 	return _chamas
@@ -194,6 +221,8 @@ func pode_interagir() -> bool:
 
 
 func texto_acao() -> String:
+	if tipo == &"fogueira" and fixa:
+		return "Falar com o Brasinha"
 	return {&"bau": "Abrir baú", &"fogueira": "Assar", &"fornalha": "Derreter / assar"}.get(tipo, "Usar bancada")
 
 
@@ -212,8 +241,15 @@ func interagir(quem: Player) -> void:
 		quem.abrir_mochila.rpc_id(quem.get_multiplayer_authority(), &"bancada")
 	elif tipo == &"fogueira":
 		# Assar: o que está cru na mão (carne, peixe, coxa de sapo) fica pronto, um por clique.
-		if not _assar(quem):
-			quem.avisar("Clique na fogueira com carne crua, peixe ou carne de sapo na mão para assar.")
+		if _assar(quem):
+			return
+		if fixa:
+			# A fogueira do acampamento é o Brasinha: clicar nela é falar com ele.
+			var mundo := get_tree().get_first_node_in_group(&"mundo") as World
+			if mundo and mundo.missoes:
+				mundo.missoes.interagir(quem)
+				return
+		quem.avisar("Clique na fogueira com carne crua, peixe ou carne de sapo na mão para assar.")
 	elif tipo == &"fornalha":
 		_usar_fornalha(quem)
 	elif tipo == &"bau":

@@ -264,6 +264,9 @@ func _on_morreu() -> void:
 		if randf() < float(extra[1]):
 			itens.append([extra[0], 1])
 	World.soltar_itens(self, global_position, itens)
+	var mundo := get_tree().get_first_node_in_group(&"mundo") as World
+	if mundo and mundo.missoes:
+		mundo.missoes.notificar_slime_morto()  # missão "Que cheiro é esse?" do Brasinha
 	queue_free()
 
 

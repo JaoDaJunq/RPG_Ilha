@@ -89,6 +89,7 @@ func configurar(p: Player) -> void:
 	jogador.vida.mudou.connect(func(atual: float, maximo: float) -> void: _barra_vida.value = atual / maximo * 100.0)
 	jogador.progresso_mudou.connect(_atualizar_progresso)
 	jogador.progresso_mudou.connect(_atualizar_slots)  # a árvore muda o que vai em Q R T E
+	_montar_missoes()
 	_vida_vista = jogador.vida.atual
 	jogador.vida.mudou.connect(_ao_mudar_vida)
 	jogador.aspecto_mudou.connect(_atualizar_aspecto)
@@ -144,6 +145,47 @@ func _input(event: InputEvent) -> void:
 		fechar_descricao()
 
 
+## O Brasinha e as missões: balão de fala, painel das pedras de lore, diário (J) e o
+## rastreador do canto. Só lê o que o anfitrião decidiu (Missoes).
+var _balao: BalaoBrasinha
+var _painel_lore: PainelLore
+var _diario: MissoesTela
+var _rastreador: RastreadorMissao
+
+
+func _montar_missoes() -> void:
+	var w := get_tree().get_first_node_in_group(&"mundo") as World
+	if w == null or w.missoes == null or _diario != null:
+		return
+	_rastreador = RastreadorMissao.new()
+	_raiz.add_child(_rastreador)
+	_rastreador.configurar(w.missoes)
+	_balao = BalaoBrasinha.new()
+	_balao.name = "BalaoBrasinha"
+	add_child(_balao)
+	_balao.configurar(jogador, w.missoes)
+	_painel_lore = PainelLore.new()
+	_painel_lore.name = "PainelLore"
+	add_child(_painel_lore)
+	_painel_lore.configurar(w.missoes)
+	_diario = MissoesTela.new()
+	_diario.name = "Diario"
+	add_child(_diario)
+	_diario.configurar(w.missoes)
+
+
+func balao() -> BalaoBrasinha:
+	return _balao
+
+
+func painel_lore() -> PainelLore:
+	return _painel_lore
+
+
+func diario() -> MissoesTela:
+	return _diario
+
+
 ## O mapa da ilha (M).
 func mapa() -> Mapa:
 	if _mapa == null:
@@ -159,6 +201,9 @@ var _mapa: Mapa
 func _unhandled_input(event: InputEvent) -> void:
 	if event.is_action_pressed(&"mapa") and jogador and not jogador.criando:
 		mapa().alternar()
+		get_viewport().set_input_as_handled()
+	elif event.is_action_pressed(&"missoes") and jogador and not jogador.criando and _diario:
+		_diario.alternar()
 		get_viewport().set_input_as_handled()
 	elif event.is_action_pressed(&"ui_cancel") and _mapa and _mapa.visible:
 		_mapa.fechar()

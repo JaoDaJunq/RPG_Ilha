@@ -28,6 +28,7 @@ const TECLAS := {
 	"alternar_noite": [KEY_N],
 	"alternar_som": [KEY_P],
 	"mapa": [KEY_M],
+	"missoes": [KEY_J],
 }
 
 const MOUSE := {

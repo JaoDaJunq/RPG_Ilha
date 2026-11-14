@@ -78,6 +78,11 @@ func _ready() -> void:
 			pedras += 1
 	checar(arvores >= 350 and pedras >= 60, "árvores (%d) e pedras (%d) espalhadas" % [arvores, pedras])
 
+	# As passagens começam fechadas de verdade (etapa 3): fechadas, o norte fica isolado.
+	checar(not w.passagem(World.PONTE).aberta and not w.passagem(World.RAIZES).aberta, "a ponte e as raízes começam fechadas")
+	w.abrir_passagem(World.PONTE)
+	w.abrir_passagem(World.RAIZES)
+	await get_tree().physics_frame
 	# Os caminhos ligam a Clareira a todas as regiões (passagens abertas).
 	var alcance := _alcance(w)
 	for r in Regioes.TODAS:
