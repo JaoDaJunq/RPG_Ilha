@@ -55,3 +55,14 @@ static func quadro_arena(indice: int) -> AtlasTexture:
 	a.atlas = t
 	a.region = Rect2(indice * QUADRO, 0, QUADRO, QUADRO)
 	return a
+
+
+## Põe `n` no chão do mundo: filho do mundo, logo antes das entidades, então fica embaixo de
+## quem anda (alvo, poça e coroa).
+static func no_chao(n: Node2D, de: Node) -> void:
+	var w := de.get_tree().get_first_node_in_group(&"mundo") as World
+	if w == null:
+		de.add_child(n)
+		return
+	w.add_child(n)
+	w.move_child(n, w.entidades.get_index())

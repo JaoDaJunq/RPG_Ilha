@@ -2,16 +2,16 @@
 
 importer="texture"
 type="CompressedTexture2D"
-uid="uid://bwvgrph051sod"
-path="res://.godot/imported/x.png-fc7048ce3fa3e87504b283cbd62334fb.ctex"
+uid="uid://bv85djlv6vics"
+path="res://.godot/imported/mae_gosma.png-5059088169ac9f090a2f00ad35a53a88.ctex"
 metadata={
 "vram_texture": false
 }
 
 [deps]
 
-source_file="res://assets/sprites/tiny/icones/x.png"
-dest_files=["res://.godot/imported/x.png-fc7048ce3fa3e87504b283cbd62334fb.ctex"]
+source_file="res://assets/sprites/tiny/inimigos/mae_gosma.png"
+dest_files=["res://.godot/imported/mae_gosma.png-5059088169ac9f090a2f00ad35a53a88.ctex"]
 
 [params]
 

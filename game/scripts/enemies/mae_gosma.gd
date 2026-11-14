@@ -108,10 +108,9 @@ func _ready() -> void:
 	reacao.reagiu.connect(func(_q: float, _c: bool, _f: float) -> void: _dano_visivel = 0.25)
 	_alvo_sprite = Sprite2D.new()
 	_alvo_sprite.top_level = true
-	_alvo_sprite.z_index = -1
 	_alvo_sprite.visible = false
 	_montar_alvo()
-	add_child(_alvo_sprite)
+	ArteGosma.no_chao(_alvo_sprite, self)
 	if multiplayer.is_server():
 		if filhote:
 			vida.maximo = maxf(vida_forcada, 1.0)
@@ -193,6 +192,7 @@ func _montar_alvo() -> void:
 		_alvo_sprite.texture = q
 		var k := raio * 2.0 / float(ArteGosma.QUADRO) * 1.3
 		_alvo_sprite.scale = Vector2(k, k)
+		_alvo_sprite.modulate = Color(3.2, 1.3, 1.2)  # o anel escuro da arte fica claro e avermelhado no chão escuro
 	else:
 		_alvo_sprite.texture = SpriteSheets.quadro(TEXTURA_BASE, 5, Vector2i(128, 128))
 		var k2 := raio * 2.0 / 128.0 * 2.2
@@ -342,7 +342,7 @@ func _poca(pos: Vector2, quem: StringName) -> void:
 	poca.elemento = quem
 	poca.position = pos
 	poca.raio = (RAIO_ESMAGAR * 0.8) * _escala
-	get_parent().add_child(poca)
+	ArteGosma.no_chao(poca, self)
 
 
 # --- Fases e elemento ------------------------------------------------------------------

@@ -18,7 +18,6 @@ var _sprite: Sprite2D
 
 func _ready() -> void:
 	add_to_group(&"pocas_gosma")
-	z_index = -1
 	# Poucas por vez: a mais velha some quando passa do limite.
 	var todas := get_tree().get_nodes_in_group(&"pocas_gosma")
 	if todas.size() > MAX_POCAS:
@@ -30,6 +29,7 @@ func _ready() -> void:
 		_sprite.texture = q
 		k = raio * 2.0 / float(ArteGosma.QUADRO) * 1.3
 		_sprite.scale = Vector2(k, k)
+		_sprite.modulate = ArteGosma.COR.get(elemento, Color.WHITE)
 	else:
 		_sprite.texture = SpriteSheets.quadro(TEXTURA_BASE, 5, Vector2i(128, 128))
 		k = raio * 2.0 / 128.0 * 1.8

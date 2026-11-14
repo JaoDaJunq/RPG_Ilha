@@ -125,7 +125,6 @@ func _montar_coroa() -> void:
 	_coroa = Sprite2D.new()
 	_coroa.top_level = true
 	_coroa.global_position = centro
-	_coroa.z_index = -1
 	var q := ArteGosma.quadro_arena(ArteGosma.Arena.COROA)
 	if q:
 		_coroa.texture = q
@@ -134,7 +133,7 @@ func _montar_coroa() -> void:
 		_coroa.texture = SpriteSheets.quadro(PLACEHOLDER, 5, Vector2i(128, 128))
 		_coroa.scale = Vector2(0.18, 0.12)
 		_coroa.modulate = Color(1.6, 1.3, 0.4)
-	add_child(_coroa)
+	ArteGosma.no_chao(_coroa, self)
 
 
 func coroa_visivel() -> bool:
