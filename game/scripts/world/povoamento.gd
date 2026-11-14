@@ -211,6 +211,8 @@ func pode_nascer_em(p: Vector2) -> bool:
 			return false
 	if World.luz_que_protege(w, p) != Vector2.INF:
 		return false
+	if w.arena_gosma and w.arena_gosma.dentro(p, 40.0):
+		return false  # a arena da Mãe Gosma fica vazia até a luta
 	for c in w.get_tree().get_nodes_in_group(&"construcoes"):
 		if (c as Node2D).global_position.distance_to(p) < 120.0:
 			return false

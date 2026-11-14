@@ -126,6 +126,7 @@ func _ready() -> void:
 	_espalhar()
 	_montar_passagens()
 	_montar_pedras_lore()
+	_montar_arena_gosma()
 	_aplicar_ciclo(false, true)
 	mapa_revelado.resize(MAPA_L * MAPA_A)
 	if somente_cenario:
@@ -1468,6 +1469,55 @@ func _montar_pedras_lore() -> void:
 					_pedras_lore[r] = pedra
 		if not achou:
 			push_warning("Sem lugar para a pedra de lore da região %d." % r)
+
+
+# --- Arena da Mãe Gosma ---------------------------------------------------------------------
+## No coração do Pântano: o ponto fixo mais perto da semente do pântano onde um disco de
+## CELULAS_LIVRES blocos é todo terra firme do pântano, fora de trilha. As árvores e pedras
+## dentro dela saem (nos dois lados: o cenário nasce igual para todos). O altar fica na borda
+## norte; ArenaGosma tem o resto (chamar, vigiar, resetar, recompensa).
+var arena_gosma: ArenaGosma
+
+
+func _montar_arena_gosma() -> void:
+	var coracao := Vector2i(GeradorIlha.SEMENTES[Regioes.Id.PANTANO][0])
+	var centro_cel := coracao
+	var achou := false
+	var n := ArenaGosma.CELULAS_LIVRES
+	for raio in range(0, 20):
+		for dy in range(-raio, raio + 1):
+			for dx in range(-raio, raio + 1):
+				if achou or maxi(absi(dx), absi(dy)) != raio:
+					continue
+				var c := coracao + Vector2i(dx, dy)
+				if _disco_livre(c, n):
+					centro_cel = c
+					achou = true
+	if not achou:
+		push_warning("Sem lugar livre para a arena da Mãe Gosma: usando o coração do pântano.")
+	var meio := Vector2(centro_cel * T) + Vector2(T, T) / 2.0
+	for r in get_tree().get_nodes_in_group(&"recursos"):
+		if (r as Node2D).global_position.distance_to(meio) <= ArenaGosma.RAIO + 8.0:
+			r.free()
+	arena_gosma = ArenaGosma.new()
+	arena_gosma.name = "ArenaGosma"
+	arena_gosma.centro = meio
+	arena_gosma.position = meio + Vector2(0, -ArenaGosma.RAIO + 10.0)
+	entidades.add_child(arena_gosma)
+	_ocupar(arena_gosma.position)
+
+
+func _disco_livre(c: Vector2i, raio: int) -> bool:
+	for dy in range(-raio, raio + 1):
+		for dx in range(-raio, raio + 1):
+			if dx * dx + dy * dy > raio * raio:
+				continue
+			var cel := c + Vector2i(dx, dy)
+			if not gerador.dentro(cel) or gerador.regiao_em(cel) != Regioes.Id.PANTANO or gerador.tipo_em(cel) == Chao.AGUA:
+				return false
+			if gerador.piso_em(cel) == GeradorIlha.Piso.TRILHA or cel in gerador.celulas_ponte:
+				return false
+	return true
 
 
 ## A pedra de lore de uma região (null na Clareira).

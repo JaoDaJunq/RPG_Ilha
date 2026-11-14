@@ -34,7 +34,17 @@ const PASTA := "res://data/items/"
 
 
 static func carregar(item_id: StringName) -> ItemData:
-	return load(PASTA + String(item_id) + ".tres") as ItemData
+	var d := load(PASTA + String(item_id) + ".tres") as ItemData
+	# Item sem ícone no .tres (a arte ainda não chegou): procura icone_<id>.png; se não houver,
+	# usa o gel de slime como placeholder (quando a arte chegar, basta pôr o arquivo).
+	if d and d.icone == null:
+		var arte := "res://assets/sprites/tiny/icones/icone_%s.png" % String(item_id)
+		var gel := "res://assets/sprites/tiny/icones/item_gosma_curativa.png"
+		if ResourceLoader.exists(arte):
+			d.icone = load(arte) as Texture2D
+		elif ResourceLoader.exists(gel):
+			d.icone = load(gel) as Texture2D
+	return d
 
 
 static func existe(item_id: StringName) -> bool:

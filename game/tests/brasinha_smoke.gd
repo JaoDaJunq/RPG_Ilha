@@ -111,7 +111,7 @@ func _ready() -> void:
 	p.inventario.adicionar(&"cogumelo", 1)
 	p.inventario.adicionar(&"carne_sapo", 1)
 	r = m.conversar(p)
-	checar(String(m.passo_atual()["id"]) == "mae_gosma", "isca completa: passo 8 (Mãe Gosma, em breve)")
+	checar(String(m.passo_atual()["id"]) == "mae_gosma", "isca completa: passo 8 (Mãe Gosma)")
 	checar(p.inventario.quantidade_de(&"isca_gosma") == 1, "ele entrega a Isca de Gosma")
 	checar(p.inventario.quantidade_de(&"gel_slime") == 0 and p.inventario.quantidade_de(&"cogumelo") == 0, "os ingredientes foram gastos (gel %d, cogumelo %d)" % [p.inventario.quantidade_de(&"gel_slime"), p.inventario.quantidade_de(&"cogumelo")])
 	checar(ItemData.existe(&"semente_coracao") and ItemData.existe(&"isca_gosma") and ItemData.existe(&"tocha_brasinha"), "os 3 itens novos existem")
