@@ -38,10 +38,10 @@ func _ready() -> void:
 	_titulo.add_theme_color_override(&"font_color", Color("3b2a1e"))
 	coluna.add_child(_titulo)
 	_imagem = TextureRect.new()
-	_imagem.custom_minimum_size = Vector2(320, 240)
+	_imagem.custom_minimum_size = Vector2(360, 315)
 	_imagem.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
 	_imagem.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
-	_imagem.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
+	_imagem.texture_filter = CanvasItem.TEXTURE_FILTER_LINEAR  # ilustração lisa
 	_imagem.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	coluna.add_child(_imagem)
 	_frase = Label.new()

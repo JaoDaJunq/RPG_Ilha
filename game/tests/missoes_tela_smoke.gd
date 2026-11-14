@@ -75,7 +75,7 @@ func _ready() -> void:
 	checar(diario.visible, "a tecla J abre o diário de missões")
 	checar(diario._missao.text == m.titulo_atual() and diario._objetivo.text.contains(m.objetivo_texto().get_slice("\n", 0)), "o diário mostra a missão atual")
 	checar(diario._pedras.text.contains("Colinas"), "e as pedras lidas")
-	checar(diario._pedido.text.contains("Concha"), "e o pedido do dia")
+	checar(diario._pedido.text.contains("concha"), "e o pedido do dia")
 	diario.fechar()
 	checar(not diario.visible, "fecha de novo")
 	checar(hud._rastreador._titulo.text == m.titulo_atual(), "o rastreador do canto mostra o objetivo")

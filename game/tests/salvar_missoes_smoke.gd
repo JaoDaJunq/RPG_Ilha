@@ -23,6 +23,7 @@ func _ready() -> void:
 	m.visitadas.append(Regioes.Id.PRAIA)
 	m.pedido = {"item": "concha", "qtd": 4, "texto": "4 conchas bonitas.", "rec": ["pocao_cura", 2], "estado": "aceito"}
 	m.pedidos_feitos = 3
+	m.comemora = 0.0  # só o desenho dele; não faz parte do que se compara
 	var antes := m.estado()
 	checar(m.acordado and String(m.passo_atual()["id"]) == "cheiro" and int(m.entregue.get("matar", 0)) == 2, "estado antes de salvar: acordado, no passo dos slimes (2/6)")
 	checar(m.tem_novidade(), "ainda há o que ele quer contar")

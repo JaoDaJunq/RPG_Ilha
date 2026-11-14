@@ -41,6 +41,7 @@ func _ready() -> void:
 	_retrato.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
 	_retrato.size_flags_vertical = Control.SIZE_SHRINK_BEGIN
 	_retrato.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_retrato.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
 	linha.add_child(_retrato)
 	var coluna := VBoxContainer.new()
 	coluna.custom_minimum_size = Vector2(360, 0)
@@ -117,8 +118,8 @@ func texto_do_pedido() -> String:
 		var rid := StringName(rec[0])
 		premio = "  (prêmio: %d %s)" % [int(rec[1]), ItemData.carregar(rid).nome if ItemData.existe(rid) else String(rid)]
 	if String(p.get("estado", "")) == "oferecido":
-		return "Ele tem um pedido: %d %s. Fale com ele para aceitar ou recusar.%s" % [int(p["qtd"]), nome, premio]
-	return "Entregue %d %s ao Brasinha.%s\nPedidos feitos: %d" % [int(p["qtd"]), nome, premio, missoes.pedidos_feitos]
+		return "Ele tem um pedido: %d %s. Fale com ele para aceitar ou recusar.%s" % [int(p["qtd"]), nome.to_lower(), premio]
+	return "Entregue %d %s ao Brasinha.%s\nPedidos feitos: %d" % [int(p["qtd"]), nome.to_lower(), premio, missoes.pedidos_feitos]
 
 
 func texto_das_pedras() -> String:

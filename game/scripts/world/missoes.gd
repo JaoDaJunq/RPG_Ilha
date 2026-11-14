@@ -38,6 +38,8 @@ var entregue: Dictionary = {}
 var lenha := 0
 var acordado := false
 var contente := 0.0
+## Segundos comemorando (quando ele acorda e quando a Semente volta): só o desenho dele.
+var comemora := 0.0
 ## {item, qtd, texto, rec: [item, qtd], estado: "oferecido" ou "aceito"} ou vazio.
 var pedido: Dictionary = {}
 var pedidos_feitos := 0
@@ -103,6 +105,8 @@ func marcador() -> String:
 
 ## Humor de fundo do Brasinha (qual desenho aparece quando ele não está falando).
 func humor_atual() -> int:
+	if comemora > 0.0:
+		return ArteBrasinha.Humor.COMEMORANDO
 	if fraquinho():
 		return ArteBrasinha.Humor.FRAQUINHO
 	if w and w.noite:
@@ -202,7 +206,7 @@ func estado() -> Dictionary:
 		"capitulo": capitulo, "passo": passo, "entregue": entregue.duplicate(), "lenha": lenha,
 		"acordado": acordado, "pedido": pedido.duplicate(true), "feitos": pedidos_feitos,
 		"pedras": pedras.duplicate(), "visitadas": visitadas.duplicate(), "semente": semente_entregue,
-		"novidade": _novidade, "contente": contente > 0.0,
+		"novidade": _novidade, "contente": contente > 0.0, "comemora": comemora > 0.0,
 	}
 
 
@@ -225,6 +229,7 @@ func carregar(d: Dictionary) -> void:
 	acordado = bool(d.get("acordado", false))
 	if not _servidor():
 		contente = 1.0 if bool(d.get("contente", false)) else 0.0
+		comemora = 1.0 if bool(d.get("comemora", false)) else 0.0
 	pedido = {}
 	var pd: Dictionary = d.get("pedido", {})
 	if not pd.is_empty():
@@ -403,6 +408,7 @@ func _concluir_passo(quem: Player = null) -> void:
 			quem.avisar("+%d %s" % [int(p["dar"][item]), _nome_item(StringName(item)).to_lower()], &"item")
 	if String(p["id"]) == "lanche":
 		acordado = true
+		comemora = 4.0
 	entregue = {}
 	if passo < passos().size() - 1:
 		passo += 1
@@ -477,6 +483,7 @@ func entregar_semente() -> bool:
 	if not _servidor() or semente_entregue:
 		return false
 	semente_entregue = true
+	comemora = 6.0
 	acordado = true
 	_pendentes.append(FalasBrasinha.SEMENTE_VOLTOU)
 	capitulo = 2
@@ -622,6 +629,10 @@ func _process(delta: float) -> void:
 		_tempo_visita = 0.0
 		atualizar_visitadas()
 		verificar_tocha()
+	if comemora > 0.0:
+		comemora = maxf(comemora - delta, 0.0)
+		if comemora <= 0.0:
+			_emitir()
 	if contente > 0.0:
 		contente = maxf(contente - delta, 0.0)
 		var f := w.entidades.get_node_or_null("FogueiraAcampamento") as Node2D

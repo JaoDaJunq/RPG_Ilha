@@ -9,9 +9,14 @@ var _objetivo: Label
 
 func _ready() -> void:
 	mouse_filter = Control.MOUSE_FILTER_IGNORE
-	set_anchors_preset(Control.PRESET_TOP_RIGHT)
+	anchor_left = 1.0
+	anchor_right = 1.0
+	anchor_top = 0.0
+	anchor_bottom = 0.0
 	grow_horizontal = Control.GROW_DIRECTION_BEGIN
-	position = Vector2(-12, 10)
+	offset_right = -12.0
+	offset_left = -12.0
+	offset_top = 10.0
 	var coluna := VBoxContainer.new()
 	coluna.custom_minimum_size = Vector2(210, 0)
 	coluna.add_theme_constant_override(&"separation", 2)
@@ -45,3 +50,6 @@ func atualizar() -> void:
 	_titulo.text = missoes.titulo_atual()
 	_objetivo.text = missoes.objetivo_texto()
 	reset_size()
+	# Colado no canto de cima à direita, com 12 px de folga.
+	offset_left = -12.0 - maxf(size.x, get_combined_minimum_size().x)
+	offset_right = -12.0

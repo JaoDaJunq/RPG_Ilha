@@ -18,6 +18,7 @@ const ICONE_INTERROGACAO := PASTA + "icones/icone_missao_interrogacao.png"
 const ICONE_SEMENTE := PASTA + "icones/icone_semente_coracao.png"
 const ICONE_ISCA := PASTA + "icones/icone_isca_gosma.png"
 const ICONE_TOCHA := PASTA + "icones/icone_tocha_brasinha.png"
+const ICONE_PEDRA := PASTA + "icones/icone_pedra_lore.png"
 
 ## Quadros da folha de humores.
 enum Humor { FALANDO_A, FALANDO_B, FRAQUINHO, COMENDO, ASSUSTADO, COMEMORANDO }

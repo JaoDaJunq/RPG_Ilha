@@ -5,7 +5,7 @@ extends Control
 ## recusar. Só mostra o que o anfitrião mandou (Missoes.fala_recebida).
 
 const CARACTERES_POR_SEGUNDO := 48.0
-const ALTURA_ACIMA := 78.0
+const ALTURA_ACIMA := 26.0
 ## Longe da fogueira o balão fecha sozinho.
 const DISTANCIA_MAXIMA := 150.0
 const COR_TEXTO := Color("3b2a1e")
@@ -42,6 +42,7 @@ func _ready() -> void:
 	_retrato.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
 	_retrato.size_flags_vertical = Control.SIZE_SHRINK_CENTER
 	_retrato.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_retrato.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
 	linha.add_child(_retrato)
 	var coluna := VBoxContainer.new()
 	coluna.add_theme_constant_override(&"separation", 4)
@@ -99,7 +100,14 @@ func abrir(linhas: Array, humor: int, escolha: bool) -> void:
 	_escolha = escolha
 	_humor = humor
 	visible = true
+	_brasinha_fala(true)
 	_mostrar_linha()
+
+
+func _brasinha_fala(valor: bool) -> void:
+	var w := get_tree().get_first_node_in_group(&"mundo") as World
+	if w and w.brasinha:
+		w.brasinha.falando(valor)
 
 
 func _mostrar_linha() -> void:
@@ -149,6 +157,7 @@ func fechar() -> void:
 		return
 	visible = false
 	_linhas = []
+	_brasinha_fala(false)
 	if missoes:
 		missoes.fim_fala()
 
