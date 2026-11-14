@@ -151,3 +151,21 @@ FAÇA: figuras grandes, simples e legíveis; contorno grosso; traço fofo.
 NÃO FAÇA: texto, letras, números, pixel art, degradê, nada encostando na borda da célula.
 NÃO SIGA: hieróglifo egípcio ou desenho realista.
 ```
+
+---
+
+## Folha 02b · Humores refeitos no MESMO corpo da folha 01 (13/11/2026)
+**Saída:** `l42_02b_brasinha_humores.png`
+
+**Por quê:** na folha 02 o Brasinha ganhou corpinho e pés; na folha 01 (a que vai no jogo) ele é uma GOTINHA de chama sem pés, com a gola de folhas embaixo. Ao alternar entre as duas no jogo, ele muda de forma. Refazer os 6 humores no corpo da folha 01.
+
+**Anexar:** 1) `art/sprites/tiny/candidatos/l42_01_brasinha_parado.png` (o corpo CERTO: copie exatamente a forma, a gola de folhas, o coração creme, as bochechas e os bracinhos de chama); 2) `art/sprites/tiny/candidatos/l42_02_brasinha_humores.png` (só as EXPRESSÕES e poses de cada humor).
+
+```text
+TAREFA: refazer a folha de 6 HUMORES do Brasinha usando EXATAMENTE o corpo da imagem 1 (gotinha de chama SEM pernas e SEM pés, gola de 3-5 folhas verdes embaixo, coração creme na barriga, bracinhos de chama nos lados), com as expressões e poses da imagem 2.
+Mesmo formato da imagem 1: 1536x1024, grade 3x2, células 512x512, fundo magenta #FF00FF, de frente, centralizado, a BASE (as folhas da gola) SEMPRE na MESMA linha da imagem 1, e o MESMO tamanho da imagem 1 (exceto onde dito).
+1) FALANDO A  2) FALANDO B (rindo, convencido)  3) FRAQUINHO (MENOR, ~60% do tamanho, pontas azuladas #7fa0c8, sonolento)  4) COMENDO (segurando uma tora pequena com os bracinhos)  5) ASSUSTADO (tremendo, olhos enormes)  6) COMEMORANDO (MAIOR, ~115%, bracinhos para cima, olhos ^ ^, 3 faíscas amarelas).
+FAÇA: mesmo traço, contorno #161c2e e cores da imagem 1.
+NÃO FAÇA: pernas, pés, corpo separado da chama, pixel art, degradê, texto, chão, sombra; nada encostando na borda.
+NÃO SIGA: o corpo com pés da imagem 2; qualquer personagem existente de filme/jogo.
+```
