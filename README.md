@@ -42,6 +42,7 @@ Co-op online de sobrevivência e exploração numa ilha de fantasia que reage ao
 - Bichos por região (`world/povoamento.gd`, tabelas em `world/regioes.gd`): cada região enche até o limite (que cresce com os jogadores) com os bichos dela, de dia e de noite; nascem fora da tela e longe da fogueira e de construções; morto volta depois de 2 minutos; longe do centro são mais fortes. Árvores e pedras crescem de novo (5 e 8 minutos).
 - Só fica ativo o que está perto (`world/soneca.gd`): bichos, árvores e a espuma longe de todos dormem, e a rede manda para cada jogador só os bichos e itens perto dele.
 - Mapa (M): a ilha de cima com as regiões, o acampamento e os jogadores; o que ainda não foi visto fica coberto e vai aparecendo ao andar (salvo com o mundo).
+- Brasinha e missões (etapa 3, `design/proposta_brasinha.md`, T40c): o espírito de fogo da fogueira do acampamento (clique nela para falar; balão com texto letra por letra, clique ou E avança). Começa fraquinho (luz e zona segura pela metade) e acorda com 10 madeiras; depois madeira é petisco (contente e cura leve por perto). Missões do grupo no capítulo 1 até a isca (acordar, lenha, bancada, 6 slimes, 5 géis, pedra do pântano, isca) e o começo do capítulo 2 (Tocha do Brasinha abre as raízes). `Missoes.entregar_semente()` é o gancho da Mãe Gosma (fecha o capítulo, conserta a ponte, 1 ponto de árvore a cada um). Pedidos do dia a dia (1 por vez, ao amanhecer, recusáveis, só de regiões visitadas, 1 ponto de árvore a cada 5). 5 pedras de lore (clique abre imagem e frase). Diário na tecla J, rastreador no canto, "!" e "?" em cima dele e alfinete no mapa. Tudo é do anfitrião e vai no arquivo do mundo. As passagens (ponte e raízes) começam fechadas. A arte final ainda é placeholder (caminhos em `ArteBrasinha`). Testes: `brasinha_smoke`, `pedidos_smoke`, `semente_smoke`, `salvar_missoes_smoke`, `missoes_tela_smoke`.
 - Acampamento com fogueira (um desenho animado só, L41) e barraca; a fogueira ilumina à noite com a luz tremendo.
 - Mouse seleciona o objeto; a caixa em cima dele diz o que fazer e se está perto o bastante.
 - Segurar E corta árvore (3 golpes = 3 de madeira, vira toco) e minera pedra (4 golpes = 3 de pedra, some).
@@ -76,6 +77,7 @@ Atalhos para testar sem o menu: `-- --solo`, `-- --hospedar` ou `-- --entrar=IP`
 | Árvore de habilidades | K (clique num nó para ver e aprender; com ela aberta não há dash nem habilidades) |
 | Dia / noite | N |
 | Mapa da ilha | M |
+| Missões do Brasinha | J |
 | Som | P |
 
 ## Gerar o jogo para enviar a amigos
