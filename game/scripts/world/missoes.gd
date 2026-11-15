@@ -46,6 +46,9 @@ var pedidos_feitos := 0
 var pedras: Array[int] = []
 var visitadas: Array[int] = [Regioes.Id.CLAREIRA]
 var semente_entregue := false
+## A Mãe Gosma (etapa 4): a isca está no altar (sobra de uma luta resetada) e se ela já caiu.
+var gosma_isca := false
+var gosma_derrotada := false
 
 var _pendentes: Array = []  # blocos de linhas que ele ainda vai contar
 var _novidade := false
@@ -168,6 +171,10 @@ func posicao_do_objetivo() -> Vector2:
 	var tipo := String(p.get("tipo", ""))
 	if tipo == "levar":
 		return Vector2(GeradorIlha.VAU * World.T)
+	if tipo == "boss" and capitulo == 1 and w and w.arena_gosma and not gosma_derrotada:
+		return w.arena_gosma.position  # o altar do pântano (derrotada: o alfinete volta ao Brasinha)
+	if tipo == "boss" and capitulo == 1 and gosma_derrotada:
+		return w.centro if w else Vector2.ZERO
 	if tipo == "pedra" and w and w.pedra_lore(int(p["regiao"])):
 		return w.pedra_lore(int(p["regiao"])).position
 	var r := regiao_do_objetivo()
@@ -205,7 +212,7 @@ func estado() -> Dictionary:
 	return {
 		"capitulo": capitulo, "passo": passo, "entregue": entregue.duplicate(), "lenha": lenha,
 		"acordado": acordado, "pedido": pedido.duplicate(true), "feitos": pedidos_feitos,
-		"pedras": pedras.duplicate(), "visitadas": visitadas.duplicate(), "semente": semente_entregue,
+		"pedras": pedras.duplicate(), "visitadas": visitadas.duplicate(), "semente": semente_entregue, "gosma_isca": gosma_isca, "gosma_derrotada": gosma_derrotada,
 		"novidade": _novidade, "contente": contente > 0.0, "comemora": comemora > 0.0,
 	}
 
@@ -246,6 +253,8 @@ func carregar(d: Dictionary) -> void:
 		if int(r) not in visitadas:
 			visitadas.append(int(r))
 	semente_entregue = bool(d.get("semente", false))
+	gosma_isca = bool(d.get("gosma_isca", false))
+	gosma_derrotada = bool(d.get("gosma_derrotada", false))
 	_pendentes = []
 	for bloco in d.get("pendentes", []):
 		var linhas: Array = []
@@ -336,6 +345,13 @@ func conversar(quem: Player) -> Dictionary:
 			if _passo_completo(p):
 				_concluir_passo(quem)
 				humor = ArteBrasinha.Humor.COMEMORANDO
+	elif tipo == "boss" and capitulo == 1 and quem.inventario.quantidade_de(&"semente_coracao") > 0:
+		# A Semente do Coração voltou: fecha o capítulo 1 (as falas vão em _pendentes).
+		quem.inventario.remover(&"semente_coracao", 1)
+		quem.avisar("-1 semente do coração", &"item")
+		entregar_semente()
+		humor = ArteBrasinha.Humor.COMEMORANDO
+		fez_algo = true
 	elif tipo == "levar" and quem.inventario.quantidade_de(StringName(p["item"])) > 0:
 		linhas.append("Segura a tocha firme e vai até a muralha, no vau!")
 	# O que mudou desde a última conversa.
@@ -477,7 +493,16 @@ func _abrir_lore(regiao: int) -> void:
 		lore_aberta.emit(regiao)
 
 
-## Gancho para a Mãe Gosma (etapa 4): a Semente voltou. Fecha o capítulo 1, conserta a ponte
+## Só o anfitrião (ArenaGosma): a isca no altar e se a Mãe Gosma já caiu.
+func definir_gosma(isca: bool, derrotada: bool) -> void:
+	if not _servidor():
+		return
+	gosma_isca = isca and not derrotada
+	gosma_derrotada = derrotada
+	_emitir()
+
+
+## A Semente voltou (Brasinha, quando o jogador a leva depois da Mãe Gosma). Fecha o capítulo 1, conserta a ponte
 ## das Colinas e dá 1 ponto de árvore a cada jogador. Devolve false se já tinha voltado.
 func entregar_semente() -> bool:
 	if not _servidor() or semente_entregue:

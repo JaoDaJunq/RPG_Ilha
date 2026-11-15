@@ -46,6 +46,8 @@ const PESO := 1.0
 ## Slime de elemento (L39): &"fogo", &"gelo" ou &"veneno" (vazio = o verde comum). Ver
 ## ELEMENTOS: o que o contato faz e a que ele é imune; o elemento contrário dá o triplo.
 @export var elemento: StringName = &""
+## Tamanho (1 = normal). Os slimes pequenos da Mãe Gosma nascem com ~0,6: menos vida, menos dano.
+@export var escala_extra := 1.0
 
 var _recarga := 0.0
 var _dano_visivel := 0.0  # mostra o quadro de dano por um instante
@@ -85,6 +87,12 @@ func _ready() -> void:
 		vida.maximo *= 1.3
 		vida.atual = vida.maximo
 		dano_contato *= 1.15
+	if escala_extra != 1.0:
+		visual.scale *= escala_extra
+		visual.position.y *= escala_extra
+		vida.maximo *= escala_extra
+		vida.atual = vida.maximo
+		dano_contato *= escala_extra
 	barra.definir_nivel((NIVEL_NOTURNO if noturno else NIVEL) + (1 if elemento != &"" else 0) + World.nivel_extra(self))
 	barra.ajustar_ao_sprite(visual)
 	reacao = ReacaoGolpe.em(self, PESO)

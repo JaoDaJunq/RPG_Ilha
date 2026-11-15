@@ -151,12 +151,15 @@ var _balao: BalaoBrasinha
 var _painel_lore: PainelLore
 var _diario: MissoesTela
 var _rastreador: RastreadorMissao
+var _barra_boss: BarraBoss
 
 
 func _montar_missoes() -> void:
 	var w := get_tree().get_first_node_in_group(&"mundo") as World
 	if w == null or w.missoes == null or _diario != null:
 		return
+	_barra_boss = BarraBoss.new()
+	_raiz.add_child(_barra_boss)
 	_rastreador = RastreadorMissao.new()
 	_raiz.add_child(_rastreador)
 	_rastreador.configurar(w.missoes)
@@ -176,6 +179,10 @@ func _montar_missoes() -> void:
 
 func balao() -> BalaoBrasinha:
 	return _balao
+
+
+func barra_boss() -> BarraBoss:
+	return _barra_boss
 
 
 func painel_lore() -> PainelLore:

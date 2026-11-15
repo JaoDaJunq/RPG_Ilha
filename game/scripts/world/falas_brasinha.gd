@@ -67,7 +67,7 @@ const CAP1: Array[Dictionary] = [
 	},
 	{
 		"id": "mae_gosma", "tipo": "boss", "titulo": "A Mãe Gosma",
-		"objetivo": "Atraia a Mãe Gosma com a isca e traga a Semente de volta (em breve).",
+		"objetivo": "Ponha a isca no altar do pântano, derrote a Mãe Gosma e leve a Semente do Coração ao Brasinha.",
 		"intro": [], "fim": [],
 	},
 ]
