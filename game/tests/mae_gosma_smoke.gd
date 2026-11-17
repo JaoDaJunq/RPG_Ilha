@@ -65,7 +65,9 @@ func _ready() -> void:
 	checar(viu_alvo, "o alvo aparece no chão antes do pulo")
 	checar(a.dentro(g.alvo_pos), "o alvo fica dentro da arena")
 	await get_tree().physics_frame
-	checar(g._alvo_sprite.visible, "o alvo está desenhado")
+	await get_tree().physics_frame
+	await get_tree().physics_frame
+	checar(g.em_aviso and g._alvo_sprite.visible and g._alvo_sprite.is_inside_tree(), "o alvo está desenhado")
 	await esperar(MaeGosma.TEMPO_AVISO + MaeGosma.TEMPO_NO_AR + 0.4)
 	var pequenos := get_tree().get_nodes_in_group(&"cria_gosma").size()
 	checar(pequenos == MaeGosma.filhotes_por_pulo(1), "o pulo soltou %d slimes pequenos (esperado %d)" % [pequenos, MaeGosma.filhotes_por_pulo(1)])
